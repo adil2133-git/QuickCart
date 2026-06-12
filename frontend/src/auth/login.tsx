@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ForgotPasswordModal from "./forgotPasswordModal";
+import ForgotPasswordModal from "./forgotPasswordModal"
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 export default function QuickKartLogin() {
