@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import OtpVerificationModal from "./OtpVerificationModal";
 
 export default function CustomerRegistration() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
   const inputClass = "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400";
@@ -24,6 +27,18 @@ export default function CustomerRegistration() {
         : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}
     </svg>
   );
+
+  const handleCreateAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: call your API to send OTP to `email`
+    setShowOtp(true);
+  };
+
+  const handleVerified = () => {
+    setShowOtp(false);
+    // TODO: finalize registration (call create-account API) then navigate
+    navigate("/login");
+  };
 
   return (
     <div className="flex min-h-screen w-full font-sans">
@@ -88,90 +103,102 @@ export default function CustomerRegistration() {
             <span className="text-sm font-medium" style={{ color: "#16a34a" }}>Immediate access — no approval needed</span>
           </div>
 
-          {/* Full Name */}
-          <div className="mb-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">Full Name</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
-                </svg>
-              </span>
-              <input type="text" placeholder="Enter your full name" className={inputClass} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+          <form onSubmit={handleCreateAccount}>
+            {/* Full Name */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Full Name</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <input type="text" required placeholder="Enter your full name" className={inputClass} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+              </div>
             </div>
-          </div>
 
-          {/* Phone */}
-          <div className="mb-1.5">
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">Phone Number</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 013.09 5.18 2 2 0 015.09 3h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L9.09 10.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 17.92z" />
-                </svg>
-              </span>
-              <input type="tel" placeholder="+1 (555) 000-0000" className={inputClass} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+            {/* Phone */}
+            <div className="mb-1.5">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Phone Number</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 013.09 5.18 2 2 0 015.09 3h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L9.09 10.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 17.92z" />
+                  </svg>
+                </span>
+                <input type="tel" required placeholder="+1 (555) 000-0000" className={inputClass} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+              </div>
             </div>
-          </div>
-          <p className="text-xs text-gray-400 mb-4">Used for delivery updates and driver communication.</p>
+            <p className="text-xs text-gray-400 mb-4">Used for delivery updates and driver communication.</p>
 
-          {/* Email */}
-          <div className="mb-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">Email Address</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
-                </svg>
-              </span>
-              <input type="email" placeholder="name@example.com" className={inputClass} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+            {/* Email */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Email Address</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                  </svg>
+                </span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className={inputClass}
+                  style={{ ...inputStyle }}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Password */}
-          <div className="mb-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">Password</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
-                </svg>
-              </span>
-              <input type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" className={`${inputClass} pr-10`} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <EyeIcon open={showPassword} />
-              </button>
+            {/* Password */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Password</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+                  </svg>
+                </span>
+                <input type={showPassword ? "text" : "password"} required placeholder="Min. 8 characters" className={`${inputClass} pr-10`} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <EyeIcon open={showPassword} />
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Confirm Password */}
-          <div className="mb-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">Confirm Password</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
-                </svg>
-              </span>
-              <input type={showConfirm ? "text" : "password"} placeholder="Repeat your password" className={`${inputClass} pr-10`} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <EyeIcon open={showConfirm} />
-              </button>
+            {/* Confirm Password */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Confirm Password</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+                  </svg>
+                </span>
+                <input type={showConfirm ? "text" : "password"} required placeholder="Repeat your password" className={`${inputClass} pr-10`} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <EyeIcon open={showConfirm} />
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Info Banner */}
-          <div className="flex items-start gap-3 rounded-lg px-4 py-3 mb-5" style={{ backgroundColor: "#FBF7F2", borderLeft: "3px solid #C9A97A" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-            <p className="text-xs text-gray-600 leading-relaxed">Your account will be activated immediately upon clicking create account.</p>
-          </div>
+            {/* Info Banner */}
+            <div className="flex items-start gap-3 rounded-lg px-4 py-3 mb-5" style={{ backgroundColor: "#FBF7F2", borderLeft: "3px solid #C9A97A" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              <p className="text-xs text-gray-600 leading-relaxed">Your account will be activated immediately upon clicking create account.</p>
+            </div>
 
-          {/* Submit */}
-          <button className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-opacity hover:opacity-90 active:opacity-80 mb-4" style={{ backgroundColor: "#C9A97A" }}>
-            Create Account
-          </button>
+            {/* Submit */}
+            <button type="submit" className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-opacity hover:opacity-90 active:opacity-80 mb-4" style={{ backgroundColor: "#C9A97A" }}>
+              Create Account
+            </button>
+          </form>
 
           {/* Login link */}
           <p className="text-center text-sm text-gray-500">
@@ -182,6 +209,15 @@ export default function CustomerRegistration() {
           </p>
         </div>
       </div>
+
+      {/* OTP Verification Modal */}
+      {showOtp && (
+        <OtpVerificationModal
+          email={email}
+          onClose={() => setShowOtp(false)}
+          onVerified={handleVerified}
+        />
+      )}
     </div>
   );
 }
