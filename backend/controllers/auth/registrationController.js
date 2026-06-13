@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const { client } = require("../../config/redis");
-const { sendOtp, verifyOtp, resendOtp } = require("../services/otpService");
-const User = require("../models/User");
+const { sendOtp, verifyOtp, resendOtp } = require("../../services/otpService");
+const User = require("../../models/shared/user");
 
 const RegisterController = async (req, res) => {
     try {
