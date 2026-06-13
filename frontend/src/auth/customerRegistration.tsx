@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import OtpVerificationModal from "./OtpVerificationModal";
+import OtpVerificationModal from "./otpVerificationModal";
 
 export default function CustomerRegistration() {
   const [showPassword, setShowPassword] = useState(false);
