@@ -1,6 +1,8 @@
 const { client } = require("../../config/redis");
 const { verifyOtp, resendOtp } = require("../../services/otpService");
 const User = require("../../models/shared/user");
+const generateToken = require("../../utils/generateToken");
+
 
 const verifyOtpController = async (req, res) => {
     try {
@@ -42,16 +44,30 @@ const verifyOtpController = async (req, res) => {
 
         await client.del(`register:${lowerEmail}`);
 
-        return res.status(201).json({
-            message: "User registered successfully",
-            user: {
-                _id: newUser._id,
-                name: newUser.name,
-                phone: newUser.phone,
-                email: newUser.email,
-                role: newUser.role
-            }
-        });
+        const { AccessToken, RefreshToken } = generateToken(newUser.email, newUser._id, newUser.role);
+
+        return res
+            .cookie("Access_Token", AccessToken, {
+                httpOnly: true,
+                sameSite: "none",
+                secure: true
+            })
+            .cookie("Refresh_Token", RefreshToken, {
+                httpOnly: true,
+                sameSite: "none",
+                secure: true
+            })
+            .status(201)
+            .json({
+                message: "User registered successfully",
+                user: {
+                    id: newUser._id,
+                    name: newUser.name,
+                    phone: newUser.phone,
+                    email: newUser.email,
+                    role: newUser.role  // frontend uses this to redirect
+                }
+            });
 
     } catch (err) {
         console.log("VERIFY OTP ERROR:", err);

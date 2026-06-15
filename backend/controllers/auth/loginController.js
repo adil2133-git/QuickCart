@@ -46,7 +46,7 @@ const Login = async (req, res) => {
                     id: user._id,
                     name: user.name,
                     email: user.email,
-                    role: user.role   // frontend uses this to redirect
+                    role: user.role 
                 }
             });
 
