@@ -4,7 +4,7 @@ const app = express()
 
 app.use(express.json())
 
-const customerAuthRoutes = require("./routes/auth/authRoutes")
+const AuthRoutes = require("./routes/auth/authRoutes")
 
 app.use(
   cors({
@@ -13,6 +13,6 @@ app.use(
   })
 )
 
-app.use("/api/auth", customerAuthRoutes)
+app.use("/api/auth", AuthRoutes)
 
 module.exports = app

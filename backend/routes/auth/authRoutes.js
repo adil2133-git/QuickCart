@@ -8,6 +8,6 @@ const { Login } = require("../../controllers/auth/loginController")
 router.post("/register", CustomerRegister);
 router.post("/register/verify-otp", verifyOtpController);
 router.post("/register/resend-otp", resendOTPController);
-router.post("/login",)
+router.post("/login", Login)
 
 module.exports = router
