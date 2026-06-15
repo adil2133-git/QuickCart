@@ -4,7 +4,7 @@ const app = express()
 
 app.use(express.json())
 
-const customerAuthRoutes = require("./routes/customer/authRoutes")
+const customerAuthRoutes = require("./routes/auth/authRoutes")
 
 app.use(
   cors({
