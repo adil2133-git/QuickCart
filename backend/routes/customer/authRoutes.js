@@ -2,12 +2,12 @@ const express = require("express")
 const router = express.Router()
 
 const {
-    RegisterController,
-    verifyOtpController,
-    resendOTPController
+    CustomerRegister
 } = require("../../controllers/auth/registrationController")
 
-router.post("/register", RegisterController);
+const {verifyOtpController, resendOTPController} = require("../../controllers/auth/otpController")
+
+router.post("/register", CustomerRegister);
 router.post("/register/verify-otp", verifyOtpController);
 router.post("/register/resend-otp", resendOTPController);
 

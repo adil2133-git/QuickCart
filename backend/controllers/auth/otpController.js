@@ -1,0 +1,90 @@
+const { client } = require("../../config/redis");
+const { verifyOtp, resendOtp } = require("../../services/otpService");
+const User = require("../../models/shared/user");
+
+const verifyOtpController = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({ message: "Email and OTP are required" });
+        }
+
+        const lowerEmail = email.toLowerCase();
+
+        const result = await verifyOtp(lowerEmail, otp);
+
+        if (!result.success) {
+            return res.status(400).json({ message: result.message || "Invalid or expired OTP" });
+        }
+
+        const userData = await client.get(`register:${lowerEmail}`);
+
+        if (!userData) {
+            return res.status(400).json({ message: "Registration session expired" });
+        }
+
+        const { name, phone, password, role } = JSON.parse(userData);
+
+        const existingUser = await User.findOne({ email: lowerEmail });
+        if (existingUser) {
+            await client.del(`register:${lowerEmail}`);
+            return res.status(409).json({ message: "Email is already registered" });
+        }
+
+        const newUser = await User.create({
+            name,
+            phone,
+            email: lowerEmail,
+            password,
+            role
+        });
+
+        await client.del(`register:${lowerEmail}`);
+
+        return res.status(201).json({
+            message: "User registered successfully",
+            user: {
+                _id: newUser._id,
+                name: newUser.name,
+                phone: newUser.phone,
+                email: newUser.email,
+                role: newUser.role
+            }
+        });
+
+    } catch (err) {
+        console.log("VERIFY OTP ERROR:", err);
+        return res.status(500).json({ message: "Internal server error", Error: err.message });
+    }
+};
+
+
+const resendOTPController = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        const lowerEmail = email.toLowerCase();
+
+        const pendingData = await client.get(`register:${lowerEmail}`);
+        if (!pendingData) {
+            return res.status(400).json({ message: "Registration session expired. Please register again." });
+        }
+
+        const result = await resendOtp(lowerEmail);
+
+        if (!result.success) {
+            return res.status(429).json({ message: result.message });
+        }
+
+        return res.status(200).json({ message: "OTP sent successfully" });
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+};
+
+module.exports = {verifyOtpController, resendOTPController}
