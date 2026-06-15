@@ -3,23 +3,23 @@ import { useState } from "react";
 // ── Icons ──────────────────────────────────────────────────────────────────────
 const CartIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-    <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+    <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
   </svg>
 );
 
 const StarIcon = () => (
   <svg width="16" height="15" viewBox="0 0 20 20" fill="#C2A383">
-    <polygon points="10,1 12.9,7 19.5,7.6 14.5,12 16.2,18.5 10,15 3.8,18.5 5.5,12 0.5,7.6 7.1,7"/>
+    <polygon points="10,1 12.9,7 19.5,7.6 14.5,12 16.2,18.5 10,15 3.8,18.5 5.5,12 0.5,7.6 7.1,7" />
   </svg>
 );
 
 const ChevronRight = () => (
-  <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#735A3E" strokeWidth="1.5" strokeLinecap="round"><polyline points="1 1 6 6 1 11"/></svg>
+  <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#735A3E" strokeWidth="1.5" strokeLinecap="round"><polyline points="1 1 6 6 1 11" /></svg>
 );
 
 const ChevronLeft = () => (
-  <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#735A3E" strokeWidth="1.5" strokeLinecap="round"><polyline points="6 1 1 6 6 11"/></svg>
+  <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#735A3E" strokeWidth="1.5" strokeLinecap="round"><polyline points="6 1 1 6 6 11" /></svg>
 );
 
 // ── NavBar ─────────────────────────────────────────────────────────────────────
@@ -36,16 +36,16 @@ function NavBar() {
         {/* Location */}
         <button className="flex-shrink-0 flex items-center gap-1">
           <svg width="14" height="18" viewBox="0 0 14 18" fill="none">
-            <path d="M7 0C3.13 0 0 3.13 0 7c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7zm0 9.5C5.62 9.5 4.5 8.38 4.5 7S5.62 4.5 7 4.5 9.5 5.62 9.5 7 8.38 9.5 7 9.5z" fill="#4E453D"/>
+            <path d="M7 0C3.13 0 0 3.13 0 7c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7zm0 9.5C5.62 9.5 4.5 8.38 4.5 7S5.62 4.5 7 4.5 9.5 5.62 9.5 7 8.38 9.5 7 9.5z" fill="#4E453D" />
           </svg>
           <span className="text-xs font-medium" style={{ fontFamily: "'DM Sans', sans-serif", color: "#4E453D" }}>Bengaluru</span>
-          <svg width="10" height="5" viewBox="0 0 10 5" className="ml-0.5"><path d="M0 0l5 5 5-5H0z" fill="#4E453D"/></svg>
+          <svg width="10" height="5" viewBox="0 0 10 5" className="ml-0.5"><path d="M0 0l5 5 5-5H0z" fill="#4E453D" /></svg>
         </button>
 
         {/* Search */}
         <div className="flex flex-1 items-center gap-2 rounded-full border px-4 py-2.5" style={{ backgroundColor: "#F9F3EA", borderColor: "#D2C4B9", maxWidth: 380 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4E453D" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             placeholder="Search..."
@@ -66,8 +66,8 @@ function NavBar() {
           {/* Cart with badge */}
           <div className="relative cursor-pointer">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#735A3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
             </svg>
             <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: "#376847" }}>
               <span className="text-white font-bold" style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif" }}>3</span>
@@ -75,11 +75,11 @@ function NavBar() {
           </div>
           {/* Bell */}
           <svg width="16" height="20" viewBox="0 0 24 24" fill="none" stroke="#735A3E" strokeWidth="2" strokeLinecap="round" className="cursor-pointer">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" />
           </svg>
           {/* User */}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#735A3E" strokeWidth="2" strokeLinecap="round" className="cursor-pointer">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
           </svg>
         </div>
 
@@ -151,7 +151,8 @@ export default function CustomerHome() {
   const trending = [
     { store: "Green Garden Organics", name: "Fresh Strawberries", weight: "250g • Organic Grade A", price: "₹149", emoji: "🍓", bg: "#7C1A1A" },
     { store: "Heritage Farm", name: "Full Cream Milk", weight: "1 Litre • Glass Bottle", price: "₹68", emoji: "🥛", bg: "#2C3C4C" },
-    { store: "", name: "", weight: "", price: "", emoji: "", bg: "#F3EDE4" },
+    { store: "Nature's Basket", name: "Organic Bananas", weight: "1 Dozen • Farm Fresh", price: "₹79", emoji: "🍌", bg: "#6B4E16" },
+    { store: "Fresh Valley Farms", name: "Free Range Eggs", weight: "12 Pieces • Premium Quality", price: "₹129", emoji: "🥚", bg: "#4A3B2A" }, 
   ];
 
   return (
@@ -170,9 +171,9 @@ export default function CustomerHome() {
           style={{ height: 480, boxShadow: "0px 8px 32px rgba(194,163,131,0.28)" }}
         >
           {/* BG gradient simulating produce photo */}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, #6B4A20 0%, #9C7040 30%, #C8963C 55%, #D4A850 75%, #8B6020 100%)" }}/>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, #6B4A20 0%, #9C7040 30%, #C8963C 55%, #D4A850 75%, #8B6020 100%)" }} />
           {/* Left fade overlay */}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(255,249,239,0.97) 0%, rgba(255,249,239,0.75) 38%, rgba(255,249,239,0.2) 60%, rgba(255,249,239,0) 100%)" }}/>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(255,249,239,0.97) 0%, rgba(255,249,239,0.75) 38%, rgba(255,249,239,0.2) 60%, rgba(255,249,239,0) 100%)" }} />
 
           {/* Content */}
           <div className="absolute inset-0 flex items-center" style={{ padding: 48 }}>
@@ -184,7 +185,7 @@ export default function CustomerHome() {
 
               {/* Heading */}
               <h1 className="font-bold leading-tight m-0" style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, letterSpacing: "-0.64px", color: "#735A3E", lineHeight: "40px", paddingTop: 8 }}>
-                Freshness Delivered<br/>To Your Doorstep
+                Freshness Delivered<br />To Your Doorstep
               </h1>
 
               {/* Sub */}
@@ -294,7 +295,7 @@ export default function CustomerHome() {
               <Card key={i} className="flex flex-col">
                 {/* Dark image top */}
                 <div className="relative h-40 flex items-end" style={{ backgroundColor: s.cardBg }}>
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)" }}/>
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)" }} />
                   <div className="relative z-10 flex items-center gap-3 p-6">
                     {/* Badge */}
                     <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 bg-white" style={{ boxShadow: "0px 4px 6px -1px rgba(0,0,0,0.1)" }}>
@@ -329,7 +330,7 @@ export default function CustomerHome() {
           <div className="flex items-center justify-between mb-6">
             <span className="text-xl font-semibold" style={{ fontFamily: "'Playfair Display', serif", color: "#735A3E" }}>Nearby Stores</span>
             <div className="flex items-center gap-2">
-              {[<ChevronLeft key="l"/>, <ChevronRight key="r"/>].map((icon, i) => (
+              {[<ChevronLeft key="l" />, <ChevronRight key="r" />].map((icon, i) => (
                 <button key={i} className="w-[30px] h-[30px] rounded-full bg-white border flex items-center justify-center cursor-pointer hover:bg-amber-50 transition-colors" style={{ borderColor: "#D2C4B9" }}>
                   {icon}
                 </button>
@@ -400,20 +401,16 @@ export default function CustomerHome() {
                         style={{ backgroundColor: "#735A3E", boxShadow: "0px 2px 12px rgba(194,163,131,0.18)" }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="h-[362px] rounded-xl" style={{ backgroundColor: "#F3EDE4" }}/>
+                  <div className="h-[362px] rounded-xl" style={{ backgroundColor: "#F3EDE4" }} />
                 )}
               </Card>
             ))}
-            {/* 4th placeholder card */}
-            <Card>
-              <div className="h-[362px]" style={{ backgroundColor: "#F3EDE4" }}/>
-            </Card>
           </div>
         </section>
 
