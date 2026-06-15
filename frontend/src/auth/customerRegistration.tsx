@@ -62,7 +62,7 @@ export default function CustomerRegistration() {
 
   const handleVerified = () => {
     setShowOtp(false);
-    navigate("/login");
+    navigate("/home");
   };
 
   return (
