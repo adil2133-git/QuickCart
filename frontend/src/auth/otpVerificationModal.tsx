@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import api from "../api/axios"; // adjust path as needed
 
 interface OtpVerificationModalProps {
   email: string;
@@ -11,6 +12,8 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
   const [count, setCount] = useState(28);
   const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [error, setError] = useState("");
+  const [resending, setResending] = useState(false);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -20,10 +23,12 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
   }, [count]);
 
   const handleChange = (value: string, index: number) => {
+    if (!/^\d*$/.test(value)) return; // digits only
     if (value.length > 1) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    setError("");
     if (value.length === 1 && index < inputsRef.current.length - 1) {
       inputsRef.current[index + 1]?.focus();
     }
@@ -35,20 +40,37 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setVerifying(true);
-    setTimeout(() => {
-      setVerifying(false);
+    try {
+      await api.post("/auth/register/verify-otp", {
+        email,
+        otp: otp.join(""),
+      });
       setVerified(true);
       setTimeout(() => onVerified(), 800);
-    }, 1200);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Invalid or expired OTP. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
   };
 
-  const handleResend = () => {
-    setCount(28);
-    setOtp(["", "", "", ""]);
-    inputsRef.current[0]?.focus();
+  const handleResend = async () => {
+    setError("");
+    setResending(true);
+    try {
+      await api.post("/auth/register/resend-otp", { email });
+      setCount(28);
+      setOtp(["", "", "", ""]);
+      inputsRef.current[0]?.focus();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to resend OTP. Please try again.");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -73,6 +95,16 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
               <span className="text-gray-900 font-semibold">{email}</span>. Please enter it below to verify your account.
             </p>
           </div>
+
+          {/* ── Error Banner ── */}
+          {error && (
+            <div className="flex items-center gap-2 rounded-md px-4 py-3 mb-4 bg-red-50 border border-red-200">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="flex justify-between gap-2 md:gap-3">
@@ -104,20 +136,23 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
             <div className="flex items-center justify-between">
               <p className={`text-xs font-medium uppercase tracking-widest text-gray-400 transition-opacity ${count <= 0 ? "opacity-30" : ""}`}>
                 {count > 0 ? (
-                  <>
-                    RESEND CODE IN <span className="tabular-nums" style={{ color: "#C9A97A" }}>{count}S</span>
-                  </>
+                  <>RESEND CODE IN <span className="tabular-nums" style={{ color: "#C9A97A" }}>{count}S</span></>
                 ) : (
                   "YOU CAN RESEND NOW"
                 )}
               </p>
               <button
                 type="button"
-                disabled={count > 0}
+                disabled={count > 0 || resending}
                 onClick={handleResend}
-                className={`text-xs font-semibold hover:underline transition-opacity ${count > 0 ? "opacity-50 cursor-not-allowed" : "opacity-100"}`}
+                className={`text-xs font-semibold hover:underline transition-opacity flex items-center gap-1 ${count > 0 || resending ? "opacity-50 cursor-not-allowed" : "opacity-100"}`}
                 style={{ color: "#C9A97A" }}
               >
+                {resending && (
+                  <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 11-6.219-8.56" />
+                  </svg>
+                )}
                 RESEND NOW
               </button>
             </div>
@@ -140,7 +175,7 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               )}
-              {verifying ? "" : verified ? "Verified" : "Verify & Proceed"}
+              {verifying ? "Verifying..." : verified ? "Verified!" : "Verify & Proceed"}
             </button>
           </form>
 

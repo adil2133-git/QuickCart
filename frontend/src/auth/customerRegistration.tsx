@@ -1,12 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OtpVerificationModal from "./otpVerificationModal";
+import api from "../api/axios"; // adjust path as needed
 
 export default function CustomerRegistration() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const inputClass = "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400";
@@ -28,21 +35,39 @@ export default function CustomerRegistration() {
     </svg>
   );
 
-  const handleCreateAccount = (e: React.FormEvent) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: call your API to send OTP to `email`
-    setShowOtp(true);
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post("/auth/register", { name, phone, email, password });
+      setShowOtp(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerified = () => {
     setShowOtp(false);
-    // TODO: finalize registration (call create-account API) then navigate
     navigate("/login");
   };
 
   return (
     <div className="flex min-h-screen w-full font-sans">
-      {/* Left Panel */}
+      {/* Left Panel — unchanged */}
       <div className="hidden md:flex flex-col justify-between w-[42%] min-h-screen px-8 py-8" style={{ backgroundColor: "#2C1A0E" }}>
         <div className="flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -52,7 +77,6 @@ export default function CustomerRegistration() {
           </svg>
           <span className="text-white font-semibold text-lg tracking-tight">QuickKart</span>
         </div>
-
         <div className="flex flex-col gap-8">
           <h1 className="text-white text-3xl font-bold leading-tight">
             Your neighbourhood<br />grocery, delivered fast.
@@ -69,21 +93,12 @@ export default function CustomerRegistration() {
               </div>
             ))}
           </div>
-          <div className="w-full rounded-xl overflow-hidden" style={{ height: 180, background: "linear-gradient(135deg,#3a2010 0%,#1a0e06 100%)", border: "1px solid #4a3020" }}>
-            <div className="w-full h-full flex items-center justify-center opacity-40">
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l1-5h16l1 5" /><path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" /><path d="M9 9v12M15 9v12M3 14h18" />
-              </svg>
-            </div>
-          </div>
         </div>
-
         <span style={{ color: "#6B4F35" }} className="text-xs">© 2024 QuickKart</span>
       </div>
 
       {/* Right Panel */}
       <div className="flex flex-col flex-1 bg-white px-10 py-8 overflow-y-auto">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-xs mb-6">
           <button onClick={() => navigate("/login")} className="hover:underline" style={{ color: "#C9A97A" }}>Login</button>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
@@ -95,13 +110,22 @@ export default function CustomerRegistration() {
         <div className="w-full max-w-md">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Create your Customer account</h2>
 
-          {/* Badge */}
           <div className="flex items-center gap-1.5 mb-6">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" />
             </svg>
             <span className="text-sm font-medium" style={{ color: "#16a34a" }}>Immediate access — no approval needed</span>
           </div>
+
+          {/* ── Error Banner ── */}
+          {error && (
+            <div className="flex items-center gap-2 rounded-md px-4 py-3 mb-4 bg-red-50 border border-red-200">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleCreateAccount}>
             {/* Full Name */}
@@ -113,7 +137,17 @@ export default function CustomerRegistration() {
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
                   </svg>
                 </span>
-                <input type="text" required placeholder="Enter your full name" className={inputClass} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your full name"
+                  className={inputClass}
+                  style={{ ...inputStyle }}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
               </div>
             </div>
 
@@ -126,7 +160,17 @@ export default function CustomerRegistration() {
                     <path d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 013.09 5.18 2 2 0 015.09 3h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L9.09 10.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 17.92z" />
                   </svg>
                 </span>
-                <input type="tel" required placeholder="+1 (555) 000-0000" className={inputClass} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 000-0000"
+                  className={inputClass}
+                  style={{ ...inputStyle }}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
               </div>
             </div>
             <p className="text-xs text-gray-400 mb-4">Used for delivery updates and driver communication.</p>
@@ -163,7 +207,17 @@ export default function CustomerRegistration() {
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                   </svg>
                 </span>
-                <input type={showPassword ? "text" : "password"} required placeholder="Min. 8 characters" className={`${inputClass} pr-10`} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min. 8 characters"
+                  className={`${inputClass} pr-10`}
+                  style={{ ...inputStyle }}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   <EyeIcon open={showPassword} />
                 </button>
@@ -179,7 +233,17 @@ export default function CustomerRegistration() {
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                   </svg>
                 </span>
-                <input type={showConfirm ? "text" : "password"} required placeholder="Repeat your password" className={`${inputClass} pr-10`} style={{ ...inputStyle }} onFocus={handleFocus} onBlur={handleBlur} />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat your password"
+                  className={`${inputClass} pr-10`}
+                  style={{ ...inputStyle }}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
                 <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   <EyeIcon open={showConfirm} />
                 </button>
@@ -195,12 +259,21 @@ export default function CustomerRegistration() {
             </div>
 
             {/* Submit */}
-            <button type="submit" className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-opacity hover:opacity-90 active:opacity-80 mb-4" style={{ backgroundColor: "#C9A97A" }}>
-              Create Account
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-opacity hover:opacity-90 active:opacity-80 mb-4 flex items-center justify-center gap-2 disabled:opacity-70"
+              style={{ backgroundColor: "#C9A97A" }}
+            >
+              {loading && (
+                <svg className="animate-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 11-6.219-8.56" />
+                </svg>
+              )}
+              {loading ? "Sending OTP..." : "Create Account"}
             </button>
           </form>
 
-          {/* Login link */}
           <p className="text-center text-sm text-gray-500">
             Already have an account?{" "}
             <button onClick={() => navigate("/login")} className="font-semibold hover:underline" style={{ color: "#2C1A0E" }}>
@@ -210,7 +283,6 @@ export default function CustomerRegistration() {
         </div>
       </div>
 
-      {/* OTP Verification Modal */}
       {showOtp && (
         <OtpVerificationModal
           email={email}
