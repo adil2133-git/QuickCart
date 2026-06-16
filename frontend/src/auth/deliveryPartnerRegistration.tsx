@@ -199,6 +199,26 @@ export default function DeliveryPartnerRegistration() {
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </span>
+                  <input
+                    type="email"
+                    placeholder="john@example.com"
+                    className={`${inputClass} pl-9`}
+                    style={inputStyle}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
