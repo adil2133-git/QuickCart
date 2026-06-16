@@ -1,6 +1,7 @@
 const { client } = require("../../config/redis");
 const { verifyOtp, resendOtp } = require("../../services/otpService");
 const User = require("../../models/shared/user");
+const DriverProfile = require("../../models/driver/driverProfile"); 
 const generateToken = require("../../utils/generateToken");
 
 
@@ -26,7 +27,16 @@ const verifyOtpController = async (req, res) => {
             return res.status(400).json({ message: "Registration session expired" });
         }
 
-        const { name, phone, password, role } = JSON.parse(userData);
+        const {
+            name,
+            phone,
+            password,
+            role,
+            vehicleType,
+            vehicleNumber,
+            licenseNumber,
+            documentUrls
+        } = JSON.parse(userData);
 
         const existingUser = await User.findOne({ email: lowerEmail });
         if (existingUser) {
@@ -39,8 +49,21 @@ const verifyOtpController = async (req, res) => {
             phone,
             email: lowerEmail,
             password,
-            role
+            role,
+            // drivers start as pending, customers are active
+            ...(role === "DRIVER" && { status: "PENDING_APPROVAL" })
         });
+
+        // If driver, also create DriverProfile
+        if (role === "DRIVER") {
+            await DriverProfile.create({
+                userId: newUser._id,
+                vehicleType,
+                vehicleNumber,
+                licenseNumber,
+                documentUrls,
+            });
+        }
 
         await client.del(`register:${lowerEmail}`);
 
@@ -103,4 +126,4 @@ const resendOTPController = async (req, res) => {
     }
 };
 
-module.exports = {verifyOtpController, resendOTPController}
+module.exports = { verifyOtpController, resendOTPController }

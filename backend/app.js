@@ -5,6 +5,7 @@ const app = express()
 app.use(express.json())
 
 const AuthRoutes = require("./routes/auth/authRoutes")
+const DriverRoutes = require("./routes/driver/driverRoutes")
 
 app.use(
   cors({
@@ -14,5 +15,6 @@ app.use(
 )
 
 app.use("/api/auth", AuthRoutes)
+app.use("/api/auth/driver", DriverRoutes)
 
 module.exports = app

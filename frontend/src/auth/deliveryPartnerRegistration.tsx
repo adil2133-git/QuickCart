@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-type VehicleType = "Bike" | "Scooter" | "Cycle";
+type VehicleType = "Bike" | "Scooter";
 
 interface UploadState {
   name: string | null;
@@ -100,7 +100,7 @@ export default function DeliveryPartnerRegistration() {
     e.target.style.boxShadow = "none";
   };
 
-  const vehicles: VehicleType[] = ["Bike", "Scooter", "Cycle"];
+  const vehicles: VehicleType[] = ["Bike", "Scooter"];
 
   const SectionHeader = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
     <div className="flex items-center gap-2 mb-4">

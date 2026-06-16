@@ -5,6 +5,7 @@ import CustomerRegistration from './auth/customerRegistration'
 import StoreRegistration from './auth/storeRegistration'
 import DeliveryPartnerRegistration from './auth/deliveryPartnerRegistration'
 import CustomerHome from './pages/customer/customerHome'
+import FreshMartStorePage from './pages/customer/singleStore'
 
 function App() {
   return (
@@ -20,6 +21,8 @@ function App() {
         <Route path="/register/delivery" element={<DeliveryPartnerRegistration />} />
 
         <Route path="/home" element={<CustomerHome />} />
+
+        <Route path='/store' element={<FreshMartStorePage />} />
 
       </Routes>
     </BrowserRouter>
