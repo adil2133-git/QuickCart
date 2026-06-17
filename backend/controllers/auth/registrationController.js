@@ -201,11 +201,13 @@ const registerStore = async (req, res) => {
         // ── 3. Collect Cloudinary URLs from req.files ─────────────────────────────
         const files = req.files || {};
 
-        const tradeLicenseUrl = files.tradeLicense?.[0]?.path || null;
-        const ownerIdUrl      = files.ownerId?.[0]?.path || null;
-        const storeFrontUrl   = files.storeFront?.[0]?.path || null;
+        const tradeLicense = files.tradeLicense?.[0]?.path || null;
+        const ownerId      = files.ownerId?.[0]?.path || null;
+        const storeFront   = files.storeFront?.[0]?.path || null;
 
-        if (!tradeLicenseUrl || !ownerIdUrl || !storeFrontUrl) {
+        const documentUrls = [tradeLicense, ownerId, storeFront].filter(Boolean);
+
+        if (documentUrls.length < 3) {
             return res.status(400).json({ success: false, message: "Trade license, owner ID, and store front photo are all required." });
         }
 
@@ -225,9 +227,7 @@ const registerStore = async (req, res) => {
                 ownerName,
                 address,
                 pincode,
-                tradeLicenseUrl,
-                ownerIdUrl,
-                storeFrontUrl,
+                documentUrls,
             })
         );
 
