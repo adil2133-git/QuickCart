@@ -62,9 +62,15 @@ export default function QuickKartLogin() {
 
       const { role, status } = data.user;
 
-      if (role === "DRIVER" && status === "PENDING_APPROVAL") {
-        navigate("/pending");
-        return;
+      if (status === "PENDING_APPROVAL") {
+        if (role === "DRIVER") {
+          navigate("/driver/pending");
+          return;
+        }
+        if (role === "STORE") {
+          navigate("/store/pending");
+          return;
+        }
       }
 
       navigate(ROLE_ROUTES[role] || "/");

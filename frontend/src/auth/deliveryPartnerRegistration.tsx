@@ -145,7 +145,7 @@ export default function DeliveryPartnerRegistration() {
   // ── Step 2 — OTP verified → go to pending-approval page ──────────────────────
   const handleDriverVerified = () => {
     setShowOtp(false);
-    navigate("/pending");
+    navigate("/driver/pending");
   };
 
   const vehicles: VehicleType[] = ["Bike", "Scooter"];

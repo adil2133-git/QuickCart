@@ -159,7 +159,7 @@ export default function StoreRegistration() {
         <OtpVerificationModal
           email={email.trim().toLowerCase()}
           onClose={() => setShowOtpModal(false)}
-          onVerified={() => navigate("/store/pending-approval")}
+          onVerified={() => navigate("/store/pending")}
         />
       )}
 

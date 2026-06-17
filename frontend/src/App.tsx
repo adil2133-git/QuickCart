@@ -15,20 +15,21 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<QuickKartLogin />} />
-        
+
         <Route path="/create-account" element={<CreateAccountModal />} />
 
         <Route path="/register/customer" element={<CustomerRegistration />} />
         <Route path="/register/store" element={<StoreRegistration />} />
         <Route path="/register/delivery" element={<DeliveryPartnerRegistration />} />
-        <Route path='/pending' element={<PendingApproval />} />
+        <Route path="/driver/pending" element={<PendingApproval role="driver" />} />
+        <Route path="/store/pending" element={<PendingApproval role="store" />} />
 
         <Route path="/home" element={<CustomerHome />} />
         <Route path='/store' element={<FreshMartStorePage />} />
 
 
 
-        <Route path='/driverdashboard' element={<QuickKartDashboard /> } />
+        <Route path='/driverdashboard' element={<QuickKartDashboard />} />
       </Routes>
     </BrowserRouter>
   )
