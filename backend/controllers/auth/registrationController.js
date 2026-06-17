@@ -160,8 +160,6 @@ const registerDriver = async (req, res) => {
 
 
 const registerStore = async (req, res) => {
-    let createdUser = null;
-
     try {
         const {
             storeName,
@@ -174,88 +172,87 @@ const registerStore = async (req, res) => {
             confirmPassword,
         } = req.body;
 
-        // Basic presence checks
+        // ── 1. Validate text fields ───────────────────────────────────────────────
         if (!storeName || !ownerName || !address || !pincode || !email || !phone || !password || !confirmPassword) {
-            return res.status(400).json({ message: "All fields are required" });
+            return res.status(400).json({ success: false, message: "All fields are required." });
         }
 
         if (password !== confirmPassword) {
-            return res.status(400).json({ message: "Passwords do not match" });
+            return res.status(400).json({ success: false, message: "Passwords do not match." });
         }
 
         if (password.length < 8) {
-            return res.status(400).json({ message: "Password must be at least 8 characters" });
+            return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
         }
 
-        const lowerEmail = email.toLowerCase().trim();
+        // ── 2. Duplicate check ────────────────────────────────────────────────────
+        const lowerEmail = email.toLowerCase();
 
-        // Check for existing user with same email or phone
-        const existingUser = await User.findOne({
-            $or: [{ email: lowerEmail }, { phone }],
-        });
-
-        if (existingUser) {
-            return res.status(409).json({ message: "An account with this email or phone already exists" });
+        const emailExists = await User.findOne({ email: lowerEmail });
+        if (emailExists) {
+            return res.status(409).json({ success: false, message: "An account with this email already exists." });
         }
 
-        // Pull uploaded document URLs from multer + Cloudinary
-        const tradeLicenseUrl = req.files?.tradeLicense?.[0]?.path || null;
-        const ownerIdUrl      = req.files?.ownerId?.[0]?.path || null;
-        const storeFrontUrl   = req.files?.storeFront?.[0]?.path || null;
+        const phoneExists = await User.findOne({ phone });
+        if (phoneExists) {
+            return res.status(409).json({ success: false, message: "Phone number is already registered." });
+        }
+
+        // ── 3. Collect Cloudinary URLs from req.files ─────────────────────────────
+        const files = req.files || {};
+
+        const tradeLicenseUrl = files.tradeLicense?.[0]?.path || null;
+        const ownerIdUrl      = files.ownerId?.[0]?.path || null;
+        const storeFrontUrl   = files.storeFront?.[0]?.path || null;
 
         if (!tradeLicenseUrl || !ownerIdUrl || !storeFrontUrl) {
-            return res.status(400).json({ message: "Trade license, owner ID, and store front photo are all required" });
+            return res.status(400).json({ success: false, message: "Trade license, owner ID, and store front photo are all required." });
         }
 
+        // ── 4. Hash password & store everything in Redis ──────────────────────────
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create the User first
-        createdUser = await User.create({
-            name: ownerName,
-            phone,
-            email: lowerEmail,
-            password: hashedPassword,
-            role: "STORE",
-            status: "PENDING_APPROVAL",
-        });
+        await client.setEx(
+            `register:${lowerEmail}`,
+            120,
+            JSON.stringify({
+                name: ownerName,
+                phone,
+                email: lowerEmail,
+                password: hashedPassword,
+                role: "STORE",
+                storeName,
+                ownerName,
+                address,
+                pincode,
+                tradeLicenseUrl,
+                ownerIdUrl,
+                storeFrontUrl,
+            })
+        );
 
-        // Then the StoreProfile, linked via userId
-        const storeProfile = await StoreProfile.create({
-            userId: createdUser._id,
-            storeName: storeName.trim(),
-            ownerName,
-            address,
-            pincode,
-            tradeLicenseUrl,
-            ownerIdUrl,
-            storeFrontUrl,
-        });
+        // ── 5. Send OTP ───────────────────────────────────────────────────────────
+        const result = await sendOtp(lowerEmail);
 
-        return res.status(201).json({
+        if (!result.success) {
+            return res.status(429).json({ success: false, message: result.message || "Failed to send OTP" });
+        }
+
+        return res.status(200).json({
             success: true,
-            message: "Store application submitted. Your account is pending admin approval.",
-            user: {
-                id: createdUser._id,
-                name: createdUser.name,
-                email: createdUser.email,
-                role: createdUser.role,
-                status: createdUser.status,
-            },
+            message: "OTP sent. Please verify your email to complete registration.",
+            email: lowerEmail,
         });
 
     } catch (err) {
-        // Roll back the User if StoreProfile creation failed partway through
-        if (createdUser) {
-            await User.findByIdAndDelete(createdUser._id).catch(() => {});
-        }
-
-        console.error("STORE REGISTRATION ERROR:", err);
+        console.error("[registerStore]", err);
 
         if (err.code === 11000) {
-            return res.status(409).json({ message: "An account with this email or phone already exists" });
+            const field = Object.keys(err.keyPattern || {})[0] || "field";
+            return res.status(409).json({ success: false, message: `An account with this ${field} already exists.` });
         }
 
-        return res.status(500).json({ message: "Internal server error", Error: err.message });
+        return res.status(500).json({ success: false, message: "Server error during registration.", error: err.message });
     }
 };
 
