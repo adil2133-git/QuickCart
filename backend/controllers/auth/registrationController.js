@@ -204,7 +204,6 @@ const registerStore = async (req, res) => {
             return res.status(400).json({ success: false, message: "Trade license, owner ID, and store front photo are all required." });
         }
 
-        // ── 4. Hash password & store everything in Redis ──────────────────────────
         const hashedPassword = await bcrypt.hash(password, 10);
 
         await client.setEx(

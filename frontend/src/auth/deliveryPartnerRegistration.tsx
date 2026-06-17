@@ -88,12 +88,10 @@ export default function DeliveryPartnerRegistration() {
   const [vehicleRC, setVehicleRC]           = useState<UploadState>({ file: null, name: null, uploaded: false });
   const [profilePhoto, setProfilePhoto]     = useState<UploadState>({ file: null, name: null, uploaded: false });
 
-  // ── UI state ─────────────────────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError]     = useState("");
   const [showOtp, setShowOtp]       = useState(false);   // ← controls OTP modal
 
-  // ── Input helpers ─────────────────────────────────────────────────────────────
   const inputClass =
     "w-full h-11 px-3 bg-white border outline-none text-sm text-gray-800 placeholder-gray-400 rounded-lg transition-all";
   const inputStyle = { borderColor: "#d2c4b9" };
@@ -113,7 +111,6 @@ export default function DeliveryPartnerRegistration() {
     </div>
   );
 
-  // ── Step 1 — submit form, open OTP modal on success ───────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError("");
@@ -133,7 +130,6 @@ export default function DeliveryPartnerRegistration() {
         profilePhoto: profilePhoto.file,
       });
 
-      // Backend sent OTP → show the modal
       setShowOtp(true);
     } catch (err: any) {
       setApiError(err?.response?.data?.message || "Something went wrong. Please try again.");
@@ -142,7 +138,6 @@ export default function DeliveryPartnerRegistration() {
     }
   };
 
-  // ── Step 2 — OTP verified → go to pending-approval page ──────────────────────
   const handleDriverVerified = () => {
     setShowOtp(false);
     navigate("/driver/pending");
@@ -153,7 +148,6 @@ export default function DeliveryPartnerRegistration() {
   return (
     <div className="flex h-screen w-full overflow-hidden font-sans" style={{ backgroundColor: "#fff8f4" }}>
 
-      {/* OTP modal — rendered on top when showOtp is true */}
       {showOtp && (
         <OtpVerificationModal
           email={email}
@@ -162,7 +156,6 @@ export default function DeliveryPartnerRegistration() {
         />
       )}
 
-      {/* ── Left panel ─────────────────────────────────────────────────────── */}
       <aside className="hidden md:flex relative w-[40%] h-full overflow-hidden flex-shrink-0"
         style={{ backgroundColor: "#291803" }}>
         <div className="absolute inset-0 z-0"

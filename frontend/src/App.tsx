@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import QuickKartLogin from './auth/login'
-import CreateAccountModal from './auth/createAccountModel'
+import CreateAccountModal from './auth/createAccountModal'
 import CustomerRegistration from './auth/customerRegistration'
 import StoreRegistration from './auth/storeRegistration'
 import DeliveryPartnerRegistration from './auth/deliveryPartnerRegistration'
