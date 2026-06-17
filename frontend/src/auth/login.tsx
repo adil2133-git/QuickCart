@@ -1,14 +1,26 @@
-import { useState } from "react";
+import { useState, FormEvent, FocusEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import ForgotPasswordModal from "./forgotPasswordModal";
 import api from "../api/axios";
 
-const ROLE_ROUTES = {
+const ROLE_ROUTES: Record<string, string> = {
   CUSTOMER: "/home",
   ADMIN: "/admin/dashboard",
   DRIVER: "/driver/home",
   STORE: "/store/dashboard",
 };
+
+interface LoginResponse {
+  message: string;
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    status?: string;
+  };
+}
 
 export default function QuickKartLogin() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,16 +34,17 @@ export default function QuickKartLogin() {
 
   const inputClass = "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400";
   const inputStyle = { borderColor: "#D6C5B0", backgroundColor: "#FAFAF8" };
-  const handleFocus = (e) => {
+
+  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
     e.target.style.borderColor = "#C9A97A";
     e.target.style.boxShadow = "0 0 0 2px #C9A97A33";
   };
-  const handleBlur = (e) => {
+  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
     e.target.style.borderColor = "#D6C5B0";
     e.target.style.boxShadow = "none";
   };
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
@@ -42,14 +55,21 @@ export default function QuickKartLogin() {
 
     try {
       setLoading(true);
-      const { data } = await api.post("/auth/login", {
+      const { data } = await api.post<LoginResponse>("/auth/login", {
         email: email.trim(),
         password,
       });
 
-      navigate(ROLE_ROUTES[data.user.role] || "/");
+      const { role, status } = data.user;
 
-    } catch (err) {
+      if (role === "DRIVER" && status === "PENDING_APPROVAL") {
+        navigate("/pending");
+        return;
+      }
+
+      navigate(ROLE_ROUTES[role] || "/");
+
+    } catch (err: any) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);

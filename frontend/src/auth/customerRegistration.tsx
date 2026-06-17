@@ -51,7 +51,7 @@ export default function CustomerRegistration() {
 
     setLoading(true);
     try {
-      await api.post("/auth/register", { name, phone, email, password });
+      await api.post("/auth/register-customer", { name, phone, email, password });
       setShowOtp(true);
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");

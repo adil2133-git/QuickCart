@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../../models/shared/user"); // updated path for your project
+const User = require("../models/shared/user"); 
 require("dotenv").config();
 
 const protectRoutes = async (req, res, next) => {

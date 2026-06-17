@@ -1,21 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
-const { uploadDriverDocs } = require("../../middleware/upload");
+const protectRoutes = require("../../middleware/protectRoute");
+const { getMyDriverProfile } = require("../../controllers/driver/profile");
 
-const { registerDriver } = require("../../controllers/auth/registrationController");
-const {
-  verifyOtpController,
-  resendOTPController,
-} = require("../../controllers/auth/otpController");
-
-router.post(
-  "/register",
-  uploadDriverDocs,
-  registerDriver
-);
-
-router.post("/register/verify-otp", verifyOtpController);
-router.post("/register/resend-otp", resendOTPController);
+// GET /api/driver/me
+router.get("/me", protectRoutes, getMyDriverProfile);
 
 module.exports = router;
