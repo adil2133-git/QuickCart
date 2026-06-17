@@ -2,6 +2,7 @@ const { client } = require("../../config/redis");
 const { verifyOtp, resendOtp } = require("../../services/otpService");
 const User = require("../../models/shared/user");
 const DriverProfile = require("../../models/driver/driverProfile"); 
+const StoreProfile = require("../../models/store/storeProfile")
 const generateToken = require("../../utils/generateToken");
 
 
@@ -35,7 +36,14 @@ const verifyOtpController = async (req, res) => {
             vehicleType,
             vehicleNumber,
             licenseNumber,
-            documentUrls
+            documentUrls,
+            storeName,
+            ownerName,
+            address,
+            pincode,
+            tradeLicenseUrl,
+            ownerIdUrl,
+            storeFrontUrl,
         } = JSON.parse(userData);
 
         const existingUser = await User.findOne({ email: lowerEmail });
@@ -50,8 +58,8 @@ const verifyOtpController = async (req, res) => {
             email: lowerEmail,
             password,
             role,
-            // drivers start as pending, customers are active
-            ...(role === "DRIVER" && { status: "PENDING_APPROVAL" })
+            // drivers and stores start as pending, customers are active
+            ...(["DRIVER", "STORE"].includes(role) && { status: "PENDING_APPROVAL" })
         });
 
         // If driver, also create DriverProfile
@@ -65,6 +73,20 @@ const verifyOtpController = async (req, res) => {
             });
         }
 
+        // If store, also create StoreProfile
+        if (role === "STORE") {
+            await StoreProfile.create({
+                userId: newUser._id,
+                storeName,
+                ownerName,
+                address,
+                pincode,
+                tradeLicenseUrl,
+                ownerIdUrl,
+                storeFrontUrl,
+            });
+        }
+
         await client.del(`register:${lowerEmail}`);
 
         const { AccessToken, RefreshToken } = generateToken(newUser.email, newUser._id, newUser.role);
@@ -72,13 +94,13 @@ const verifyOtpController = async (req, res) => {
         return res
             .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
-                sameSite: "none",
-                secure: true
+                sameSite: "lax",
+                secure: false
             })
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
-                sameSite: "none",
-                secure: true
+                sameSite: "lax",
+                secure: false
             })
             .status(201)
             .json({
@@ -88,7 +110,8 @@ const verifyOtpController = async (req, res) => {
                     name: newUser.name,
                     phone: newUser.phone,
                     email: newUser.email,
-                    role: newUser.role  // frontend uses this to redirect
+                    role: newUser.role,
+                    status: newUser.status || "ACTIVE", // frontend uses this to redirect pending drivers/stores
                 }
             });
 
