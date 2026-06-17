@@ -8,6 +8,7 @@ app.use(cookieParser())
 
 const AuthRoutes = require("./routes/auth/authRoutes")
 const DriverRoutes = require("./routes/driver/driverRoutes")
+const StoreRoutes = require("./routes/store/storeRoutes")
 
 
 app.use(
@@ -19,6 +20,7 @@ app.use(
 
 app.use("/api/auth", AuthRoutes)
 app.use("/api/driver", DriverRoutes)
+app.use("/api/store", StoreRoutes)
 
 app.use((err, req, res, next) => {
   console.error("=== GLOBAL ERROR HANDLER ===");
