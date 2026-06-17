@@ -41,9 +41,6 @@ const verifyOtpController = async (req, res) => {
             ownerName,
             address,
             pincode,
-            tradeLicenseUrl,
-            ownerIdUrl,
-            storeFrontUrl,
         } = JSON.parse(userData);
 
         const existingUser = await User.findOne({ email: lowerEmail });
@@ -81,9 +78,7 @@ const verifyOtpController = async (req, res) => {
                 ownerName,
                 address,
                 pincode,
-                tradeLicenseUrl,
-                ownerIdUrl,
-                storeFrontUrl,
+                documentUrls,
             });
         }
 
@@ -111,7 +106,7 @@ const verifyOtpController = async (req, res) => {
                     phone: newUser.phone,
                     email: newUser.email,
                     role: newUser.role,
-                    status: newUser.status || "ACTIVE", // frontend uses this to redirect pending drivers/stores
+                    status: newUser.status || "ACTIVE",
                 }
             });
 
