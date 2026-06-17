@@ -13,11 +13,10 @@ const storeProfileSchema = new mongoose.Schema(
         storeName: { type: String, required: true, trim: true },
         ownerName: { type: String, required: true },
         address:   { type: String, required: true },
+        pincode:   { type: String, default: null },
 
-        tradeLicenseUrl: { type: String, default: null },
-        ownerIdUrl:      { type: String, default: null },
-        storeFrontUrl:   { type: String, default: null },
-        pincode:         { type: String, default: null },
+        // Order: [tradeLicense, ownerId, storeFront]
+        documentUrls: { type: [String], default: [] },
 
         coordinates: {
             lat: { type: Number, default: 0 },
@@ -29,11 +28,6 @@ const storeProfileSchema = new mongoose.Schema(
             type:    String,
             enum:    ["OPEN", "CLOSED", "BUSY"],
             default: "CLOSED",
-        },
-        verificationStatus: {
-            type:    String,
-            enum:    ["PENDING", "VERIFIED", "REJECTED"],
-            default: "PENDING",
         },
         availableBalance: { type: Number, default: 0 },
         pendingBalance:   { type: Number, default: 0 },

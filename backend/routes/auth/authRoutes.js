@@ -2,10 +2,12 @@ const express = require("express");
 const router = express.Router();
 
 const { uploadDriverDocs } = require("../../middleware/upload");
+const {uploadStoreDocs} = require("../../middleware/uploadStore")
 
 const {
   CustomerRegister,
   registerDriver,
+  registerStore
 } = require("../../controllers/auth/registrationController");
 
 const {
