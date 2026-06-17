@@ -25,6 +25,13 @@ router.post(
   registerDriver
 );
 
+// Store Registration
+router.post(
+  "/register/store",
+  uploadStoreDocs,
+  registerStore
+);
+
 // Common OTP Routes
 router.post("/register/verify-otp", verifyOtpController);
 router.post("/register/resend-otp", resendOTPController);
