@@ -3,6 +3,7 @@ const { client } = require("../../config/redis");
 const { sendOtp } = require("../../services/otpService");
 const User = require("../../models/shared/user");
 const DriverProfile = require("../../models/driver/driverProfile");
+const StoreProfile = require("../../models/store/storeProfile")
 
 
 const CustomerRegister = async (req, res) => {
@@ -158,4 +159,106 @@ const registerDriver = async (req, res) => {
 };
 
 
-module.exports = { CustomerRegister, registerDriver };
+const registerStore = async (req, res) => {
+    let createdUser = null;
+
+    try {
+        const {
+            storeName,
+            ownerName,
+            address,
+            pincode,
+            email,
+            phone,
+            password,
+            confirmPassword,
+        } = req.body;
+
+        // Basic presence checks
+        if (!storeName || !ownerName || !address || !pincode || !email || !phone || !password || !confirmPassword) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({ message: "Passwords do not match" });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({ message: "Password must be at least 8 characters" });
+        }
+
+        const lowerEmail = email.toLowerCase().trim();
+
+        // Check for existing user with same email or phone
+        const existingUser = await User.findOne({
+            $or: [{ email: lowerEmail }, { phone }],
+        });
+
+        if (existingUser) {
+            return res.status(409).json({ message: "An account with this email or phone already exists" });
+        }
+
+        // Pull uploaded document URLs from multer + Cloudinary
+        const tradeLicenseUrl = req.files?.tradeLicense?.[0]?.path || null;
+        const ownerIdUrl      = req.files?.ownerId?.[0]?.path || null;
+        const storeFrontUrl   = req.files?.storeFront?.[0]?.path || null;
+
+        if (!tradeLicenseUrl || !ownerIdUrl || !storeFrontUrl) {
+            return res.status(400).json({ message: "Trade license, owner ID, and store front photo are all required" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create the User first
+        createdUser = await User.create({
+            name: ownerName,
+            phone,
+            email: lowerEmail,
+            password: hashedPassword,
+            role: "STORE",
+            status: "PENDING_APPROVAL",
+        });
+
+        // Then the StoreProfile, linked via userId
+        const storeProfile = await StoreProfile.create({
+            userId: createdUser._id,
+            storeName: storeName.trim(),
+            ownerName,
+            address,
+            pincode,
+            tradeLicenseUrl,
+            ownerIdUrl,
+            storeFrontUrl,
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Store application submitted. Your account is pending admin approval.",
+            user: {
+                id: createdUser._id,
+                name: createdUser.name,
+                email: createdUser.email,
+                role: createdUser.role,
+                status: createdUser.status,
+            },
+        });
+
+    } catch (err) {
+        // Roll back the User if StoreProfile creation failed partway through
+        if (createdUser) {
+            await User.findByIdAndDelete(createdUser._id).catch(() => {});
+        }
+
+        console.error("STORE REGISTRATION ERROR:", err);
+
+        if (err.code === 11000) {
+            return res.status(409).json({ message: "An account with this email or phone already exists" });
+        }
+
+        return res.status(500).json({ message: "Internal server error", Error: err.message });
+    }
+};
+
+
+
+module.exports = { CustomerRegister, registerDriver, registerStore };
