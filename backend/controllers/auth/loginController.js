@@ -26,7 +26,6 @@ const Login = async (req, res) => {
             return res.status(403).json({ message: "Your account has been blocked" });
         }
 
-        // Driver-specific approval status checks
         if (user.role === "DRIVER") {
             if (user.status === "REJECTED") {
                 return res.status(403).json({
@@ -43,7 +42,6 @@ const Login = async (req, res) => {
             }
         }
 
-        // Reaching here: customer, ACTIVE driver, or PENDING_APPROVAL driver — all get a session
         const { AccessToken, RefreshToken } = generateToken(user.email, user._id, user.role);
 
         res
@@ -66,7 +64,7 @@ const Login = async (req, res) => {
                     name: user.name,
                     email: user.email,
                     role: user.role,
-                    status: user.status || "ACTIVE", // helps frontend decide where to redirect a DRIVER
+                    status: user.status || "ACTIVE", 
                 }
             });
 

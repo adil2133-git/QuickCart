@@ -60,7 +60,6 @@ const CustomerRegister = async (req, res) => {
 
 
 
-// POST /api/delivery-partners/register
 const registerDriver = async (req, res) => {
     try {
         const {
@@ -74,7 +73,6 @@ const registerDriver = async (req, res) => {
             licenseNumber,
         } = req.body;
 
-        // ── 1. Validate text fields ───────────────────────────────────────────────
         if (!name || !phone || !email || !password || !confirmPassword || !vehicleType || !vehicleNumber || !licenseNumber) {
             return res.status(400).json({ success: false, message: "All fields are required." });
         }
@@ -92,7 +90,6 @@ const registerDriver = async (req, res) => {
             return res.status(400).json({ success: false, message: `vehicleType must be one of: ${validVehicles.join(", ")}` });
         }
 
-        // ── 2. Duplicate check ────────────────────────────────────────────────────
         const lowerEmail = email.toLowerCase();
 
         const emailExists = await User.findOne({ email: lowerEmail });
@@ -105,7 +102,7 @@ const registerDriver = async (req, res) => {
             return res.status(409).json({ success: false, message: "Phone number is already registered." });
         }
 
-        // ── 3. Collect Cloudinary URLs from req.files ─────────────────────────────
+        // Collect Cloudinary URLs from req.files 
         const files = req.files || {};
 
         const drivingLicense = files.drivingLicense?.[0]?.path || null;
@@ -114,7 +111,6 @@ const registerDriver = async (req, res) => {
 
         const documentUrls = [drivingLicense, vehicleRC, profilePhoto].filter(Boolean);
 
-        // ── 4. Hash password & store everything in Redis ──────────────────────────
         const hashedPassword = await bcrypt.hash(password, 10);
 
         await client.setEx(
@@ -133,7 +129,6 @@ const registerDriver = async (req, res) => {
             })
         );
 
-        // ── 5. Send OTP ───────────────────────────────────────────────────────────
         const result = await sendOtp(lowerEmail);
 
         if (!result.success) {
@@ -172,7 +167,6 @@ const registerStore = async (req, res) => {
             confirmPassword,
         } = req.body;
 
-        // ── 1. Validate text fields ───────────────────────────────────────────────
         if (!storeName || !ownerName || !address || !pincode || !email || !phone || !password || !confirmPassword) {
             return res.status(400).json({ success: false, message: "All fields are required." });
         }
@@ -185,7 +179,6 @@ const registerStore = async (req, res) => {
             return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
         }
 
-        // ── 2. Duplicate check ────────────────────────────────────────────────────
         const lowerEmail = email.toLowerCase();
 
         const emailExists = await User.findOne({ email: lowerEmail });
@@ -198,7 +191,7 @@ const registerStore = async (req, res) => {
             return res.status(409).json({ success: false, message: "Phone number is already registered." });
         }
 
-        // ── 3. Collect Cloudinary URLs from req.files ─────────────────────────────
+        //Collect Cloudinary URLs from req.files 
         const files = req.files || {};
 
         const tradeLicense = files.tradeLicense?.[0]?.path || null;
@@ -231,7 +224,6 @@ const registerStore = async (req, res) => {
             })
         );
 
-        // ── 5. Send OTP ───────────────────────────────────────────────────────────
         const result = await sendOtp(lowerEmail);
 
         if (!result.success) {

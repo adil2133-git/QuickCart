@@ -55,7 +55,6 @@ const verifyOtpController = async (req, res) => {
             email: lowerEmail,
             password,
             role,
-            // drivers and stores start as pending, customers are active
             ...(["DRIVER", "STORE"].includes(role) && { status: "PENDING_APPROVAL" })
         });
 
