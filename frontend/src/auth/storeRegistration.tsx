@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import OtpVerificationModal from "./OtpVerificationModal"; // adjust path as needed
 
-type UploadState = { name: string | null };
+type UploadState = { file: File | null };
 
 function PasswordStrengthBar({ password }: { password: string }) {
   const len = password.length;
@@ -32,10 +34,10 @@ function UploadCard({
   label: string;
   sub: string;
   upload: UploadState;
-  onUpload: (name: string) => void;
+  onUpload: (file: File) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const uploaded = !!upload.name;
+  const uploaded = !!upload.file;
   return (
     <div
       onClick={() => ref.current?.click()}
@@ -48,14 +50,15 @@ function UploadCard({
       <input
         ref={ref}
         type="file"
+        accept=".jpg,.jpeg,.png,.pdf"
         className="hidden"
-        onChange={(e) => { if (e.target.files?.[0]) onUpload(e.target.files[0].name); }}
+        onChange={(e) => { if (e.target.files?.[0]) onUpload(e.target.files[0]); }}
       />
       <div style={{ color: uploaded ? "#735a3e" : "#80756b" }}>{icon}</div>
       <div className="text-center">
         <p className="text-sm font-semibold text-gray-800">{label}</p>
         <p className="text-xs mt-0.5" style={{ color: uploaded ? "#735a3e" : "#80756b", fontWeight: uploaded ? 600 : 400 }}>
-          {uploaded ? `Uploaded: ${upload.name}` : sub}
+          {uploaded ? `Uploaded: ${upload.file?.name}` : sub}
         </p>
       </div>
     </div>
@@ -64,10 +67,26 @@ function UploadCard({
 
 export default function StoreRegistration() {
   const navigate = useNavigate();
+
+  // Text fields
+  const [storeName, setStoreName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [address, setAddress] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [tradeLicense, setTradeLicense] = useState<UploadState>({ name: null });
-  const [ownerID, setOwnerID] = useState<UploadState>({ name: null });
-  const [storeFront, setStoreFront] = useState<UploadState>({ name: null });
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // File uploads
+  const [tradeLicense, setTradeLicense] = useState<UploadState>({ file: null });
+  const [ownerID, setOwnerID] = useState<UploadState>({ file: null });
+  const [storeFront, setStoreFront] = useState<UploadState>({ file: null });
+
+  // UI state
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
 
   const inputClass =
     "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
@@ -81,8 +100,69 @@ export default function StoreRegistration() {
     e.target.style.boxShadow = "none";
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!storeName.trim() || !ownerName.trim() || !address.trim() || !pincode.trim() || !email.trim() || !phone.trim() || !password || !confirmPassword) {
+      setError("All fields are required");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    if (!tradeLicense.file || !ownerID.file || !storeFront.file) {
+      setError("Trade license, owner ID, and store front photo are all required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      formData.append("storeName", storeName.trim());
+      formData.append("ownerName", ownerName.trim());
+      formData.append("address", address.trim());
+      formData.append("pincode", pincode.trim());
+      formData.append("email", email.trim());
+      formData.append("phone", phone.trim());
+      formData.append("password", password);
+      formData.append("confirmPassword", confirmPassword);
+      formData.append("tradeLicense", tradeLicense.file);
+      formData.append("ownerId", ownerID.file);
+      formData.append("storeFront", storeFront.file);
+
+      await api.post("/auth/register/store", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setShowOtpModal(true);
+
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen w-full font-sans" style={{ backgroundColor: "#fff8f4" }}>
+      {showOtpModal && (
+        <OtpVerificationModal
+          email={email.trim().toLowerCase()}
+          onClose={() => setShowOtpModal(false)}
+          onVerified={() => navigate("/store/pending-approval")}
+        />
+      )}
+
       {/* Left Panel */}
       <aside
         className="hidden md:flex flex-col justify-between w-[40%] min-h-screen px-10 py-10 relative overflow-hidden flex-shrink-0"
@@ -159,7 +239,17 @@ export default function StoreRegistration() {
             </p>
           </div>
 
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
+          {/* Error Banner */}
+          {error && (
+            <div className="flex items-center gap-2 rounded-md px-4 py-3 bg-red-50 border border-red-200">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-8">
 
             {/* Section 1: Store Info */}
             <section className="space-y-5">
@@ -179,13 +269,31 @@ export default function StoreRegistration() {
                         <path d="M3 9l1-5h16l1 5" /><path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
                       </svg>
                     </span>
-                    <input type="text" placeholder="e.g. Green Valley Organics" className={`${inputClass} pl-9`} style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+                    <input
+                      type="text"
+                      placeholder="e.g. Green Valley Organics"
+                      className={`${inputClass} pl-9`}
+                      style={inputStyle}
+                      value={storeName}
+                      onChange={(e) => setStoreName(e.target.value)}
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Owner Name</label>
-                  <input type="text" placeholder="Legal full name" className={inputClass} style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+                  <input
+                    type="text"
+                    placeholder="Legal full name"
+                    className={inputClass}
+                    style={inputStyle}
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                  />
                 </div>
 
                 <div>
@@ -195,6 +303,8 @@ export default function StoreRegistration() {
                     rows={3}
                     className="w-full p-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 resize-none transition-all"
                     style={inputStyle}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                   />
@@ -208,7 +318,16 @@ export default function StoreRegistration() {
                         <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
                       </svg>
                     </span>
-                    <input type="text" placeholder="6-digit postal code" className={`${inputClass} pl-9`} style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+                    <input
+                      type="text"
+                      placeholder="6-digit postal code"
+                      className={`${inputClass} pl-9`}
+                      style={inputStyle}
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value)}
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
+                    />
                   </div>
                 </div>
               </div>
@@ -226,11 +345,29 @@ export default function StoreRegistration() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Email</label>
-                  <input type="email" placeholder="name@store.com" className={inputClass} style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+                  <input
+                    type="email"
+                    placeholder="name@store.com"
+                    className={inputClass}
+                    style={inputStyle}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Phone</label>
-                  <input type="tel" placeholder="+91 00000 00000" className={inputClass} style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+                  <input
+                    type="tel"
+                    placeholder="+91 00000 00000"
+                    className={inputClass}
+                    style={inputStyle}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                  />
                 </div>
               </div>
 
@@ -251,7 +388,16 @@ export default function StoreRegistration() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Confirm Password</label>
-                  <input type="password" placeholder="Repeat password" className={inputClass} style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+                  <input
+                    type="password"
+                    placeholder="Repeat password"
+                    className={inputClass}
+                    style={inputStyle}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                  />
                 </div>
               </div>
             </section>
@@ -271,21 +417,21 @@ export default function StoreRegistration() {
                   label="Trade License"
                   sub="PDF, JPG or PNG (Max 5MB)"
                   upload={tradeLicense}
-                  onUpload={(n) => setTradeLicense({ name: n })}
+                  onUpload={(f) => setTradeLicense({ file: f })}
                 />
                 <UploadCard
                   icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M7 15s0-4 5-4 5 4 5 4" /><circle cx="12" cy="9" r="2" /></svg>}
                   label="Owner ID Proof"
                   sub="Government Issued ID"
                   upload={ownerID}
-                  onUpload={(n) => setOwnerID({ name: n })}
+                  onUpload={(f) => setOwnerID({ file: f })}
                 />
                 <UploadCard
                   icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>}
                   label="Store Front Photo"
                   sub="Clear photo of the shop entrance"
                   upload={storeFront}
-                  onUpload={(n) => setStoreFront({ name: n })}
+                  onUpload={(f) => setStoreFront({ file: f })}
                 />
               </div>
             </section>
@@ -294,13 +440,20 @@ export default function StoreRegistration() {
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full h-12 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all hover:brightness-95 active:scale-[0.98]"
+                disabled={loading}
+                className="w-full h-12 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70"
                 style={{ backgroundColor: "#c2a383", color: "#291803", boxShadow: "0 8px 24px rgba(42,26,10,0.08)" }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l1-5h16l1 5" /><path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
-                </svg>
-                Submit Store Application
+                {loading ? (
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 11-6.219-8.56" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l1-5h16l1 5" /><path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
+                  </svg>
+                )}
+                {loading ? "Submitting..." : "Submit Store Application"}
               </button>
               <p className="mt-3 text-xs text-center text-gray-500">
                 By clicking submit, you agree to QuickKart's{" "}
