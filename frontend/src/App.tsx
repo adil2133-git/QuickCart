@@ -8,6 +8,10 @@ import CustomerHome from './pages/customer/customerHome'
 import FreshMartStorePage from './pages/customer/singleStore'
 import PendingApproval from './auth/pendingApproval'
 import QuickKartDashboard from './pages/Driver/dashboard'
+import ProductDiscoveryPage from './pages/customer/productDiscovery'
+import Dashboard from './pages/admin/dashboard'
+import StoreApplicationsPage from './pages/admin/approvals/store/applications'
+import StoreApplicationReview from './pages/admin/approvals/store/review'
 
 function App() {
   return (
@@ -26,10 +30,18 @@ function App() {
 
         <Route path="/home" element={<CustomerHome />} />
         <Route path='/store' element={<FreshMartStorePage />} />
+        <Route path='/discovery' element={<ProductDiscoveryPage />} />
 
 
 
-        <Route path='/driverdashboard' element={<QuickKartDashboard />} />
+        <Route path='/driver/dashboard' element={<QuickKartDashboard />} />
+
+        
+        <Route path='/admin/dashboard' element={<Dashboard />} />
+        <Route path='/admin/approvals/store' element={<StoreApplicationsPage />} />
+        <Route path='/admin/approvals/store/:id' element={<StoreApplicationReview />} />
+
+
       </Routes>
     </BrowserRouter>
   )
