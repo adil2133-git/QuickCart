@@ -1,4 +1,4 @@
-const Product = require("../models/Product");
+const Product = require("../../models/store/product");
 const mongoose = require("mongoose");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);

@@ -1,3 +1,5 @@
+const mongoose = require("mongoose")
+
 const driverProfileSchema = new mongoose.Schema(
     {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
@@ -25,3 +27,5 @@ const driverProfileSchema = new mongoose.Schema(
     },
     { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );
+
+module.exports = mongoose.model("DriverProfile", driverProfileSchema);

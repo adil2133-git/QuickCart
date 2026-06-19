@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     AlertTriangle,
@@ -15,84 +15,94 @@ import {
 } from "lucide-react";
 import Sidebar from "../../../../components/admin/sidebar";
 import TopBar from "../../../../components/admin/topbar";
-import {
-    DRIVER_APPLICATIONS,
-    DRIVER_STATUS_BADGE,
-    verificationProgress,
-    type DriverApplication,
-} from "./data";
+import api from "../../../../api/axios";
 
-/**
- * QuickKart Admin — Driver Applications (Approvals)
- * Stack: React + TypeScript + Tailwind CSS + lucide-react
- *
- * Same shell + color tokens as Store Applications:
- *   page bg #FBF6EE · border #EBE1D2 · text #3A2C20 · muted #8C7C6B
- *   accent #8B6F47 · success #2E7D52/#EAF6EF · danger #D94F4F/#FBEAEA
- *
- * Clicking the primary action on a card navigates to the per-driver
- * review page at /admin/approvals/driver/:id.
- */
+const STATUS_FILTERS = ["All Statuses", "Pending Review", "Approved", "Rejected"];
+const VEHICLE_FILTERS = ["All Types", "Bike", "Scooter"];
+const PAGE_SIZE = 4;
 
-const STATS = [
-    {
-        label: "Pending Applications",
-        value: "14",
-        tag: "+12%",
-        tagColor: "text-[#8B6F47]",
-        bg: "bg-[#F7EFE2]",
-        icon: CircleDashed,
-        iconColor: "text-[#8B6F47]",
-    },
-    {
-        label: "Approved Drivers",
-        value: "145",
-        tag: "+24%",
-        tagColor: "text-[#2E7D52]",
-        bg: "bg-[#EAF6EF]",
-        icon: CheckCircle2,
-        iconColor: "text-[#2E7D52]",
-    },
-    {
-        label: "Rejected",
-        value: "8",
-        tag: "-5%",
-        tagColor: "text-[#D94F4F]",
-        bg: "bg-[#FBEAEA]",
-        icon: XCircle,
-        iconColor: "text-[#D94F4F]",
-    },
-    {
-        label: "Requiring Attention",
-        value: "5",
-        tag: "+2",
-        tagColor: "text-[#D94F4F]",
-        bg: "bg-[#FBEAEA]",
-        icon: AlertTriangle,
-        iconColor: "text-[#D94F4F]",
-    },
-];
+// ---------- Types ----------
 
-function StatCard({ stat }: { stat: (typeof STATS)[number] }) {
-    const Icon = stat.icon;
+type DriverStatus = "pending" | "approved" | "rejected";
+
+interface DriverApplication {
+    id: string;
+    driverCode: string;
+    name: string;
+    email: string;
+    phone: string;
+    vehicleType: string;
+    vehicleNumber: string;
+    licenseNumber: string;
+    status: DriverStatus;
+    documentsSubmitted: number;
+    documentsTotal: number;
+    createdAt: string;
+}
+
+interface DriverApplicationStats {
+    pending: number;
+    approved: number;
+    rejected: number;
+    requiringAttention: number;
+}
+
+interface PaginationInfo {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
+// ---------- UI helpers ----------
+
+const DRIVER_STATUS_BADGE: Record<DriverStatus, { label: string; className: string }> = {
+    pending: { label: "Pending Review", className: "bg-[#F7EFE2] text-[#8B6F47]" },
+    approved: { label: "Approved", className: "bg-[#EAF6EF] text-[#2E7D52]" },
+    rejected: { label: "Rejected", className: "bg-[#FBEAEA] text-[#D94F4F]" },
+};
+
+function verificationProgress(app: { documentsSubmitted: number; documentsTotal: number }) {
+    const total = app.documentsTotal || 0;
+    const verified = app.documentsSubmitted || 0;
+    const percent = total === 0 ? 0 : Math.round((verified / total) * 100);
+    return { verified, total, percent };
+}
+
+function formatDateLabel(createdAt: string) {
+    const d = new Date(createdAt);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function StatCard({
+    label,
+    value,
+    icon: Icon,
+    bg,
+    iconColor,
+}: {
+    label: string;
+    value: number;
+    icon: typeof CircleDashed;
+    bg: string;
+    iconColor: string;
+}) {
     return (
-        <div className={`flex flex-col gap-3 rounded-2xl ${stat.bg} p-5`}>
-            <div className="flex items-center justify-between">
-                <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-white/70 ${stat.iconColor}`}>
-                    <Icon size={16} strokeWidth={2} />
-                </span>
-                <span className={`text-[12px] font-semibold ${stat.tagColor}`}>{stat.tag}</span>
-            </div>
+        <div className={`flex flex-col gap-3 rounded-2xl ${bg} p-5`}>
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-white/70 ${iconColor}`}>
+                <Icon size={16} strokeWidth={2} />
+            </span>
             <div>
-                <p className="text-[13px] text-[#5A4A3A]">{stat.label}</p>
-                <p className="text-[28px] font-semibold leading-tight text-[#3A2C20]">{stat.value}</p>
+                <p className="text-[13px] text-[#5A4A3A]">{label}</p>
+                <p className="text-[28px] font-semibold leading-tight text-[#3A2C20]">{value}</p>
             </div>
         </div>
     );
 }
 
-function DriverAvatar({ driver }: { driver: DriverApplication }) {
-    const initials = driver.name
+function DriverAvatar({ name }: { name: string }) {
+    const initials = name
         .split(" ")
         .map((p) => p[0])
         .join("")
@@ -109,10 +119,6 @@ function primaryAction(status: DriverApplication["status"]) {
     switch (status) {
         case "pending":
             return { label: "Review Application", disabled: false };
-        case "documents-missing":
-            return { label: "Notify Driver", disabled: false };
-        case "ready":
-            return { label: "Review Application", disabled: false };
         case "approved":
             return { label: "Application Approved", disabled: true };
         case "rejected":
@@ -120,35 +126,22 @@ function primaryAction(status: DriverApplication["status"]) {
     }
 }
 
-function secondaryAction(status: DriverApplication["status"]) {
-    switch (status) {
-        case "documents-missing":
-            return "View Missing";
-        case "rejected":
-            return "Archived Docs";
-        default:
-            return "View Docs";
-    }
-}
-
 function DriverCard({ driver, onReview }: { driver: DriverApplication; onReview: (id: string) => void }) {
     const badge = DRIVER_STATUS_BADGE[driver.status];
     const primary = primaryAction(driver.status);
-    const secondary = secondaryAction(driver.status);
-    const progress = verificationProgress(driver.checklist);
+    const progress = verificationProgress(driver);
     const barColor =
         progress.percent === 100 ? "bg-[#2E7D52]" : progress.percent >= 50 ? "bg-[#D9A23B]" : "bg-[#D94F4F]";
 
     return (
         <div className="flex flex-col gap-5 rounded-2xl border border-[#EBE1D2] bg-white p-6">
-            {/* Header */}
             <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                    <DriverAvatar driver={driver} />
+                    <DriverAvatar name={driver.name} />
                     <div>
                         <p className="text-[15px] font-semibold text-[#3A2C20]">{driver.name}</p>
                         <p className="text-[12.5px] text-[#8C7C6B]">
-                            {driver.driverCode} · {driver.city}
+                            {driver.driverCode} · {formatDateLabel(driver.createdAt)}
                         </p>
                     </div>
                 </div>
@@ -157,7 +150,6 @@ function DriverCard({ driver, onReview }: { driver: DriverApplication; onReview:
                 </span>
             </div>
 
-            {/* Contact */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12.5px] text-[#5A4A3A]">
                 <span className="flex items-center gap-1.5">
                     <Mail size={13} className="text-[#A2937F]" />
@@ -169,16 +161,13 @@ function DriverCard({ driver, onReview }: { driver: DriverApplication; onReview:
                 </span>
             </div>
 
-            {/* Vehicle + verification */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-xl bg-[#FBF6EE] p-3.5">
                     <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-wide text-[#A2937F]">
                         <Bike size={12} />
                         Vehicle Info
                     </p>
-                    <p className="text-[13px] font-medium text-[#3A2C20]">
-                        {driver.vehicleType} · {driver.vehicleModel}
-                    </p>
+                    <p className="text-[13px] font-medium text-[#3A2C20]">{driver.vehicleType}</p>
                     <p className="text-[12px] text-[#8C7C6B]">{driver.vehicleNumber}</p>
                 </div>
                 <div className="rounded-xl bg-[#FBF6EE] p-3.5">
@@ -192,15 +181,11 @@ function DriverCard({ driver, onReview }: { driver: DriverApplication; onReview:
                         {progress.verified}/{progress.total} Submitted
                     </p>
                     <div className="h-1.5 w-full rounded-full bg-[#EBE1D2]">
-                        <div
-                            className={`h-1.5 rounded-full ${barColor}`}
-                            style={{ width: `${progress.percent}%` }}
-                        />
+                        <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${progress.percent}%` }} />
                     </div>
                 </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3">
                 <button
                     disabled={primary.disabled}
@@ -217,55 +202,89 @@ function DriverCard({ driver, onReview }: { driver: DriverApplication; onReview:
                     onClick={() => onReview(driver.id)}
                     className="flex-1 rounded-xl border border-[#EBE1D2] bg-white px-4 py-2.5 text-[13px] font-medium text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]"
                 >
-                    {secondary}
+                    View Docs
                 </button>
             </div>
         </div>
     );
 }
 
-const CITIES = ["All Cities", "Mumbai", "Bangalore", "Delhi", "Gurgaon"];
-const STATUS_FILTERS = ["All Statuses", "Pending Review", "Documents Missing", "Ready for Review", "Approved", "Rejected"];
-const VEHICLE_FILTERS = ["All Types", "Bike", "Scooter"];
-
 export default function DriverApplicationsPage() {
     const navigate = useNavigate();
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("All Statuses");
     const [vehicleFilter, setVehicleFilter] = useState("All Types");
-    const [cityFilter, setCityFilter] = useState("All Cities");
     const [dateFilter, setDateFilter] = useState("");
     const [page, setPage] = useState(1);
 
-    const totalApplications = 132;
-    const pageSize = 4;
-    const totalPages = Math.ceil(totalApplications / pageSize);
+    const [applications, setApplications] = useState<DriverApplication[]>([]);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+    const [stats, setStats] = useState<DriverApplicationStats | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const filteredDrivers = useMemo(() => {
-        return DRIVER_APPLICATIONS.filter((driver) => {
-            const matchesSearch =
-                search.trim() === "" ||
-                driver.name.toLowerCase().includes(search.toLowerCase()) ||
-                driver.email.toLowerCase().includes(search.toLowerCase()) ||
-                driver.driverCode.toLowerCase().includes(search.toLowerCase());
-            const matchesStatus =
-                statusFilter === "All Statuses" || DRIVER_STATUS_BADGE[driver.status].label === statusFilter;
-            const matchesVehicle = vehicleFilter === "All Types" || driver.vehicleType === vehicleFilter;
-            const matchesCity = cityFilter === "All Cities" || driver.city === cityFilter;
-            return matchesSearch && matchesStatus && matchesVehicle && matchesCity;
-        });
-    }, [search, statusFilter, vehicleFilter, cityFilter]);
+    // Debounce search so we don't fire a request on every keystroke.
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(search), 350);
+        return () => clearTimeout(t);
+    }, [search]);
+
+    // Reset to page 1 whenever filters change.
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, statusFilter, vehicleFilter, dateFilter]);
+
+    useEffect(() => {
+        let active = true;
+        setLoading(true);
+        setError(null);
+
+        api
+            .get("/admin/driver/applications", {
+                params: {
+                    search: debouncedSearch,
+                    status: statusFilter,
+                    vehicleType: vehicleFilter,
+                    date: dateFilter || undefined,
+                    page,
+                    limit: PAGE_SIZE,
+                },
+            })
+            .then((res) => {
+                if (!active) return;
+                setApplications(res.data.applications);
+                setPagination(res.data.pagination);
+            })
+            .catch((err) => {
+                if (!active) return;
+                setError(err?.response?.data?.message || "Failed to load applications.");
+            })
+            .finally(() => active && setLoading(false));
+
+        return () => {
+            active = false;
+        };
+    }, [debouncedSearch, statusFilter, vehicleFilter, dateFilter, page]);
+
+    useEffect(() => {
+        api
+            .get("/admin/driver/applications/stats")
+            .then((res) => setStats(res.data.stats))
+            .catch(() => setStats(null));
+    }, []);
 
     const resetFilters = () => {
         setSearch("");
         setStatusFilter("All Statuses");
         setVehicleFilter("All Types");
-        setCityFilter("All Cities");
         setDateFilter("");
     };
 
-    const pendingCount = DRIVER_APPLICATIONS.filter((d) => d.status === "pending").length;
-    const staleCount = 5; // pending > 48h — wire to real data once available
+    const totalPages = pagination?.totalPages ?? 1;
+    const total = pagination?.total ?? 0;
+    const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    const rangeEnd = Math.min(page * PAGE_SIZE, total);
 
     return (
         <div className="flex h-screen w-full bg-[#FBF6EE]">
@@ -288,23 +307,45 @@ export default function DriverApplicationsPage() {
                                 </span>
                                 <div>
                                     <p className="text-[14px] font-semibold text-[#3A2C20]">
-                                        {pendingCount} driver applications are awaiting review
+                                        {stats?.pending ?? "—"} driver applications are awaiting review
                                     </p>
                                     <p className="text-[12.5px] text-[#8C7C6B]">
-                                        {staleCount} applications have been pending for more than 48 hours
+                                        {stats?.requiringAttention ?? "—"} applications have been pending for more than 48 hours
                                     </p>
                                 </div>
                             </div>
-                            <button className="whitespace-nowrap rounded-xl bg-[#3A2C20] px-4 py-2.5 text-[13px] font-medium text-[#F4EDE2] transition-colors hover:bg-[#2E231C]">
-                                Review Priority Queue
-                            </button>
                         </div>
 
                         {/* Stats */}
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                            {STATS.map((stat) => (
-                                <StatCard key={stat.label} stat={stat} />
-                            ))}
+                            <StatCard
+                                label="Pending Applications"
+                                value={stats?.pending ?? 0}
+                                icon={CircleDashed}
+                                bg="bg-[#F7EFE2]"
+                                iconColor="text-[#8B6F47]"
+                            />
+                            <StatCard
+                                label="Approved Drivers"
+                                value={stats?.approved ?? 0}
+                                icon={CheckCircle2}
+                                bg="bg-[#EAF6EF]"
+                                iconColor="text-[#2E7D52]"
+                            />
+                            <StatCard
+                                label="Rejected"
+                                value={stats?.rejected ?? 0}
+                                icon={XCircle}
+                                bg="bg-[#FBEAEA]"
+                                iconColor="text-[#D94F4F]"
+                            />
+                            <StatCard
+                                label="Requiring Attention"
+                                value={stats?.requiringAttention ?? 0}
+                                icon={AlertTriangle}
+                                bg="bg-[#FBEAEA]"
+                                iconColor="text-[#D94F4F]"
+                            />
                         </div>
 
                         {/* Filters */}
@@ -315,7 +356,7 @@ export default function DriverApplicationsPage() {
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Name, Email, ID"
+                                    placeholder="Name, Email, Vehicle Number"
                                     className="w-full bg-transparent text-[13px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
                                 />
                             </div>
@@ -330,8 +371,6 @@ export default function DriverApplicationsPage() {
                                 className="rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5 text-[13px] text-[#3A2C20] focus:outline-none"
                             />
 
-                            <FilterSelect value={cityFilter} onChange={setCityFilter} options={CITIES} />
-
                             <button
                                 onClick={resetFilters}
                                 className="whitespace-nowrap text-[13px] font-medium text-[#8B6F47] hover:underline"
@@ -341,74 +380,65 @@ export default function DriverApplicationsPage() {
                         </div>
 
                         {/* Driver cards */}
-                        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                            {filteredDrivers.length === 0 ? (
-                                <div className="col-span-full rounded-2xl border border-dashed border-[#EBE1D2] bg-white px-6 py-12 text-center">
-                                    <p className="text-[14px] font-medium text-[#3A2C20]">
-                                        No applications match these filters
-                                    </p>
-                                    <p className="mt-1 text-[12.5px] text-[#8C7C6B]">
-                                        Try a different search term or reset the filters above.
-                                    </p>
-                                </div>
-                            ) : (
-                                filteredDrivers.map((driver) => (
-                                    <DriverCard
-                                        key={driver.id}
-                                        driver={driver}
-                                        onReview={(id) => navigate(`/admin/approvals/driver/${id}`)}
-                                    />
-                                ))
-                            )}
-                        </div>
+                        {error ? (
+                            <div className="col-span-full rounded-2xl border border-dashed border-[#D94F4F] bg-white px-6 py-12 text-center">
+                                <p className="text-[14px] font-medium text-[#D94F4F]">{error}</p>
+                            </div>
+                        ) : loading ? (
+                            <div className="col-span-full rounded-2xl border border-dashed border-[#EBE1D2] bg-white px-6 py-12 text-center">
+                                <p className="text-[14px] text-[#8C7C6B]">Loading applications...</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                                {applications.length === 0 ? (
+                                    <div className="col-span-full rounded-2xl border border-dashed border-[#EBE1D2] bg-white px-6 py-12 text-center">
+                                        <p className="text-[14px] font-medium text-[#3A2C20]">
+                                            No applications match these filters
+                                        </p>
+                                        <p className="mt-1 text-[12.5px] text-[#8C7C6B]">
+                                            Try a different search term or reset the filters above.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    applications.map((driver) => (
+                                        <DriverCard
+                                            key={driver.id}
+                                            driver={driver}
+                                            onReview={(id) => navigate(`/admin/approvals/driver/${id}`)}
+                                        />
+                                    ))
+                                )}
+                            </div>
+                        )}
 
                         {/* Pagination */}
-                        <div className="flex items-center justify-between border-t border-[#EBE1D2] pt-5">
-                            <p className="text-[13px] text-[#8C7C6B]">
-                                Showing <span className="font-semibold text-[#3A2C20]">1 – 4</span> of{" "}
-                                <span className="font-semibold text-[#3A2C20]">{totalApplications}</span> applications
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
-                                    disabled={page === 1}
-                                >
-                                    <ChevronLeft size={16} />
-                                </button>
-                                {[1, 2, 3].map((n) => (
+                        {total > 0 && (
+                            <div className="flex items-center justify-between border-t border-[#EBE1D2] pt-5">
+                                <p className="text-[13px] text-[#8C7C6B]">
+                                    Showing <span className="font-semibold text-[#3A2C20]">{rangeStart} – {rangeEnd}</span> of{" "}
+                                    <span className="font-semibold text-[#3A2C20]">{total}</span> applications
+                                </p>
+                                <div className="flex items-center gap-2">
                                     <button
-                                        key={n}
-                                        onClick={() => setPage(n)}
-                                        className={`flex h-9 w-9 items-center justify-center rounded-lg text-[13px] font-medium transition-colors ${
-                                            page === n
-                                                ? "bg-[#3A2C20] text-[#F4EDE2]"
-                                                : "border border-[#EBE1D2] bg-white text-[#3A2C20] hover:bg-[#F5EEE2]"
-                                        }`}
+                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
+                                        disabled={page === 1}
                                     >
-                                        {n}
+                                        <ChevronLeft size={16} />
                                     </button>
-                                ))}
-                                <span className="px-1 text-[13px] text-[#8C7C6B]">...</span>
-                                <button
-                                    onClick={() => setPage(totalPages)}
-                                    className={`flex h-9 w-9 items-center justify-center rounded-lg text-[13px] font-medium transition-colors ${
-                                        page === totalPages
-                                            ? "bg-[#3A2C20] text-[#F4EDE2]"
-                                            : "border border-[#EBE1D2] bg-white text-[#3A2C20] hover:bg-[#F5EEE2]"
-                                    }`}
-                                >
-                                    {totalPages}
-                                </button>
-                                <button
-                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
-                                    disabled={page === totalPages}
-                                >
-                                    <ChevronRight size={16} />
-                                </button>
+                                    <span className="px-2 text-[13px] text-[#3A2C20]">
+                                        Page {page} of {totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
+                                        disabled={page === totalPages}
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </main>
             </div>

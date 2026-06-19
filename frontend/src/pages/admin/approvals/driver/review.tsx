@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
@@ -15,37 +15,56 @@ import {
     MessageSquareText,
     Mail,
     Phone,
-    MapPin,
     Bike,
     IdCard,
 } from "lucide-react";
 import Sidebar from "../../../../components/admin/sidebar";
 import TopBar from "../../../../components/admin/topbar";
-import {
-    DRIVER_APPLICATIONS,
-    DRIVER_STATUS_BADGE,
-    DOC_CHIP,
-    verificationProgress,
-    type DriverChecklistDoc,
-    type DocStatus,
-} from "./data";
+import api from "../../../../api/axios";
 
-/**
- * QuickKart Admin — Driver Application Review
- * Route: /admin/approvals/driver/:id
- *
- * Same pattern as the Store Application Review page: full applicant
- * details, document-by-document verify/flag, review notes, and a
- * decision panel (Approve / Request More Info / Reject).
- */
-
-type Decision = "approve" | "reject" | "more-info" | null;
-
-// Treated as an image if the filename ends in one of these. Everything else
-// (pdf, etc.) falls back to the PDF/iframe branch or the "no preview" state.
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
-function getFileKind(fileName?: string): "image" | "pdf" | "unknown" {
+type DriverDecision = "approve" | "reject" | "more-info";
+
+type ReviewNote = {
+    note: string;
+    author: string;
+    date: string;
+};
+
+type DriverDocument = {
+    id: string;
+    label: string;
+    fileUrl: string | null;
+    fileName: string | null;
+};
+
+type DriverApplication = {
+    id: string;
+    name: string;
+    driverCode: string;
+    email: string;
+    phone: string;
+    vehicleType: string;
+    vehicleNumber: string;
+    licenseNumber: string;
+    status: "pending" | "approved" | "rejected" | "more-info";
+    createdAt: string;
+    rejectionReason?: string | null;
+    reviewNotes?: ReviewNote[];
+    documents: DriverDocument[];
+    documentsSubmitted: number;
+    documentsTotal: number;
+};
+
+const DRIVER_STATUS_BADGE: Record<string, { label: string; className: string }> = {
+    pending: { label: "Pending", className: "bg-[#F7EFE2] text-[#8B6F47]" },
+    approved: { label: "Approved", className: "bg-[#EAF6EF] text-[#2E7D52]" },
+    rejected: { label: "Rejected", className: "bg-[#FBEAEA] text-[#D94F4F]" },
+    "more-info": { label: "More Info", className: "bg-[#EEF1FB] text-[#3D5A99]" },
+};
+
+function getFileKind(fileName?: string | null): "image" | "pdf" | "unknown" {
     if (!fileName) return "unknown";
     const lower = fileName.toLowerCase();
     if (IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext))) return "image";
@@ -53,60 +72,115 @@ function getFileKind(fileName?: string): "image" | "pdf" | "unknown" {
     return "unknown";
 }
 
+function verificationProgress(driver: DriverApplication) {
+    const verified = driver.documentsSubmitted;
+    const total = driver.documentsTotal;
+    const percent = total > 0 ? Math.round((verified / total) * 100) : 0;
+    return { verified, total, percent };
+}
+
+function formatDateLabel(dateStr: string) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export default function DriverApplicationReview() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const driver = useMemo(() => DRIVER_APPLICATIONS.find((d) => d.id === id), [id]);
+    const [driver, setDriver] = useState<DriverApplication | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
-    const [checklist, setChecklist] = useState<DriverChecklistDoc[]>(driver?.checklist ?? []);
     const [note, setNote] = useState("");
-    const [decision, setDecision] = useState<Decision>(null);
+    const [savingNote, setSavingNote] = useState(false);
+
+    const [decision, setDecision] = useState<DriverDecision | null>(null);
     const [decisionReason, setDecisionReason] = useState("");
-    const [submitted, setSubmitted] = useState<Decision>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [submittedDecision, setSubmittedDecision] = useState<DriverDecision | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
+
     const [previewDocId, setPreviewDocId] = useState<string | null>(null);
 
-    const previewDoc = checklist.find((d) => d.id === previewDocId) ?? null;
+    useEffect(() => {
+        if (!id) return;
+        let active = true;
+        setLoading(true);
+        setLoadError(null);
 
-    if (!driver) {
+        api.get(`/admin/driver/applications/${id}`)
+            .then((res) => active && setDriver(res.data.application))
+            .catch((err) => active && setLoadError(err?.response?.data?.message || "Failed to load application."))
+            .finally(() => active && setLoading(false));
+
+        return () => { active = false; };
+    }, [id]);
+
+    const previewDoc = driver?.documents?.find((d) => d.id === previewDocId) ?? null;
+    
+    if (loading) {
         return (
-            <div className="flex h-screen w-full bg-[#FBF6EE]">
-                <Sidebar />
-                <div className="flex h-screen flex-1 flex-col overflow-hidden">
-                    <TopBar pageTitle="Driver Applications" showSearch={false} />
-                    <main className="flex flex-1 flex-col items-center justify-center gap-3 px-7 py-6">
-                        <p className="text-[15px] font-semibold text-[#3A2C20]">Application not found</p>
-                        <p className="text-[13px] text-[#8C7C6B]">
-                            It may have been removed, or the link is out of date.
-                        </p>
-                        <button
-                            onClick={() => navigate("/admin/approvals/drivers")}
-                            className="mt-2 rounded-xl bg-[#3A2C20] px-4 py-2.5 text-[13px] font-medium text-[#F4EDE2] hover:bg-[#2E231C]"
-                        >
-                            Back to Driver Applications
-                        </button>
-                    </main>
-                </div>
-            </div>
+            <PageShell>
+                <p className="text-[13px] text-[#8C7C6B]">Loading application...</p>
+            </PageShell>
         );
     }
 
-    const badge = DRIVER_STATUS_BADGE[driver.status];
-    const progress = verificationProgress(checklist);
+    if (loadError || !driver) {
+        return (
+            <PageShell>
+                <p className="text-[15px] font-semibold text-[#3A2C20]">
+                    {loadError || "Application not found"}
+                </p>
+                <p className="text-[13px] text-[#8C7C6B]">It may have been removed, or the link is out of date.</p>
+                <button
+                    onClick={() => navigate("/admin/approvals/drivers")}
+                    className="mt-2 rounded-xl bg-[#3A2C20] px-4 py-2.5 text-[13px] font-medium text-[#F4EDE2] hover:bg-[#2E231C]"
+                >
+                    Back to Driver Applications
+                </button>
+            </PageShell>
+        );
+    }
 
-    const toggleDocStatus = (docId: string, status: DocStatus) => {
-        setChecklist((prev) => prev.map((d) => (d.id === docId ? { ...d, status } : d)));
-    };
-
-    const allVerified = checklist.length > 0 && checklist.every((d) => d.status === "verified");
-    const hasIssues = checklist.some((d) => d.status === "issue");
+    const badge = DRIVER_STATUS_BADGE[driver.status] ?? DRIVER_STATUS_BADGE["pending"];
+    const progress = verificationProgress(driver);
 
     const requiresReason = decision === "reject" || decision === "more-info";
     const canSubmit = decision !== null && (!requiresReason || decisionReason.trim().length > 0);
 
-    const handleSubmit = () => {
-        if (!canSubmit) return;
-        setSubmitted(decision);
+    const handleAddNote = async () => {
+        if (!note.trim() || !id) return;
+        setSavingNote(true);
+        setActionError(null);
+        try {
+            const res = await api.post(`/admin/driver/applications/${id}/notes`, { note: note.trim() });
+            setDriver((prev) => prev ? { ...prev, reviewNotes: res.data.reviewNotes } : prev);
+            setNote("");
+        } catch (err: any) {
+            setActionError(err?.response?.data?.message || "Failed to add note.");
+        } finally {
+            setSavingNote(false);
+        }
+    };
+
+    const handleSubmitDecision = async () => {
+        if (!canSubmit || !decision || !id) return;
+        setSubmitting(true);
+        setActionError(null);
+        try {
+            const res = await api.post(`/admin/driver/applications/${id}/decision`, {
+                decision,
+                reason: decisionReason.trim() || undefined,
+            });
+            setSubmittedDecision(decision);
+            setDriver((prev) => prev ? { ...prev, status: res.data.status } : prev);
+        } catch (err: any) {
+            setActionError(err?.response?.data?.message || "Failed to submit decision.");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -126,7 +200,14 @@ export default function DriverApplicationReview() {
                             Back to Driver Applications
                         </button>
 
-                        {submitted && <DecisionBanner decision={submitted} driverName={driver.name} />}
+                        {submittedDecision && (
+                            <DecisionBanner decision={submittedDecision} driverName={driver.name} />
+                        )}
+                        {actionError && (
+                            <div className="rounded-xl bg-[#FBEAEA] px-4 py-3 text-[12.5px] text-[#D94F4F]">
+                                {actionError}
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
                             {/* Left column */}
@@ -137,20 +218,14 @@ export default function DriverApplicationReview() {
                                         <div className="flex items-start gap-4">
                                             <DriverAvatar name={driver.name} />
                                             <div>
-                                                <p className="text-[18px] font-semibold text-[#3A2C20]">
-                                                    {driver.name}
-                                                </p>
-                                                <p className="text-[13px] text-[#8C7C6B]">
-                                                    {driver.driverCode} · {driver.city}
-                                                </p>
+                                                <p className="text-[18px] font-semibold text-[#3A2C20]">{driver.name}</p>
+                                                <p className="text-[13px] text-[#8C7C6B]">{driver.driverCode}</p>
                                                 <p className="mt-1 text-[12px] text-[#A2937F]">
-                                                    {driver.dateLabel}
+                                                    Applied {formatDateLabel(driver.createdAt)}
                                                 </p>
                                             </div>
                                         </div>
-                                        <span
-                                            className={`whitespace-nowrap rounded-full px-3 py-1 text-[11.5px] font-medium ${badge.className}`}
-                                        >
+                                        <span className={`whitespace-nowrap rounded-full px-3 py-1 text-[11.5px] font-medium ${badge.className}`}>
                                             {badge.label}
                                         </span>
                                     </div>
@@ -158,12 +233,7 @@ export default function DriverApplicationReview() {
                                     <div className="grid grid-cols-1 gap-4 border-t border-[#EBE1D2] pt-4 sm:grid-cols-2">
                                         <InfoRow icon={Mail} label="Email" value={driver.email} />
                                         <InfoRow icon={Phone} label="Phone" value={driver.phone} />
-                                        <InfoRow icon={MapPin} label="City" value={driver.city} />
-                                        <InfoRow
-                                            icon={Bike}
-                                            label="Vehicle"
-                                            value={`${driver.vehicleType} · ${driver.vehicleModel ?? "—"}`}
-                                        />
+                                        <InfoRow icon={Bike} label="Vehicle" value={driver.vehicleType} />
                                         <InfoRow icon={IdCard} label="Vehicle Number" value={driver.vehicleNumber} />
                                         <InfoRow icon={IdCard} label="License Number" value={driver.licenseNumber} />
                                     </div>
@@ -179,59 +249,45 @@ export default function DriverApplicationReview() {
                                         </div>
                                         <div className="h-1.5 w-full rounded-full bg-[#EBE1D2]">
                                             <div
-                                                className={`h-1.5 rounded-full ${
-                                                    progress.percent === 100
-                                                        ? "bg-[#2E7D52]"
-                                                        : progress.percent >= 50
+                                                className={`h-1.5 rounded-full ${progress.percent === 100
+                                                    ? "bg-[#2E7D52]"
+                                                    : progress.percent >= 50
                                                         ? "bg-[#D9A23B]"
                                                         : "bg-[#D94F4F]"
-                                                }`}
+                                                    }`}
                                                 style={{ width: `${progress.percent}%` }}
                                             />
                                         </div>
                                     </div>
+
+                                    {driver.rejectionReason && (
+                                        <div className="rounded-xl bg-[#FBEAEA] px-4 py-3.5">
+                                            <p className="text-[11px] font-medium uppercase tracking-wide text-[#D94F4F]">
+                                                Rejection Reason
+                                            </p>
+                                            <p className="mt-1 text-[13px] text-[#3A2C20]">{driver.rejectionReason}</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Documents */}
                                 <div className="flex flex-col gap-4 rounded-2xl border border-[#EBE1D2] bg-white p-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-[15px] font-semibold text-[#3A2C20]">
-                                            Submitted Documents
-                                        </p>
-                                        <span
-                                            className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium ${
-                                                allVerified
-                                                    ? "bg-[#EAF6EF] text-[#2E7D52]"
-                                                    : hasIssues
-                                                    ? "bg-[#FBEAEA] text-[#D94F4F]"
-                                                    : "bg-[#F7EFE2] text-[#8B6F47]"
-                                            }`}
-                                        >
-                                            {allVerified
-                                                ? "All Verified"
-                                                : hasIssues
-                                                ? "Issues Found"
-                                                : "Pending Review"}
+                                        <p className="text-[15px] font-semibold text-[#3A2C20]">Submitted Documents</p>
+                                        <span className="rounded-full bg-[#F7EFE2] px-2.5 py-1 text-[11.5px] font-medium text-[#8B6F47]">
+                                            {driver.documentsSubmitted}/{driver.documentsTotal} Submitted
                                         </span>
                                     </div>
 
-                                    {checklist.length === 0 ? (
-                                        <p className="text-[13px] text-[#8C7C6B]">
-                                            No documents were attached to this application.
-                                        </p>
-                                    ) : (
-                                        <div className="flex flex-col gap-3">
-                                            {checklist.map((doc) => (
-                                                <DocumentRow
-                                                    key={doc.id}
-                                                    doc={doc}
-                                                    onPreview={() => setPreviewDocId(doc.id)}
-                                                    onVerify={() => toggleDocStatus(doc.id, "verified")}
-                                                    onFlag={() => toggleDocStatus(doc.id, "issue")}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
+                                    <div className="flex flex-col gap-3">
+                                        {driver.documents.map((doc) => (
+                                            <DocumentRow
+                                                key={doc.id}
+                                                doc={doc}
+                                                onPreview={() => setPreviewDocId(doc.id)}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
 
                                 {/* Review notes */}
@@ -242,14 +298,11 @@ export default function DriverApplicationReview() {
                                         <div className="flex flex-col gap-3">
                                             {driver.reviewNotes.map((n, i) => (
                                                 <div key={i} className="flex gap-3 rounded-xl bg-[#FBF6EE] px-4 py-3">
-                                                    <MessageSquareText
-                                                        size={15}
-                                                        className="mt-0.5 shrink-0 text-[#8B6F47]"
-                                                    />
+                                                    <MessageSquareText size={15} className="mt-0.5 shrink-0 text-[#8B6F47]" />
                                                     <div>
                                                         <p className="text-[12.5px] text-[#3A2C20]">{n.note}</p>
                                                         <p className="mt-1 text-[11.5px] text-[#A2937F]">
-                                                            {n.author} · {n.date}
+                                                            {n.author} · {formatDateLabel(n.date)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -268,11 +321,11 @@ export default function DriverApplicationReview() {
                                             className="w-full resize-none rounded-xl border border-[#EBE1D2] bg-[#FBF6EE] px-3.5 py-2.5 text-[13px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
                                         />
                                         <button
-                                            disabled={note.trim().length === 0}
-                                            onClick={() => setNote("")}
+                                            disabled={note.trim().length === 0 || savingNote}
+                                            onClick={handleAddNote}
                                             className="self-end rounded-xl bg-[#3A2C20] px-4 py-2 text-[12.5px] font-medium text-[#F4EDE2] transition-colors hover:bg-[#2E231C] disabled:cursor-not-allowed disabled:bg-[#F0E6D6] disabled:text-[#A2937F]"
                                         >
-                                            Add Note
+                                            {savingNote ? "Saving..." : "Add Note"}
                                         </button>
                                     </div>
                                 </div>
@@ -335,17 +388,19 @@ export default function DriverApplicationReview() {
                                     )}
 
                                     <button
-                                        disabled={!canSubmit}
-                                        onClick={handleSubmit}
+                                        disabled={!canSubmit || submitting}
+                                        onClick={handleSubmitDecision}
                                         className="rounded-xl bg-[#3A2C20] px-4 py-2.5 text-[13px] font-medium text-[#F4EDE2] transition-colors hover:bg-[#2E231C] disabled:cursor-not-allowed disabled:bg-[#F0E6D6] disabled:text-[#A2937F]"
                                     >
-                                        {decision === "approve"
-                                            ? "Confirm Approval"
-                                            : decision === "reject"
-                                            ? "Confirm Rejection"
-                                            : decision === "more-info"
-                                            ? "Send Request"
-                                            : "Select a decision"}
+                                        {submitting
+                                            ? "Submitting..."
+                                            : decision === "approve"
+                                                ? "Confirm Approval"
+                                                : decision === "reject"
+                                                    ? "Confirm Rejection"
+                                                    : decision === "more-info"
+                                                        ? "Send Request"
+                                                        : "Select a decision"}
                                     </button>
                                 </div>
                             </div>
@@ -355,13 +410,22 @@ export default function DriverApplicationReview() {
             </div>
 
             {previewDoc && (
-                <DocumentPreviewModal
-                    doc={previewDoc}
-                    onClose={() => setPreviewDocId(null)}
-                    onVerify={() => toggleDocStatus(previewDoc.id, "verified")}
-                    onFlag={() => toggleDocStatus(previewDoc.id, "issue")}
-                />
+                <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDocId(null)} />
             )}
+        </div>
+    );
+}
+
+function PageShell({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="flex h-screen w-full bg-[#FBF6EE]">
+            <Sidebar />
+            <div className="flex h-screen flex-1 flex-col overflow-hidden">
+                <TopBar pageTitle="Driver Applications" showSearch={false} />
+                <main className="flex flex-1 flex-col items-center justify-center gap-3 px-7 py-6">
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }
@@ -395,54 +459,35 @@ function DriverAvatar({ name }: { name: string }) {
 function DocumentRow({
     doc,
     onPreview,
-    onVerify,
-    onFlag,
 }: {
-    doc: DriverChecklistDoc;
+    doc: DriverDocument;
     onPreview: () => void;
-    onVerify: () => void;
-    onFlag: () => void;
 }) {
-    const hasFile = !!doc.fileName;
+    const hasFile = !!doc.fileUrl;
     return (
         <div className="flex flex-col gap-2 rounded-xl border border-[#EBE1D2] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
                 <button
                     onClick={hasFile ? onPreview : undefined}
                     disabled={!hasFile}
-                    className={`flex flex-1 items-center gap-3 rounded-lg text-left ${
-                        hasFile ? "cursor-pointer" : "cursor-default"
-                    }`}
+                    className={`flex flex-1 items-center gap-3 rounded-lg text-left ${hasFile ? "cursor-pointer" : "cursor-default"}`}
                 >
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FBF6EE] text-[#8C7C6B]">
                         <FileText size={16} />
                     </span>
                     <div>
-                        <p className="text-[13.5px] font-medium text-[#3A2C20] group-hover:underline">
-                            {doc.label}
-                        </p>
-                        <p className="text-[12px] text-[#A2937F]">
-                            {hasFile ? doc.fileName : "Not uploaded"}
-                        </p>
+                        <p className="text-[13.5px] font-medium text-[#3A2C20]">{doc.label}</p>
+                        <p className="text-[12px] text-[#A2937F]">{hasFile ? doc.fileName : "Not uploaded"}</p>
                     </div>
                 </button>
                 <span
-                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium ${DOC_CHIP[doc.status]}`}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium ${hasFile ? "bg-[#EAF6EF] text-[#2E7D52]" : "bg-[#F0E6D6] text-[#A2937F]"
+                        }`}
                 >
-                    {doc.status === "verified" ? (
-                        <CheckCircle2 size={12} />
-                    ) : doc.status === "issue" ? (
-                        <XCircle size={12} />
-                    ) : (
-                        <CircleDashed size={12} />
-                    )}
-                    {doc.status === "verified" ? "Verified" : doc.status === "issue" ? "Flagged" : "Missing"}
+                    {hasFile ? <CheckCircle2 size={12} /> : <CircleDashed size={12} />}
+                    {hasFile ? "Submitted" : "Missing"}
                 </span>
             </div>
-
-            {doc.note && (
-                <p className="rounded-lg bg-[#FBEAEA] px-3 py-2 text-[12px] text-[#C0392B]">{doc.note}</p>
-            )}
 
             {hasFile && (
                 <div className="flex items-center gap-2 pt-1">
@@ -453,22 +498,16 @@ function DocumentRow({
                         <Eye size={13} />
                         View
                     </button>
-                    <button className="flex items-center gap-1.5 rounded-lg border border-[#EBE1D2] px-3 py-1.5 text-[12px] font-medium text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]">
+                    <a
+                        href={doc.fileUrl ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className="flex items-center gap-1.5 rounded-lg border border-[#EBE1D2] px-3 py-1.5 text-[12px] font-medium text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]"
+                    >
                         <Download size={13} />
                         Download
-                    </button>
-                    <button
-                        onClick={onVerify}
-                        className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-[#2E7D52] transition-colors hover:bg-[#EAF6EF]"
-                    >
-                        Mark Verified
-                    </button>
-                    <button
-                        onClick={onFlag}
-                        className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-[#D94F4F] transition-colors hover:bg-[#FBEAEA]"
-                    >
-                        Flag Issue
-                    </button>
+                    </a>
                 </div>
             )}
         </div>
@@ -478,25 +517,14 @@ function DocumentRow({
 function DocumentPreviewModal({
     doc,
     onClose,
-    onVerify,
-    onFlag,
 }: {
-    doc: DriverChecklistDoc;
+    doc: DriverDocument;
     onClose: () => void;
-    onVerify: () => void;
-    onFlag: () => void;
 }) {
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
     const kind = getFileKind(doc.fileName);
 
-    // Reset zoom/rotation whenever a different document is opened.
-    useEffect(() => {
-        setZoom(1);
-        setRotation(0);
-    }, [doc.id]);
-
-    // Esc to close.
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") onClose();
@@ -506,15 +534,11 @@ function DocumentPreviewModal({
     }, [onClose]);
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={onClose}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white"
             >
-                {/* Header */}
                 <div className="flex items-center justify-between gap-3 border-b border-[#EBE1D2] px-5 py-4">
                     <div className="flex items-center gap-3 overflow-hidden">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FBF6EE] text-[#8C7C6B]">
@@ -525,39 +549,21 @@ function DocumentPreviewModal({
                             <p className="truncate text-[12px] text-[#A2937F]">{doc.fileName}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span
-                            className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium ${DOC_CHIP[doc.status]}`}
-                        >
-                            {doc.status === "verified" ? (
-                                <CheckCircle2 size={12} />
-                            ) : doc.status === "issue" ? (
-                                <XCircle size={12} />
-                            ) : (
-                                <CircleDashed size={12} />
-                            )}
-                            {doc.status === "verified" ? "Verified" : doc.status === "issue" ? "Flagged" : "Missing"}
-                        </span>
-                        <button
-                            onClick={onClose}
-                            aria-label="Close preview"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] hover:text-[#3A2C20]"
-                        >
-                            <X size={17} />
-                        </button>
-                    </div>
+                    <button
+                        onClick={onClose}
+                        aria-label="Close preview"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] hover:text-[#3A2C20]"
+                    >
+                        <X size={17} />
+                    </button>
                 </div>
 
-                {/* Body */}
                 <div className="flex flex-1 items-center justify-center overflow-auto bg-[#FBF6EE] p-5">
                     {kind === "image" ? (
                         <img
                             src={doc.fileUrl ?? ""}
                             alt={doc.label}
-                            style={{
-                                transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                                transition: "transform 0.15s ease",
-                            }}
+                            style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: "transform 0.15s ease" }}
                             className="max-h-[60vh] max-w-full rounded-lg object-contain shadow-sm"
                         />
                     ) : kind === "pdf" ? (
@@ -569,9 +575,7 @@ function DocumentPreviewModal({
                     ) : (
                         <div className="flex flex-col items-center gap-2 py-12 text-center">
                             <FileText size={32} className="text-[#A2937F]" />
-                            <p className="text-[13px] font-medium text-[#3A2C20]">
-                                Preview isn't available for this file
-                            </p>
+                            <p className="text-[13px] font-medium text-[#3A2C20]">Preview isn't available for this file</p>
                             <p className="max-w-xs text-[12px] text-[#8C7C6B]">
                                 Download the file to view {doc.fileName ?? "it"} on your device.
                             </p>
@@ -579,7 +583,6 @@ function DocumentPreviewModal({
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="flex items-center justify-between gap-3 border-t border-[#EBE1D2] px-5 py-3.5">
                     <div className="flex items-center gap-1.5">
                         {kind === "image" && (
@@ -591,9 +594,7 @@ function DocumentPreviewModal({
                                 >
                                     <ZoomOut size={15} />
                                 </button>
-                                <span className="w-10 text-center text-[12px] text-[#8C7C6B]">
-                                    {Math.round(zoom * 100)}%
-                                </span>
+                                <span className="w-10 text-center text-[12px] text-[#8C7C6B]">{Math.round(zoom * 100)}%</span>
                                 <button
                                     onClick={() => setZoom((z) => Math.min(2.5, +(z + 0.25).toFixed(2)))}
                                     aria-label="Zoom in"
@@ -612,24 +613,16 @@ function DocumentPreviewModal({
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <button className="flex items-center gap-1.5 rounded-lg border border-[#EBE1D2] px-3 py-1.5 text-[12px] font-medium text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]">
-                            <Download size={13} />
-                            Download
-                        </button>
-                        <button
-                            onClick={onFlag}
-                            className="rounded-lg border border-transparent px-3 py-1.5 text-[12px] font-medium text-[#D94F4F] transition-colors hover:bg-[#FBEAEA]"
-                        >
-                            Flag Issue
-                        </button>
-                        <button
-                            onClick={onVerify}
-                            className="rounded-lg bg-[#2E7D52] px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#256242]"
-                        >
-                            Mark Verified
-                        </button>
-                    </div>
+                    <a
+                        href={doc.fileUrl ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className="flex items-center gap-1.5 rounded-lg border border-[#EBE1D2] px-3 py-1.5 text-[12px] font-medium text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]"
+                    >
+                        <Download size={13} />
+                        Download
+                    </a>
                 </div>
             </div>
         </div>
@@ -654,9 +647,8 @@ function DecisionOption({
     return (
         <button
             onClick={onClick}
-            className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
-                active ? activeClass : "border-[#EBE1D2] text-[#3A2C20] hover:bg-[#F5EEE2]"
-            }`}
+            className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${active ? activeClass : "border-[#EBE1D2] text-[#3A2C20] hover:bg-[#F5EEE2]"
+                }`}
         >
             <Icon size={17} className="mt-0.5 shrink-0" />
             <div>
@@ -667,43 +659,17 @@ function DecisionOption({
     );
 }
 
-function DecisionBanner({ decision, driverName }: { decision: Decision; driverName: string }) {
+function DecisionBanner({ decision, driverName }: { decision: DriverDecision; driverName: string }) {
     if (decision === "approve") {
-        return (
-            <Banner
-                color="success"
-                title={`${driverName} has been approved`}
-                body="The driver can now start accepting deliveries."
-            />
-        );
+        return <Banner color="success" title={`${driverName} has been approved`} body="The driver can now start accepting deliveries." />;
     }
     if (decision === "reject") {
-        return (
-            <Banner
-                color="danger"
-                title={`${driverName}'s application has been rejected`}
-                body="The driver will be notified with your reason."
-            />
-        );
+        return <Banner color="danger" title={`${driverName}'s application has been rejected`} body="The driver will be notified with your reason." />;
     }
-    return (
-        <Banner
-            color="warning"
-            title={`Requested more info from ${driverName}`}
-            body="The driver will be notified to resubmit the flagged details."
-        />
-    );
+    return <Banner color="warning" title={`Requested more info from ${driverName}`} body="The driver will be notified to resubmit the flagged details." />;
 }
 
-function Banner({
-    color,
-    title,
-    body,
-}: {
-    color: "success" | "danger" | "warning";
-    title: string;
-    body: string;
-}) {
+function Banner({ color, title, body }: { color: "success" | "danger" | "warning"; title: string; body: string }) {
     const styles = {
         success: "bg-[#EAF6EF] text-[#2E7D52]",
         danger: "bg-[#FBEAEA] text-[#D94F4F]",
