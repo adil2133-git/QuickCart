@@ -12,6 +12,8 @@ import ProductDiscoveryPage from './pages/customer/productDiscovery'
 import Dashboard from './pages/admin/dashboard'
 import StoreApplicationsPage from './pages/admin/approvals/store/applications'
 import StoreApplicationReview from './pages/admin/approvals/store/review'
+import DriverApplicationsPage from './pages/admin/approvals/driver/applications'
+import DriverApplicationReview from './pages/admin/approvals/driver/review'
 
 function App() {
   return (
@@ -36,10 +38,12 @@ function App() {
 
         <Route path='/driver/dashboard' element={<QuickKartDashboard />} />
 
-        
+
         <Route path='/admin/dashboard' element={<Dashboard />} />
         <Route path='/admin/approvals/store' element={<StoreApplicationsPage />} />
         <Route path='/admin/approvals/store/:id' element={<StoreApplicationReview />} />
+        <Route path="/admin/approvals/drivers" element={<DriverApplicationsPage />} />
+        <Route path="/admin/approvals/driver/:id" element={<DriverApplicationReview />} />
 
 
       </Routes>

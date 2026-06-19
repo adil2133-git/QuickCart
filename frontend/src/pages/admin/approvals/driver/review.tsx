@@ -13,36 +13,30 @@ import {
     ZoomOut,
     RotateCw,
     MessageSquareText,
-    Store as StoreIcon,
     Mail,
     Phone,
     MapPin,
-    Building2,
-    ShieldCheck,
+    Bike,
+    IdCard,
 } from "lucide-react";
 import Sidebar from "../../../../components/admin/sidebar";
 import TopBar from "../../../../components/admin/topbar";
 import {
-    APPLICATIONS,
-    STATUS_BADGE,
+    DRIVER_APPLICATIONS,
+    DRIVER_STATUS_BADGE,
     DOC_CHIP,
-    type ChecklistDoc,
+    verificationProgress,
+    type DriverChecklistDoc,
     type DocStatus,
 } from "./data";
 
 /**
- * QuickKart Admin — Store Application Review
- * Route: /admin/approvals/store/:id
+ * QuickKart Admin — Driver Application Review
+ * Route: /admin/approvals/driver/:id
  *
- * Opened from the "Review Application" / "Resolve Issues" / "Review
- * Feedback" button on the Store Applications list. Lets an admin:
- *   - see full applicant + business details
- *   - preview each submitted document inline (and download it) and mark
- *     it verified / flagged
- *   - leave a review note (kept in the application's audit trail)
- *   - Approve, Reject (reason required), or Request More Info
- *
- * Same color tokens as the rest of the admin panel.
+ * Same pattern as the Store Application Review page: full applicant
+ * details, document-by-document verify/flag, review notes, and a
+ * decision panel (Approve / Request More Info / Reject).
  */
 
 type Decision = "approve" | "reject" | "more-info" | null;
@@ -59,13 +53,13 @@ function getFileKind(fileName?: string): "image" | "pdf" | "unknown" {
     return "unknown";
 }
 
-export default function StoreApplicationReview() {
+export default function DriverApplicationReview() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const application = useMemo(() => APPLICATIONS.find((a) => a.id === id), [id]);
+    const driver = useMemo(() => DRIVER_APPLICATIONS.find((d) => d.id === id), [id]);
 
-    const [checklist, setChecklist] = useState<ChecklistDoc[]>(application?.checklist ?? []);
+    const [checklist, setChecklist] = useState<DriverChecklistDoc[]>(driver?.checklist ?? []);
     const [note, setNote] = useState("");
     const [decision, setDecision] = useState<Decision>(null);
     const [decisionReason, setDecisionReason] = useState("");
@@ -74,22 +68,22 @@ export default function StoreApplicationReview() {
 
     const previewDoc = checklist.find((d) => d.id === previewDocId) ?? null;
 
-    if (!application) {
+    if (!driver) {
         return (
             <div className="flex h-screen w-full bg-[#FBF6EE]">
                 <Sidebar />
                 <div className="flex h-screen flex-1 flex-col overflow-hidden">
-                    <TopBar pageTitle="Store Applications" showSearch={false} />
+                    <TopBar pageTitle="Driver Applications" showSearch={false} />
                     <main className="flex flex-1 flex-col items-center justify-center gap-3 px-7 py-6">
                         <p className="text-[15px] font-semibold text-[#3A2C20]">Application not found</p>
                         <p className="text-[13px] text-[#8C7C6B]">
                             It may have been removed, or the link is out of date.
                         </p>
                         <button
-                            onClick={() => navigate("/admin/approvals")}
+                            onClick={() => navigate("/admin/approvals/drivers")}
                             className="mt-2 rounded-xl bg-[#3A2C20] px-4 py-2.5 text-[13px] font-medium text-[#F4EDE2] hover:bg-[#2E231C]"
                         >
-                            Back to Applications
+                            Back to Driver Applications
                         </button>
                     </main>
                 </div>
@@ -97,7 +91,8 @@ export default function StoreApplicationReview() {
         );
     }
 
-    const badge = STATUS_BADGE[application.status];
+    const badge = DRIVER_STATUS_BADGE[driver.status];
+    const progress = verificationProgress(checklist);
 
     const toggleDocStatus = (docId: string, status: DocStatus) => {
         setChecklist((prev) => prev.map((d) => (d.id === docId ? { ...d, status } : d)));
@@ -119,40 +114,37 @@ export default function StoreApplicationReview() {
             <Sidebar />
 
             <div className="flex h-screen flex-1 flex-col overflow-hidden">
-                <TopBar pageTitle="Review Application" showSearch={false} />
+                <TopBar pageTitle="Review Driver Application" showSearch={false} />
 
                 <main className="flex-1 overflow-y-auto overflow-x-hidden px-7 py-6">
                     <div className="flex flex-col gap-6">
-                        {/* Back link */}
                         <button
-                            onClick={() => navigate("/admin/approvals")}
+                            onClick={() => navigate("/admin/approvals/drivers")}
                             className="flex w-fit items-center gap-2 text-[13px] font-medium text-[#8C7C6B] transition-colors hover:text-[#3A2C20]"
                         >
                             <ArrowLeft size={15} />
-                            Back to Store Applications
+                            Back to Driver Applications
                         </button>
 
-                        {submitted && (
-                            <DecisionBanner decision={submitted} storeName={application.name} />
-                        )}
+                        {submitted && <DecisionBanner decision={submitted} driverName={driver.name} />}
 
                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
-                            {/* Left column: main content */}
+                            {/* Left column */}
                             <div className="flex flex-col gap-6">
                                 {/* Header card */}
                                 <div className="flex flex-col gap-5 rounded-2xl border border-[#EBE1D2] bg-white p-6">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex items-start gap-4">
-                                            <StoreLogo app={application} />
+                                            <DriverAvatar name={driver.name} />
                                             <div>
                                                 <p className="text-[18px] font-semibold text-[#3A2C20]">
-                                                    {application.name}
+                                                    {driver.name}
                                                 </p>
                                                 <p className="text-[13px] text-[#8C7C6B]">
-                                                    Owner — {application.owner}
+                                                    {driver.driverCode} · {driver.city}
                                                 </p>
                                                 <p className="mt-1 text-[12px] text-[#A2937F]">
-                                                    {application.dateLabel}
+                                                    {driver.dateLabel}
                                                 </p>
                                             </div>
                                         </div>
@@ -164,37 +156,38 @@ export default function StoreApplicationReview() {
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-4 border-t border-[#EBE1D2] pt-4 sm:grid-cols-2">
-                                        <InfoRow icon={Mail} label="Email" value={application.contactEmail} />
-                                        <InfoRow icon={Phone} label="Phone" value={application.contactPhone} />
-                                        <InfoRow icon={MapPin} label="Address" value={application.fullAddress} />
-                                        <InfoRow icon={ShieldCheck} label="Pincode" value={application.pincode} />
-                                        <InfoRow icon={Building2} label="Store Type" value={application.type} />
+                                        <InfoRow icon={Mail} label="Email" value={driver.email} />
+                                        <InfoRow icon={Phone} label="Phone" value={driver.phone} />
+                                        <InfoRow icon={MapPin} label="City" value={driver.city} />
+                                        <InfoRow
+                                            icon={Bike}
+                                            label="Vehicle"
+                                            value={`${driver.vehicleType} · ${driver.vehicleModel ?? "—"}`}
+                                        />
+                                        <InfoRow icon={IdCard} label="Vehicle Number" value={driver.vehicleNumber} />
+                                        <InfoRow icon={IdCard} label="License Number" value={driver.licenseNumber} />
                                     </div>
 
-                                    <div className="flex items-stretch divide-x divide-[#EBE1D2] rounded-xl bg-[#FBF6EE] px-2 py-3">
-                                        <div className="flex-1 px-3 text-center">
-                                            <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#A2937F]">
-                                                Products
+                                    <div className="rounded-xl bg-[#FBF6EE] px-4 py-3.5">
+                                        <div className="mb-1.5 flex items-center justify-between">
+                                            <p className="text-[11px] font-medium uppercase tracking-wide text-[#A2937F]">
+                                                Verification Progress
                                             </p>
-                                            <p className="mt-1 text-[14px] font-semibold text-[#3A2C20]">
-                                                {application.products}
-                                            </p>
+                                            <span className="text-[13px] font-semibold text-[#3A2C20]">
+                                                {progress.verified}/{progress.total} · {progress.percent}%
+                                            </span>
                                         </div>
-                                        <div className="flex-1 px-3 text-center">
-                                            <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#A2937F]">
-                                                Delivery Radius
-                                            </p>
-                                            <p className="mt-1 text-[14px] font-semibold text-[#3A2C20]">
-                                                {application.radius}
-                                            </p>
-                                        </div>
-                                        <div className="flex-1 px-3 text-center">
-                                            <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#A2937F]">
-                                                Submitted
-                                            </p>
-                                            <p className="mt-1 text-[14px] font-semibold text-[#3A2C20]">
-                                                {application.submittedOn}
-                                            </p>
+                                        <div className="h-1.5 w-full rounded-full bg-[#EBE1D2]">
+                                            <div
+                                                className={`h-1.5 rounded-full ${
+                                                    progress.percent === 100
+                                                        ? "bg-[#2E7D52]"
+                                                        : progress.percent >= 50
+                                                        ? "bg-[#D9A23B]"
+                                                        : "bg-[#D94F4F]"
+                                                }`}
+                                                style={{ width: `${progress.percent}%` }}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -241,17 +234,14 @@ export default function StoreApplicationReview() {
                                     )}
                                 </div>
 
-                                {/* Review notes / audit trail */}
+                                {/* Review notes */}
                                 <div className="flex flex-col gap-4 rounded-2xl border border-[#EBE1D2] bg-white p-6">
                                     <p className="text-[15px] font-semibold text-[#3A2C20]">Review Notes</p>
 
-                                    {application.reviewNotes && application.reviewNotes.length > 0 ? (
+                                    {driver.reviewNotes && driver.reviewNotes.length > 0 ? (
                                         <div className="flex flex-col gap-3">
-                                            {application.reviewNotes.map((n, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="flex gap-3 rounded-xl bg-[#FBF6EE] px-4 py-3"
-                                                >
+                                            {driver.reviewNotes.map((n, i) => (
+                                                <div key={i} className="flex gap-3 rounded-xl bg-[#FBF6EE] px-4 py-3">
                                                     <MessageSquareText
                                                         size={15}
                                                         className="mt-0.5 shrink-0 text-[#8B6F47]"
@@ -293,13 +283,13 @@ export default function StoreApplicationReview() {
                                 <div className="sticky top-0 flex flex-col gap-4 rounded-2xl border border-[#EBE1D2] bg-white p-6">
                                     <p className="text-[15px] font-semibold text-[#3A2C20]">Decision</p>
                                     <p className="text-[12.5px] text-[#8C7C6B]">
-                                        Choose how to respond to this application.
+                                        Choose how to respond to this driver application.
                                     </p>
 
                                     <div className="flex flex-col gap-2">
                                         <DecisionOption
-                                            label="Approve Application"
-                                            description="Store goes live immediately."
+                                            label="Approve Driver"
+                                            description="Driver can start accepting deliveries."
                                             icon={CheckCircle2}
                                             active={decision === "approve"}
                                             activeClass="border-[#2E7D52] bg-[#EAF6EF] text-[#2E7D52]"
@@ -307,7 +297,7 @@ export default function StoreApplicationReview() {
                                         />
                                         <DecisionOption
                                             label="Request More Info"
-                                            description="Notify the owner to resubmit documents."
+                                            description="Notify the driver to resubmit documents."
                                             icon={MessageSquareText}
                                             active={decision === "more-info"}
                                             activeClass="border-[#8B6F47] bg-[#F7EFE2] text-[#8B6F47]"
@@ -315,7 +305,7 @@ export default function StoreApplicationReview() {
                                         />
                                         <DecisionOption
                                             label="Reject Application"
-                                            description="Store will not be onboarded."
+                                            description="Driver will not be onboarded."
                                             icon={XCircle}
                                             active={decision === "reject"}
                                             activeClass="border-[#D94F4F] bg-[#FBEAEA] text-[#D94F4F]"
@@ -336,8 +326,8 @@ export default function StoreApplicationReview() {
                                                 rows={3}
                                                 placeholder={
                                                     decision === "reject"
-                                                        ? "e.g. Duplicate license number on file"
-                                                        : "e.g. Please re-upload a valid address proof"
+                                                        ? "e.g. License could not be verified"
+                                                        : "e.g. Please re-upload a clear vehicle RC"
                                                 }
                                                 className="w-full resize-none rounded-xl border border-[#EBE1D2] bg-[#FBF6EE] px-3.5 py-2.5 text-[13px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
                                             />
@@ -376,15 +366,7 @@ export default function StoreApplicationReview() {
     );
 }
 
-function InfoRow({
-    icon: Icon,
-    label,
-    value,
-}: {
-    icon: typeof Mail;
-    label: string;
-    value: string;
-}) {
+function InfoRow({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
     return (
         <div className="flex items-start gap-2.5">
             <Icon size={15} className="mt-0.5 shrink-0 text-[#8C7C6B]" />
@@ -396,20 +378,16 @@ function InfoRow({
     );
 }
 
-function StoreLogo({ app }: { app: { logoInitial?: string; logoColor?: string } }) {
-    if (!app.logoInitial) {
-        return (
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#EFE7DC] text-[#A2937F]">
-                <StoreIcon size={22} />
-            </div>
-        );
-    }
+function DriverAvatar({ name }: { name: string }) {
+    const initials = name
+        .split(" ")
+        .map((p) => p[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
     return (
-        <div
-            className="flex h-14 w-14 items-center justify-center rounded-xl text-[17px] font-semibold text-white"
-            style={{ backgroundColor: app.logoColor ?? "#8B6F47" }}
-        >
-            {app.logoInitial}
+        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#EFE7DC] text-[16px] font-semibold text-[#8B6F47]">
+            {initials}
         </div>
     );
 }
@@ -420,7 +398,7 @@ function DocumentRow({
     onVerify,
     onFlag,
 }: {
-    doc: ChecklistDoc;
+    doc: DriverChecklistDoc;
     onPreview: () => void;
     onVerify: () => void;
     onFlag: () => void;
@@ -440,7 +418,9 @@ function DocumentRow({
                         <FileText size={16} />
                     </span>
                     <div>
-                        <p className="text-[13.5px] font-medium text-[#3A2C20]">{doc.label}</p>
+                        <p className="text-[13.5px] font-medium text-[#3A2C20] group-hover:underline">
+                            {doc.label}
+                        </p>
                         <p className="text-[12px] text-[#A2937F]">
                             {hasFile ? doc.fileName : "Not uploaded"}
                         </p>
@@ -501,7 +481,7 @@ function DocumentPreviewModal({
     onVerify,
     onFlag,
 }: {
-    doc: ChecklistDoc;
+    doc: DriverChecklistDoc;
     onClose: () => void;
     onVerify: () => void;
     onFlag: () => void;
@@ -687,13 +667,13 @@ function DecisionOption({
     );
 }
 
-function DecisionBanner({ decision, storeName }: { decision: Decision; storeName: string }) {
+function DecisionBanner({ decision, driverName }: { decision: Decision; driverName: string }) {
     if (decision === "approve") {
         return (
             <Banner
                 color="success"
-                title={`${storeName} has been approved`}
-                body="The store can now go live on the platform."
+                title={`${driverName} has been approved`}
+                body="The driver can now start accepting deliveries."
             />
         );
     }
@@ -701,16 +681,16 @@ function DecisionBanner({ decision, storeName }: { decision: Decision; storeName
         return (
             <Banner
                 color="danger"
-                title={`${storeName} has been rejected`}
-                body="The owner will be notified with your reason."
+                title={`${driverName}'s application has been rejected`}
+                body="The driver will be notified with your reason."
             />
         );
     }
     return (
         <Banner
             color="warning"
-            title={`Requested more info from ${storeName}`}
-            body="The owner will be notified to resubmit the flagged details."
+            title={`Requested more info from ${driverName}`}
+            body="The driver will be notified to resubmit the flagged details."
         />
     );
 }
