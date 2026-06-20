@@ -10,6 +10,7 @@ const AuthRoutes = require("./routes/auth/authRoutes")
 const DriverRoutes = require("./routes/driver/driverRoutes")
 const StoreRoutes = require("./routes/store/storeRoutes")
 const DriverApplicationRoutes = require("./routes/admin/driverApplicationRoutes")
+const StoreApplicationRoutes = require("./routes/admin/storeApplicationRoutes")
 
 
 app.use(
@@ -22,7 +23,9 @@ app.use(
 app.use("/api/auth", AuthRoutes)
 app.use("/api/driver", DriverRoutes)
 app.use("/api/store", StoreRoutes)
+
 app.use("/api/admin/driver", DriverApplicationRoutes)
+app.use("/api/admin/store", StoreApplicationRoutes)
 
 
 app.use((err, req, res, next) => {
