@@ -14,6 +14,8 @@ import StoreApplicationsPage from './pages/admin/approvals/store/applications'
 import StoreApplicationReview from './pages/admin/approvals/store/review'
 import DriverApplicationsPage from './pages/admin/approvals/driver/applications'
 import DriverApplicationReview from './pages/admin/approvals/driver/review'
+import DashboardPage from './pages/store/DashboardPage'
+import QuickKartLanding from './pages/landing'
 
 function App() {
   return (
@@ -21,6 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<QuickKartLogin />} />
+        <Route path="/landing" element={<QuickKartLanding />} />
 
         <Route path="/create-account" element={<CreateAccountModal />} />
 
@@ -30,14 +33,22 @@ function App() {
         <Route path="/driver/pending" element={<PendingApproval role="driver" />} />
         <Route path="/store/pending" element={<PendingApproval role="store" />} />
 
+
+{/* *******************CUSTOMER*************************CUSTOMER*********************CUSTOMER******************************* */}
+
         <Route path="/home" element={<CustomerHome />} />
         <Route path='/store' element={<FreshMartStorePage />} />
         <Route path='/discovery' element={<ProductDiscoveryPage />} />
 
 
+{/* *******************DRIVER*************************DRIVER*********************DRIVER******************************* */}
 
         <Route path='/driver/dashboard' element={<QuickKartDashboard />} />
 
+        <Route path='/store/dashboard' element={<DashboardPage />} />
+
+
+{/* *******************ADMIN*************************ADMIN*********************ADMIN******************************* */}
 
         <Route path='/admin/dashboard' element={<Dashboard />} />
         <Route path='/admin/approvals/store' element={<StoreApplicationsPage />} />

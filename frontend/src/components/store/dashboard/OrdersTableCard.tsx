@@ -1,0 +1,96 @@
+import { ChevronRight, MoreVertical } from "lucide-react";
+import type { Order } from "../types/store";
+import { formatCurrency, getAvatarColor, getInitials, getOrderStatusBadge } from "../lib/dashboardUtils";
+
+interface OrdersTableCardProps {
+  orders: Order[];
+  onViewAll?: () => void;
+  onOrderMenuClick?: (order: Order) => void;
+}
+
+export default function OrdersTableCard({ orders, onViewAll, onOrderMenuClick }: OrdersTableCardProps) {
+  return (
+    <div className="flex flex-1 flex-col rounded-2xl border border-[#EFE6DA] bg-white shadow-sm">
+      <div className="flex items-center justify-between px-6 pt-5 pb-4">
+        <h3 className="text-lg font-bold text-[#2B1B0E]">Incoming Orders</h3>
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="flex items-center gap-0.5 text-sm font-medium text-[#B08550] transition-colors hover:text-[#8A6A4D]"
+        >
+          View All
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {orders.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+          <p className="text-sm font-medium text-[#5C4A3A]">No incoming orders right now</p>
+          <p className="mt-1 text-sm text-[#A38F7D]">New orders will show up here as customers check out.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-y border-[#F3EAE0] bg-[#FBF6F0] text-xs font-medium uppercase tracking-wide text-[#A38F7D]">
+                <th className="px-6 py-3">Order ID</th>
+                <th className="px-6 py-3">Customer</th>
+                <th className="px-6 py-3">Total</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => {
+                const badge = getOrderStatusBadge(order.orderStatus);
+                return (
+                  <tr key={order._id} className="border-b border-[#F3EAE0] last:border-b-0">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-[#2B1B0E]">
+                      {order.orderNumber}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={[
+                            "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                            getAvatarColor(order.customerName),
+                          ].join(" ")}
+                        >
+                          {getInitials(order.customerName)}
+                        </span>
+                        <span className="text-sm text-[#2B1B0E]">{order.customerName}</span>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-[#2B1B0E]">
+                      {formatCurrency(order.totalAmount)}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <span
+                        className={[
+                          "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide",
+                          badge.className,
+                        ].join(" ")}
+                      >
+                        {badge.label}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => onOrderMenuClick?.(order)}
+                        aria-label={`More actions for order ${order.orderNumber}`}
+                        className="rounded-full p-1.5 text-[#A38F7D] transition-colors hover:bg-black/5 hover:text-[#2B1B0E]"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
