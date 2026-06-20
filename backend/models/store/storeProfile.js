@@ -7,6 +7,12 @@ const operatingHoursSchema = new mongoose.Schema({
     isClosed:  { type: Boolean, default: false },
 });
 
+const reviewNoteSchema = new mongoose.Schema({
+    note:   { type: String, required: true },
+    author: { type: String, required: true },
+    date:   { type: Date, default: Date.now },
+});
+
 const storeProfileSchema = new mongoose.Schema(
     {
         userId:    { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
@@ -33,6 +39,10 @@ const storeProfileSchema = new mongoose.Schema(
         pendingBalance:   { type: Number, default: 0 },
         averageRating:    { type: Number, default: 0, min: 0, max: 5 },
         totalOrders:      { type: Number, default: 0 },
+
+        // ---- Approval workflow fields (mirrors DriverProfile) ----
+        rejectionReason: { type: String, default: null },
+        reviewNotes:      { type: [reviewNoteSchema], default: [] },
     },
     { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );
