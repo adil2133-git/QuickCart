@@ -1,4 +1,5 @@
-import { useState, FormEvent, FocusEvent } from "react";
+import { useState, } from "react";
+import type { FormEvent, FocusEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import ForgotPasswordModal from "./forgotPasswordModal";
 import api from "../api/axios";
@@ -6,7 +7,7 @@ import api from "../api/axios";
 const ROLE_ROUTES: Record<string, string> = {
   CUSTOMER: "/home",
   ADMIN: "/admin/dashboard",
-  DRIVER: "/driver/home",
+  DRIVER: "/driver/dashboard",
   STORE: "/store/dashboard",
 };
 
@@ -44,7 +45,7 @@ export default function QuickKartLogin() {
     e.target.style.boxShadow = "none";
   };
 
-  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 

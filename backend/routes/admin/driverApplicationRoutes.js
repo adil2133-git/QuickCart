@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const protectRoute = require("../../middleware/protectRoute"); 
+const authorizeRoles = require("../../middleware/authorizeRoles"); 
 const {
     getDriverApplications,
     getDriverApplicationStats,
@@ -10,6 +11,7 @@ const {
 } = require("../../controllers/admin/driverApplicationController");
 
 router.use(protectRoute);
+router.use(authorizeRoles("admin"))
 
 router.get("/applications", getDriverApplications);
 router.get("/applications/stats", getDriverApplicationStats);
