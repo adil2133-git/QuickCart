@@ -16,6 +16,8 @@ import DriverApplicationsPage from './pages/admin/approvals/driver/applications'
 import DriverApplicationReview from './pages/admin/approvals/driver/review'
 import DashboardPage from './pages/store/DashboardPage'
 import QuickKartLanding from './pages/landing'
+import AddProductPage from './pages/store/addEditProductPage'
+import ProductsPage from './pages/store/productsPage'
 
 function App() {
   return (
@@ -45,8 +47,12 @@ function App() {
 
         <Route path='/driver/dashboard' element={<QuickKartDashboard />} />
 
-        <Route path='/store/dashboard' element={<DashboardPage />} />
+{/* *******************STORE*************************STORE*********************STORE******************************* */}
 
+        <Route path='/store/dashboard' element={<DashboardPage />} />
+        <Route path='/store/products/new' element={<AddProductPage />} />
+        <Route path='/store/products' element={<ProductsPage />} />
+        <Route path='/store/products/:id/edit' element={<AddProductPage />} />
 
 {/* *******************ADMIN*************************ADMIN*********************ADMIN******************************* */}
 

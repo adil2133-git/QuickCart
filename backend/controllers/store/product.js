@@ -1,26 +1,49 @@
 const Product = require("../../models/store/product");
+const StoreProfile = require("../../models/store/storeProfile");
 const mongoose = require("mongoose");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+// Resolves the logged-in STORE user's StoreProfile._id from the JWT.
+// storeId is never trusted from the client — same principle as getMyStoreProfile.
+const resolveStoreId = async (req) => {
+    const userId = req.user.userID;
+    const storeProfile = await StoreProfile.findOne({ userId });
+    return storeProfile ? storeProfile._id : null;
+};
+
+// ─── Create Product  (POST /api/store/addProduct) ────────────────────────────
 
 const createProduct = async (req, res) => {
     try {
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ message: "Store profile not found for this account." });
+        }
+
         const {
-            storeId,
             categoryId,
             productName,
             description,
             price,
             stockQuantity,
-            unit, 
-            images,
+            unit,
             availabilityStatus,
         } = req.body;
 
-        if (!isValidObjectId(storeId) || !isValidObjectId(categoryId)) {
-            return res.status(400).json({ message: "Invalid storeId or categoryId." });
+        if (!isValidObjectId(categoryId)) {
+            return res.status(400).json({ message: "Invalid categoryId." });
         }
+
+        // Image validation
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                message: "At least one product image is required."
+            });
+        }
+
+        const uploadedImageUrls = req.files.map((file) => file.path);
 
         const product = await Product.create({
             storeId,
@@ -30,27 +53,34 @@ const createProduct = async (req, res) => {
             price,
             stockQuantity,
             unit,
-            images: images || [],
+            images: uploadedImageUrls,
             availabilityStatus: availabilityStatus || "AVAILABLE",
         });
 
-        return res.status(201).json({ message: "Product created successfully.", product });
+        return res.status(201).json({
+            message: "Product created successfully.",
+            product
+        });
     } catch (error) {
         if (error.name === "ValidationError") {
             return res.status(400).json({ message: error.message });
         }
-        return res.status(500).json({ message: "Server error.", error: error.message });
+
+        return res.status(500).json({
+            message: "Server error.",
+            error: error.message
+        });
     }
 };
 
-// ─── Get All Products for a Store  (Inventory / Products list) ───────────────
+// ─── Get All Products for the logged-in store  (GET /api/store/getProductsByStore) ───
 
 const getProductsByStore = async (req, res) => {
     try {
-        const { storeId } = req.params;
+        const storeId = await resolveStoreId(req);
 
-        if (!isValidObjectId(storeId)) {
-            return res.status(400).json({ message: "Invalid storeId." });
+        if (!storeId) {
+            return res.status(404).json({ message: "Store profile not found for this account." });
         }
 
         const { categoryId, status, search, page = 1, limit = 20 } = req.query;
@@ -80,7 +110,7 @@ const getProductsByStore = async (req, res) => {
 
         const [products, total] = await Promise.all([
             Product.find(filter)
-                .populate("categoryId", "name")
+                .populate("categoryId", "categoryName image status")
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(Number(limit)),
@@ -98,17 +128,27 @@ const getProductsByStore = async (req, res) => {
     }
 };
 
-// ─── Get Single Product  (Edit Product — pre-fill form) ──────────────────────
+// ─── Get Single Product  (GET /api/store/getSingleProduct/:id) ──────────────
+// Still scoped to the logged-in store — a store can't fetch another store's product by guessing an ID.
 
 const getProductById = async (req, res) => {
     try {
-        const { productId } = req.params;
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ message: "Store profile not found for this account." });
+        }
+
+        const { id: productId } = req.params;
 
         if (!isValidObjectId(productId)) {
             return res.status(400).json({ message: "Invalid productId." });
         }
 
-        const product = await Product.findById(productId).populate("categoryId", "name");
+        const product = await Product.findOne({ _id: productId, storeId }).populate(
+            "categoryId",
+            "categoryName image status"
+        );
 
         if (!product) {
             return res.status(404).json({ message: "Product not found." });
@@ -120,11 +160,17 @@ const getProductById = async (req, res) => {
     }
 };
 
-// ─── Update Product  (Save Product — Figma "Save Product" button) ────────────
+// ─── Update Product  (PUT /api/store/updateProduct/:id) ─────────────────────
 
 const updateProduct = async (req, res) => {
     try {
-        const { productId } = req.params;
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ message: "Store profile not found for this account." });
+        }
+
+        const { id: productId } = req.params;
 
         if (!isValidObjectId(productId)) {
             return res.status(400).json({ message: "Invalid productId." });
@@ -137,7 +183,6 @@ const updateProduct = async (req, res) => {
             "price",
             "stockQuantity",
             "unit",
-            "images",
             "availabilityStatus",
         ];
 
@@ -149,11 +194,29 @@ const updateProduct = async (req, res) => {
             return res.status(400).json({ message: "Invalid categoryId." });
         }
 
-        const product = await Product.findByIdAndUpdate(
-            productId,
+        // Image handling: the form sends `existingImages` (JSON string array of URLs
+        // the user kept/didn't remove) plus any new files uploaded via uploadProductImages.
+        const newlyUploadedUrls = (req.files || []).map((file) => file.path);
+
+        if (req.body.existingImages !== undefined || newlyUploadedUrls.length > 0) {
+            let keptImages = [];
+            if (req.body.existingImages) {
+                try {
+                    keptImages = JSON.parse(req.body.existingImages);
+                } catch {
+                    return res.status(400).json({ message: "existingImages must be a JSON array of URLs." });
+                }
+            }
+            updates.images = [...keptImages, ...newlyUploadedUrls];
+        }
+
+        // findOneAndUpdate with storeId in the filter ensures a store can only
+        // update its own products, even if it sends another store's productId.
+        const product = await Product.findOneAndUpdate(
+            { _id: productId, storeId },
             { $set: updates },
             { new: true, runValidators: true }
-        ).populate("categoryId", "name");
+        ).populate("categoryId", "categoryName image status");
 
         if (!product) {
             return res.status(404).json({ message: "Product not found." });
@@ -168,17 +231,23 @@ const updateProduct = async (req, res) => {
     }
 };
 
-// ─── Toggle Availability  (Figma "Available for sale" toggle) ────────────────
+// ─── Toggle Availability  (PATCH /api/store/toggleAvailability/:id) ─────────
 
 const toggleAvailability = async (req, res) => {
     try {
-        const { productId } = req.params;
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ message: "Store profile not found for this account." });
+        }
+
+        const { id: productId } = req.params;
 
         if (!isValidObjectId(productId)) {
             return res.status(400).json({ message: "Invalid productId." });
         }
 
-        const product = await Product.findById(productId);
+        const product = await Product.findOne({ _id: productId, storeId });
 
         if (!product) {
             return res.status(404).json({ message: "Product not found." });
@@ -198,11 +267,17 @@ const toggleAvailability = async (req, res) => {
     }
 };
 
-// ─── Update Stock Count  (Inventory quick-edit) ──────────────────────────────
+// ─── Update Stock Count  (PATCH /api/store/updateStock/:id) ─────────────────
 
 const updateStock = async (req, res) => {
     try {
-        const { productId } = req.params;
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ message: "Store profile not found for this account." });
+        }
+
+        const { id: productId } = req.params;
         const { stockQuantity } = req.body;
 
         if (!isValidObjectId(productId)) {
@@ -213,8 +288,8 @@ const updateStock = async (req, res) => {
             return res.status(400).json({ message: "stockQuantity must be a non-negative number." });
         }
 
-        const product = await Product.findByIdAndUpdate(
-            productId,
+        const product = await Product.findOneAndUpdate(
+            { _id: productId, storeId },
             {
                 $set: {
                     stockQuantity,
@@ -234,17 +309,23 @@ const updateStock = async (req, res) => {
     }
 };
 
-// ─── Delete Product ───────────────────────────────────────────────────────────
+// ─── Delete Product  (DELETE /api/store/deleteProduct/:id) ──────────────────
 
 const deleteProduct = async (req, res) => {
     try {
-        const { productId } = req.params;
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ message: "Store profile not found for this account." });
+        }
+
+        const { id: productId } = req.params;
 
         if (!isValidObjectId(productId)) {
             return res.status(400).json({ message: "Invalid productId." });
         }
 
-        const product = await Product.findByIdAndDelete(productId);
+        const product = await Product.findOneAndDelete({ _id: productId, storeId });
 
         if (!product) {
             return res.status(404).json({ message: "Product not found." });

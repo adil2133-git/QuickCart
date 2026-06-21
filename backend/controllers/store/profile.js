@@ -38,7 +38,11 @@ const getMyStoreProfile = async (req, res) => {
                 name: user.name,
                 phone: user.phone,
                 email: user.email,
-                storeId: user._id,
+                // FIX: this was previously `user._id`, which is the User ID — but
+                // Product.storeId (and other store-scoped collections) reference
+                // StoreProfile, not User. Using the wrong ID here would silently
+                // scope every product query to a document that doesn't exist.
+                storeId: storeProfile._id,
                 registeredOn: user.createdAt,
                 role: "Store Partner",
                 approvalStatus: user.status, // "PENDING_APPROVAL" | "ACTIVE" | "SUSPENDED" | "REJECTED"
