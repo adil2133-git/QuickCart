@@ -70,7 +70,7 @@ function App() {
 
       <Routes>
         {/* ── Public routes (no auth needed) ──────────────────────────── */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/landing" replace />} />
         <Route path="/login" element={<QuickKartLogin />} />
         <Route path="/landing" element={<QuickKartLanding />} />
         <Route path="/about" element={<QuickKartAbout />} />
