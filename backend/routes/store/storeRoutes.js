@@ -5,7 +5,13 @@ const protectRoutes = require("../../middleware/protectRoute");
 const { uploadProductImages } = require("../../middleware/uploadProductImages");
 const { uploadCategoryImage } = require("../../middleware/uploadCategoryImages");
 
-const { getMyStoreProfile } = require("../../controllers/store/profile");
+const {
+    getMyStoreProfile,
+    updateStoreBranding,       
+    toggleManualClose,         
+} = require("../../controllers/store/storeProfileController");
+const { uploadStoreBranding } = require("../../middleware/uploadStoreBranding");
+
 const {
     createProduct,
     getProductById,
@@ -14,17 +20,19 @@ const {
     toggleAvailability,
     updateStock,
     deleteProduct,
-} = require("../../controllers/store/product");
+} = require("../../controllers/store/productController");
 const {
     createCategory,
     getCategories,
     getCategoryById,
     updateCategory,
     deleteCategory,
-} = require("../../controllers/store/category");
+} = require("../../controllers/store/categoryController");
 
 // GET /api/store/me
 router.get("/me", protectRoutes, getMyStoreProfile);
+router.patch("/branding", protectRoutes, uploadStoreBranding, updateStoreBranding);
+router.patch("/toggleManualClose", protectRoutes, toggleManualClose);
 
 // ─── Products ─────────────────────────────────────────────────────────────────
 router.post("/addProduct", protectRoutes, uploadProductImages, createProduct);
@@ -45,3 +53,5 @@ router.put("/updateCategory/:id", protectRoutes, uploadCategoryImage, updateCate
 router.delete("/deleteCategory/:id", protectRoutes, deleteCategory);
 
 module.exports = router;
+
+

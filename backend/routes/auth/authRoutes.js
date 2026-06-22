@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { uploadDriverDocs } = require("../../middleware/upload");
-const {uploadStoreDocs} = require("../../middleware/uploadStore")
+const { uploadStoreDocs } = require("../../middleware/uploadStore")
 
 const {
   CustomerRegister,
@@ -16,6 +16,11 @@ const {
 } = require("../../controllers/auth/otpController");
 
 const { Login } = require("../../controllers/auth/loginController");
+
+const { getMe } = require("../../controllers/auth/authMe");
+const protectRoutes = require("../../middleware/protectRoute");
+
+router.get("/me", protectRoutes, getMe)
 
 // Customer Registration
 router.post("/register/customer", CustomerRegister);
