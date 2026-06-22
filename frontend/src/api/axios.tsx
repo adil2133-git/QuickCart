@@ -13,29 +13,31 @@ const api = axios.create({
 
 // ─── Response Interceptor ─────────────────────────────────────────────────────
 api.interceptors.response.use(
-  // ✅ Success — pass through untouched
   (response) => response,
-
-  // ❌ Error — handle auth errors globally
   (error) => {
     const status = error.response?.status;
     const message = error.response?.data?.message || "";
+    const isAuthCheck = error.config?.url?.includes("/auth/me");
 
-    // Token expired
+    // Silent "am I logged in" check — never toast or redirect from this one.
+    // Let the caller (hydrate()) handle the null/failure quietly.
+    if (status === 401 && isAuthCheck) {
+      useAuthStore.getState().clearUser();
+      return Promise.reject(error);
+    }
+
     if (status === 401 && message === "Access token expired") {
       useAuthStore.getState().clearUser();
       toast.error("Your session has expired. Please log in again.", {
-        id: "session-expired", // prevent duplicate toasts
+        id: "session-expired",
         duration: 4000,
       });
-      // Small delay so the toast is visible before redirect
       setTimeout(() => {
         window.location.href = "/login";
       }, 500);
       return Promise.reject(error);
     }
 
-    // No token / unauthorized
     if (status === 401) {
       useAuthStore.getState().clearUser();
       toast.error("Please log in to continue.", {
@@ -48,7 +50,6 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Forbidden — wrong role trying to access a route
     if (status === 403) {
       toast.error("You don't have permission to access this.", {
         id: "forbidden",
