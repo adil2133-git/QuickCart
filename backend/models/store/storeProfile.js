@@ -24,17 +24,34 @@ const storeProfileSchema = new mongoose.Schema(
         // Order: [tradeLicense, ownerId, storeFront]
         documentUrls: { type: [String], default: [] },
 
+        // Public-facing branding images, set by the store owner from their
+        // dashboard. Distinct from documentUrls, which are approval documents
+        // and are never shown to customers.
+        logoUrl:       { type: String, default: null },
+        coverImageUrl: { type: String, default: null },
+
         coordinates: {
             lat: { type: Number, default: 0 },
             lng: { type: Number, default: 0 },
         },
 
         operatingHours: [operatingHoursSchema],
+
+        // storeStatus now only carries the "BUSY" manual signal and the
+        // pre-approval default. OPEN/CLOSED for an approved store is derived
+        // at read time from operatingHours + isManuallyClosed (see
+        // helpers/storeStatus.js) rather than trusted directly off this field,
+        // since trusting a stale stored value would show "OPEN" overnight.
         storeStatus: {
             type:    String,
             enum:    ["OPEN", "CLOSED", "BUSY"],
             default: "CLOSED",
         },
+
+        // Store-controlled override, e.g. "closing early today" or "on a break".
+        // When true, the store reads as CLOSED regardless of operatingHours.
+        isManuallyClosed: { type: Boolean, default: false },
+
         availableBalance: { type: Number, default: 0 },
         pendingBalance:   { type: Number, default: 0 },
         averageRating:    { type: Number, default: 0, min: 0, max: 5 },

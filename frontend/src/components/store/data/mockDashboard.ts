@@ -3,7 +3,7 @@ import type { DashboardData } from "../types/store";
 export function getMockDashboardData(): DashboardData {
   return {
     store: {
-      storeName: "QuickKart - MG Road",
+      storeName: "QuickKart",
       visibility: "Open",
       todaysHours: "08:00 – 22:00",
     },

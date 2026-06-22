@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NavBar from "../../components/customer/navbar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Product {
@@ -217,70 +218,7 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-function NavBar() {
-  return (
-    <header className="sticky top-0 z-50 border-b" style={{ backgroundColor: "#FFF9EF", borderColor: "#D2C4B9", boxShadow: "0px 1px 2px rgba(0,0,0,0.05)" }}>
-      <div className="mx-auto flex items-center justify-between gap-6 px-10" style={{ maxWidth: 1200, height: 89 }}>
 
-        {/* Logo */}
-        <span className="flex-shrink-0 text-2xl italic font-bold" style={{ fontFamily: "'Playfair Display', serif", color: "#735A3E" }}>
-          QuickKart
-        </span>
-
-        {/* Location */}
-        <button className="flex-shrink-0 flex items-center gap-1">
-          <svg width="14" height="18" viewBox="0 0 14 18" fill="none">
-            <path d="M7 0C3.13 0 0 3.13 0 7c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7zm0 9.5C5.62 9.5 4.5 8.38 4.5 7S5.62 4.5 7 4.5 9.5 5.62 9.5 7 8.38 9.5 7 9.5z" fill="#4E453D" />
-          </svg>
-          <span className="text-xs font-medium" style={{ fontFamily: "'DM Sans', sans-serif", color: "#4E453D" }}>Bengaluru</span>
-          <svg width="10" height="5" viewBox="0 0 10 5" className="ml-0.5"><path d="M0 0l5 5 5-5H0z" fill="#4E453D" /></svg>
-        </button>
-
-        {/* Search */}
-        <div className="flex flex-1 items-center gap-2 rounded-full border px-4 py-2.5" style={{ backgroundColor: "#F9F3EA", borderColor: "#D2C4B9", maxWidth: 380 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4E453D" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            placeholder="Search..."
-            className="flex-1 bg-transparent outline-none text-sm"
-            style={{ fontFamily: "'DM Sans', sans-serif", color: "#80756B" }}
-          />
-        </div>
-
-        {/* Nav Links */}
-        <nav className="hidden md:flex items-center gap-6 flex-shrink-0">
-          {["Categories", "Stores", "Offers"].map(l => (
-            <span key={l} className="text-xs font-medium cursor-pointer" style={{ fontFamily: "'DM Sans', sans-serif", color: "#4E453D" }}>{l}</span>
-          ))}
-        </nav>
-
-        {/* Action Icons */}
-        <div className="flex items-center gap-4 flex-shrink-0">
-          {/* Cart with badge */}
-          <div className="relative cursor-pointer">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#735A3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-              <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
-            </svg>
-            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: "#376847" }}>
-              <span className="text-white font-bold" style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif" }}>3</span>
-            </div>
-          </div>
-          {/* Bell */}
-          <svg width="16" height="20" viewBox="0 0 24 24" fill="none" stroke="#735A3E" strokeWidth="2" strokeLinecap="round" className="cursor-pointer">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" />
-          </svg>
-          {/* User */}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#735A3E" strokeWidth="2" strokeLinecap="round" className="cursor-pointer">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-
-      </div>
-    </header>
-  );
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function FreshMartStorePage() {
