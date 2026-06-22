@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import ProtectedRoute from './router/protectedRoute'
+import NotFound from './router/notFound'
 import { useAuthStore } from './features/auth/state/authState'
 
 import QuickKartLogin from './features/auth/pages/login'
@@ -28,7 +29,8 @@ import StoreApplicationReview from './features/admin/pages/storeReview'
 import DriverApplicationsPage from './features/admin/pages/driverApplications'
 import DriverApplicationReview from './features/admin/pages/driverReview'
 
-import QuickKartLanding from './features/landing'
+import QuickKartLanding from './features/marketing/pages/landing'
+import QuickKartAbout from './features/marketing/pages/about'
 
 function App() {
   const hydrate = useAuthStore((state) => state.hydrate)
@@ -71,6 +73,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<QuickKartLogin />} />
         <Route path="/landing" element={<QuickKartLanding />} />
+        <Route path="/about" element={<QuickKartAbout />} />
         <Route path="/create-account" element={<CreateAccountModal />} />
         <Route path="/register/customer" element={<CustomerRegistration />} />
         <Route path="/register/store" element={<StoreRegistration />} />
@@ -159,7 +162,7 @@ function App() {
         } />
 
         {/* ── Catch-all ────────────────────────────────────────────────── */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
