@@ -9,7 +9,7 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Mail,
+  Pencil,
 } from "lucide-react";
 import Sidebar from "../components/storeSidebar";
 import Topbar from "../components/storeTopbar";
@@ -86,6 +86,54 @@ function TextField({ label, value, onChange, icon: Icon, placeholder }: {
   );
 }
 
+// ─── Read-only display field — mirrors TextField's layout for view mode ───
+function DisplayField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#2B1B0E]/45">{label}</p>
+      <p className="mt-1.5 text-sm text-[#2B1B0E]">{value || "—"}</p>
+    </div>
+  );
+}
+
+function EditButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-full border border-[#2B1B0E]/15 px-4 py-2 text-xs font-semibold text-[#2B1B0E] transition-colors hover:bg-[#FBF1E9]"
+    >
+      <Pencil className="h-3.5 w-3.5" /> Edit
+    </button>
+  );
+}
+
+function SaveCancelButtons({ onCancel, onSave, saving, savingLabel = "Saving…", label = "Save" }: {
+  onCancel: () => void;
+  onSave: () => void;
+  saving: boolean;
+  savingLabel?: string;
+  label?: string;
+}) {
+  return (
+    <div className="flex gap-2">
+      <button
+        onClick={onCancel}
+        className="rounded-full border border-[#2B1B0E]/15 px-4 py-2 text-xs font-semibold text-[#2B1B0E] transition-colors hover:bg-[#FBF1E9]"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="inline-flex items-center gap-1.5 rounded-full bg-[#2B1B0E] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#3a2614] disabled:opacity-50"
+      >
+        {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+        {saving ? savingLabel : label}
+      </button>
+    </div>
+  );
+}
+
 const NOTIFICATION_ITEMS: { key: keyof NotificationPrefs; label: string; description: string }[] = [
   { key: "orderAlerts", label: "Order Alerts", description: "Real-time push notifications for new and canceled orders." },
   { key: "inventoryAlerts", label: "Inventory Alerts", description: "Weekly summaries of low-stock and expiring items." },
@@ -103,6 +151,8 @@ export default function StoreSettingsPage() {
     actionSuccess,
     infoDraft,
     hoursDraft,
+    editingInfo,
+    editingHours,
     notificationPrefs,
     fetchSettings,
     setInfoDraft,
@@ -110,7 +160,11 @@ export default function StoreSettingsPage() {
     saveStoreInfo,
     saveOperatingHours,
     toggleNotificationPref,
-    discardChanges,
+    setEditingInfo,
+    setEditingHours,
+    initializeHours,
+    cancelEditInfo,
+    cancelEditHours,
     setActionError,
   } = useStoreSettingsStore();
 
@@ -173,67 +227,93 @@ export default function StoreSettingsPage() {
                 {/* Left / main column */}
                 <div className="space-y-6 lg:col-span-2">
 
+                  {/* ── Store Information ── */}
                   <Card
                     title="Store Information"
                     subtitle="Editable business details shown to customers."
                     icon={Store}
                     right={
-                      <button
-                        onClick={saveStoreInfo}
-                        disabled={savingInfo}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#2B1B0E] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#3a2614] disabled:opacity-50"
-                      >
-                        {savingInfo && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                        {savingInfo ? "Saving…" : "Save Info"}
-                      </button>
+                      editingInfo ? (
+                        <SaveCancelButtons
+                          onCancel={cancelEditInfo}
+                          onSave={saveStoreInfo}
+                          saving={savingInfo}
+                          savingLabel="Saving…"
+                          label="Save Info"
+                        />
+                      ) : (
+                        <EditButton onClick={() => setEditingInfo(true)} />
+                      )
                     }
                   >
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <TextField
-                        label="Store Name"
-                        value={infoDraft.storeName}
-                        onChange={(v) => setInfoDraft("storeName", v)}
-                        icon={Store}
-                      />
-                      <TextField
-                        label="Pincode"
-                        value={infoDraft.pincode}
-                        onChange={(v) => setInfoDraft("pincode", v)}
-                        placeholder="Optional"
-                      />
-                      <div className="sm:col-span-2">
+                    {editingInfo ? (
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <TextField
-                          label="Store Address"
-                          value={infoDraft.address}
-                          onChange={(v) => setInfoDraft("address", v)}
-                          icon={MapPin}
+                          label="Store Name"
+                          value={infoDraft.storeName}
+                          onChange={(v) => setInfoDraft("storeName", v)}
+                          icon={Store}
                         />
+                        <TextField
+                          label="Pincode"
+                          value={infoDraft.pincode}
+                          onChange={(v) => setInfoDraft("pincode", v)}
+                          placeholder="Optional"
+                        />
+                        <div className="sm:col-span-2">
+                          <TextField
+                            label="Store Address"
+                            value={infoDraft.address}
+                            onChange={(v) => setInfoDraft("address", v)}
+                            icon={MapPin}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <DisplayField label="Store Name" value={settings.storeName} />
+                        <DisplayField label="Pincode" value={settings.pincode || ""} />
+                        <div className="sm:col-span-2">
+                          <DisplayField label="Store Address" value={settings.address} />
+                        </div>
+                      </div>
+                    )}
                     <p className="mt-3 text-xs text-[#2B1B0E]/40">
                       Note: there's no <code>email</code> field on <code>StoreProfile</code> —
                       that lives on the linked <code>User</code> document, so it isn't editable here.
                     </p>
                   </Card>
 
+                  {/* ── Operating Hours ── */}
                   <Card
                     title="Operating Hours"
                     subtitle="Set when your store is open for orders."
                     icon={Clock}
                     right={
-                      <button
-                        onClick={saveOperatingHours}
-                        disabled={savingHours}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#2B1B0E] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#3a2614] disabled:opacity-50"
-                      >
-                        {savingHours && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                        {savingHours ? "Saving…" : "Save Hours"}
-                      </button>
+                      hoursDraft.length === 0 ? null : editingHours ? (
+                        <SaveCancelButtons
+                          onCancel={cancelEditHours}
+                          onSave={saveOperatingHours}
+                          saving={savingHours}
+                          savingLabel="Saving…"
+                          label="Save Hours"
+                        />
+                      ) : (
+                        <EditButton onClick={() => setEditingHours(true)} />
+                      )
                     }
                   >
                     {hoursDraft.length === 0 ? (
-                      <p className="text-sm text-[#2B1B0E]/50">No hours set yet.</p>
-                    ) : (
+                      <div className="flex flex-col items-center gap-3 py-6 text-center">
+                        <p className="text-sm text-[#2B1B0E]/50">You haven't set any operating hours yet.</p>
+                        <button
+                          onClick={initializeHours}
+                          className="rounded-full bg-[#2B1B0E] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3a2614]"
+                        >
+                          Add Operating Hours
+                        </button>
+                      </div>
+                    ) : editingHours ? (
                       <div className="divide-y divide-[#2B1B0E]/[0.06]">
                         {hoursDraft.map((h) => (
                           <div key={h.day} className="flex flex-wrap items-center gap-3 py-3">
@@ -267,9 +347,21 @@ export default function StoreSettingsPage() {
                           </div>
                         ))}
                       </div>
+                    ) : (
+                      <div className="divide-y divide-[#2B1B0E]/[0.06]">
+                        {hoursDraft.map((h) => (
+                          <div key={h.day} className="flex items-center justify-between py-2.5 text-sm">
+                            <span className="font-medium text-[#2B1B0E]">{h.day}</span>
+                            <span className={h.isClosed ? "text-[#2B1B0E]/40" : "text-[#2B1B0E]/70"}>
+                              {h.isClosed || !h.openTime || !h.closeTime ? "Closed" : `${h.openTime} – ${h.closeTime}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </Card>
 
+                  {/* ── Documents ── */}
                   <Card title="Verification Documents" subtitle="Submitted during onboarding. Re-upload isn't supported on this page yet." icon={FileText}>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       {settings.documents.map((doc) => (
@@ -325,24 +417,6 @@ export default function StoreSettingsPage() {
                     </p>
                   </Card>
                 </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pb-4">
-                <button
-                  onClick={discardChanges}
-                  className="rounded-full border border-[#2B1B0E]/15 px-5 py-2.5 text-sm font-medium text-[#2B1B0E] hover:bg-white"
-                >
-                  Discard Changes
-                </button>
-                <button
-                  onClick={async () => {
-                    await saveStoreInfo();
-                    await saveOperatingHours();
-                  }}
-                  className="rounded-full bg-[#2B1B0E] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3a2614]"
-                >
-                  Save All Settings
-                </button>
               </div>
             </div>
           )}

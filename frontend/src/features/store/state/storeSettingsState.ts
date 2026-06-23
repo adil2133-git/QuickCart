@@ -34,10 +34,13 @@ interface StoreSettingsState {
   actionError: string | null;
   actionSuccess: string | null;
 
-  // Draft copies the user edits before saving — keeps the "Discard Changes"
-  // affordance trivial (just re-fetch / reset draft from settings).
+  // Draft copies the user edits before saving.
   infoDraft: { storeName: string; address: string; pincode: string };
   hoursDraft: OperatingHour[];
+
+  // Controls whether each card shows read-only view or editable inputs.
+  editingInfo: boolean;
+  editingHours: boolean;
 
   notificationPrefs: NotificationPrefs;
 
@@ -49,6 +52,12 @@ interface StoreSettingsState {
   toggleNotificationPref: (key: keyof NotificationPrefs) => void;
   discardChanges: () => void;
 
+  setEditingInfo: (val: boolean) => void;
+  setEditingHours: (val: boolean) => void;
+  initializeHours: () => void;
+  cancelEditInfo: () => void;
+  cancelEditHours: () => void;
+
   setActionError: (msg: string | null) => void;
   clearActionSuccess: () => void;
 }
@@ -58,6 +67,15 @@ const DAY_ORDER = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 function sortByDay(hours: OperatingHour[]): OperatingHour[] {
   return [...hours].sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
 }
+
+// Seeded when a store has no operatingHours yet — gives the user a sensible
+// 7-day starting point (9–6, all open) to edit rather than an empty array.
+const DEFAULT_HOURS: OperatingHour[] = DAY_ORDER.map((day) => ({
+  day,
+  openTime: "09:00",
+  closeTime: "18:00",
+  isClosed: false,
+}));
 
 /* -------------------------------------------------------------------------- */
 /*  Store                                                                     */
@@ -75,6 +93,9 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
 
   infoDraft: { storeName: "", address: "", pincode: "" },
   hoursDraft: [],
+
+  editingInfo: false,
+  editingHours: false,
 
   // Local-only — no backend field on StoreProfile yet. See dev-note in
   // NotificationPreferencesCard for what schema + endpoint would light this up.
@@ -106,6 +127,8 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
           pincode: settings.pincode || "",
         },
         hoursDraft: settings.operatingHours,
+        editingInfo: false,
+        editingHours: false,
       });
     } catch (err: any) {
       set({
@@ -149,6 +172,7 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
             }
           : state.settings,
         savingInfo: false,
+        editingInfo: false,
         actionSuccess: res.data.message,
       }));
       toast.success(res.data.message || "Store information updated.");
@@ -170,6 +194,7 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
         settings: state.settings ? { ...state.settings, operatingHours: updated } : state.settings,
         hoursDraft: updated,
         savingHours: false,
+        editingHours: false,
         actionSuccess: res.data.message,
       }));
       toast.success(res.data.message || "Operating hours updated.");
@@ -197,9 +222,39 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
         pincode: settings.pincode || "",
       },
       hoursDraft: settings.operatingHours,
+      editingInfo: false,
+      editingHours: false,
       actionError: null,
     });
     toast("Changes discarded.");
+  },
+
+  setEditingInfo: (val) => set({ editingInfo: val }),
+  setEditingHours: (val) => set({ editingHours: val }),
+
+  // Seeds a full 7-day draft locally and opens edit mode. Nothing is saved
+  // until the user hits "Save Hours".
+  initializeHours: () => set({ hoursDraft: DEFAULT_HOURS, editingHours: true }),
+
+  cancelEditInfo: () => {
+    const { settings } = get();
+    if (!settings) return;
+    set({
+      infoDraft: {
+        storeName: settings.storeName,
+        address: settings.address,
+        pincode: settings.pincode || "",
+      },
+      editingInfo: false,
+    });
+  },
+
+  cancelEditHours: () => {
+    const { settings } = get();
+    set({
+      hoursDraft: settings ? settings.operatingHours : [],
+      editingHours: false,
+    });
   },
 
   setActionError: (msg) => set({ actionError: msg }),

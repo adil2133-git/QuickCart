@@ -30,9 +30,9 @@ const getMyStoreProfile = async (req, res) => {
         }
 
         const documents = [
-            { label: "Trade License",    key: "tradeLicense", submitted: Boolean(storeProfile.documentUrls?.[0]) },
-            { label: "Owner ID Proof",   key: "ownerId",      submitted: Boolean(storeProfile.documentUrls?.[1]) },
-            { label: "Store Front Photo", key: "storeFront",  submitted: Boolean(storeProfile.documentUrls?.[2]) },
+            { label: "Trade License", key: "tradeLicense", submitted: Boolean(storeProfile.documentUrls?.[0]) },
+            { label: "Owner ID Proof", key: "ownerId", submitted: Boolean(storeProfile.documentUrls?.[1]) },
+            { label: "Store Front Photo", key: "storeFront", submitted: Boolean(storeProfile.documentUrls?.[2]) },
         ];
 
         return res.status(200).json({
@@ -172,7 +172,7 @@ const updateStoreInfo = async (req, res) => {
         const store = await StoreProfile.findByIdAndUpdate(
             storeId,
             { $set: updates },
-            { new: true, runValidators: true }
+            { returnDocument: "after", runValidators: true }
         );
 
         return res.status(200).json({
@@ -218,7 +218,7 @@ const updateOperatingHours = async (req, res) => {
         const store = await StoreProfile.findByIdAndUpdate(
             storeId,
             { $set: { operatingHours } },
-            { new: true, runValidators: true }
+            { returnDocument: "after", runValidators: true }
         );
 
         return res.status(200).json({

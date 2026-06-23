@@ -22,6 +22,7 @@ import DashboardPage from './features/store/pages/storeDashboardPage'
 import AddProductPage from './features/store/pages/addEditProductPage'
 import ProductsPage from './features/store/pages/productsPage'
 import StoreProfilePage from './features/store/pages/storeProfile'
+import StoreSettingsPage from './features/store/pages/storeSettingsPage'
 
 import Dashboard from './features/admin/pages/dashboard'
 import StoreApplicationsPage from './features/admin/pages/storeApplications'
@@ -131,6 +132,11 @@ function App() {
         <Route path="/store/profile" element={
           <ProtectedRoute allowedRoles={["STORE"]}>
             <StoreProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/store/settings" element={
+          <ProtectedRoute allowedRoles={["STORE"]}>
+            <StoreSettingsPage />
           </ProtectedRoute>
         } />
 
