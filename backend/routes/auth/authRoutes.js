@@ -11,6 +11,13 @@ const {
 } = require("../../controllers/auth/registrationController");
 
 const {
+    sendForgotPasswordOtp,
+    verifyForgotPasswordOtp,
+    resetPassword,
+    resendForgotPasswordOtp,
+} = require("../../controllers/auth/forgotPasswordController");
+
+const {
   verifyOtpController,
   resendOTPController,
 } = require("../../controllers/auth/otpController");
@@ -39,6 +46,12 @@ router.post(
   registerStore
 );
 
+
+router.post("/forgot-password/send-otp", sendForgotPasswordOtp);
+router.post("/forgot-password/verify-otp", verifyForgotPasswordOtp);
+router.post("/forgot-password/resend-otp", resendForgotPasswordOtp);
+router.post("/forgot-password/reset", resetPassword);
+
 // Common OTP Routes
 router.post("/register/verify-otp", verifyOtpController);
 router.post("/register/resend-otp", resendOTPController);
@@ -47,3 +60,8 @@ router.post("/register/resend-otp", resendOTPController);
 router.post("/login", Login);
 
 module.exports = router;
+
+
+
+
+
