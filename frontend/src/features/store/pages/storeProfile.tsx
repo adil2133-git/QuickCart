@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import {
   Camera,
   MapPin,
@@ -6,7 +6,6 @@ import {
   Phone,
   Calendar,
   ShieldCheck,
-  ShieldAlert,
   Clock,
   ToggleLeft,
   Star,
@@ -21,49 +20,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/storeSidebar";
 import Topbar from "../components/storeTopbar";
-import api from "../../../api/axios";
-
-// ════════════════════════════════════════════════════════════════════════════
-//  Types — mirrored from getMyStoreProfile's response shape + StoreProfile schema
-// ════════════════════════════════════════════════════════════════════════════
-interface DocumentStatus {
-  label: string;
-  key: string;
-  submitted: boolean;
-}
-
-interface OperatingHour {
-  day: string;
-  openTime?: string;
-  closeTime?: string;
-  isClosed?: boolean;
-}
-
-interface StoreMe {
-  name: string;
-  phone: string;
-  email: string;
-  storeId: string;
-  registeredOn: string;
-  role: string;
-  approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | string;
-  storeName: string;
-  ownerName: string;
-  address: string;
-  pincode: string | null;
-  storeStatus: "OPEN" | "CLOSED" | "BUSY";
-  logoUrl: string | null;
-  coverImageUrl: string | null;
-  isManuallyClosed: boolean;
-  operatingHours: OperatingHour[];
-  documents: DocumentStatus[];
-}
-
-const PALETTE = {
-  brown: "#C2825A",
-  ink: "#2B1B0E",
-  bg: "#FBF1E9",
-};
+import { useStoreProfileStore } from "../state/storeProfileState";
 
 const DAY_ORDER = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -144,85 +101,28 @@ function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onCha
 }
 
 export default function StoreProfilePage() {
-  const [store, setStore] = useState<StoreMe | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [savingClose, setSavingClose] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const {
+    store,
+    loading,
+    error,
+    savingClose,
+    uploadingLogo,
+    uploadingCover,
+    actionError,
+    actionSuccess,
+    fetchProfile,
+    toggleManualClose,
+    uploadBranding,
+    setActionError,
+  } = useStoreProfileStore();
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  const flashSuccess = (msg: string) => {
-    setActionSuccess(msg);
-    setTimeout(() => setActionSuccess(null), 2500);
-  };
-
-  // ── Load profile ──
-  const loadProfile = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    api
-      .get("/store/me")
-      .then((res) => setStore(res.data.store))
-      .catch((err) => setError(err?.response?.data?.message || "Couldn't load your store profile."))
-      .finally(() => setLoading(false));
-  }, []);
-
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
-
-  // ── Toggle manual close ──
-  const handleToggleClose = async () => {
-    if (!store) return;
-    setSavingClose(true);
-    setActionError(null);
-    const prev = store.isManuallyClosed;
-    setStore({ ...store, isManuallyClosed: !prev }); // optimistic
-    try {
-      const res = await api.patch("/store/toggleManualClose");
-      setStore((s) => (s ? { ...s, isManuallyClosed: res.data.isManuallyClosed } : s));
-      flashSuccess(res.data.message);
-    } catch (err: any) {
-      setStore((s) => (s ? { ...s, isManuallyClosed: prev } : s)); // revert
-      setActionError(err?.response?.data?.message || "Couldn't update store status.");
-    } finally {
-      setSavingClose(false);
-    }
-  };
-
-  // ── Branding upload (logo / coverImage) ──
-  const handleBrandingUpload = async (field: "logo" | "coverImage", file: File) => {
-    const setUploading = field === "logo" ? setUploadingLogo : setUploadingCover;
-    setUploading(true);
-    setActionError(null);
-    try {
-      const formData = new FormData();
-      formData.append(field, file);
-      const res = await api.patch("/store/branding", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setStore((s) =>
-        s
-          ? {
-              ...s,
-              logoUrl: res.data.logoUrl ?? s.logoUrl,
-              coverImageUrl: res.data.coverImageUrl ?? s.coverImageUrl,
-            }
-          : s
-      );
-      flashSuccess(field === "logo" ? "Logo updated." : "Cover image updated.");
-    } catch (err: any) {
-      setActionError(err?.response?.data?.message || "Upload failed. Try a smaller image.");
-    } finally {
-      setUploading(false);
-    }
-  };
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const hours = (store?.operatingHours || [])
     .slice()
@@ -246,7 +146,7 @@ export default function StoreProfilePage() {
               <AlertCircle className="h-7 w-7 text-red-500" />
               <p className="text-sm text-[#2B1B0E]/60">{error || "Something went wrong."}</p>
               <button
-                onClick={loadProfile}
+                onClick={fetchProfile}
                 className="rounded-full border border-[#2B1B0E]/15 px-4 py-2 text-sm font-medium text-[#2B1B0E] hover:bg-white"
               >
                 Try again
@@ -257,8 +157,13 @@ export default function StoreProfilePage() {
 
               {/* ── Inline notifications ── */}
               {actionError && (
-                <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-600/15">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" /> {actionError}
+                <div className="flex items-center justify-between gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-600/15">
+                  <span className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" /> {actionError}
+                  </span>
+                  <button onClick={() => setActionError(null)} className="text-red-700/60 hover:text-red-700">
+                    ×
+                  </button>
                 </div>
               )}
               {actionSuccess && (
@@ -278,7 +183,7 @@ export default function StoreProfilePage() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleBrandingUpload("coverImage", e.target.files[0])}
+                    onChange={(e) => e.target.files?.[0] && uploadBranding("coverImage", e.target.files[0])}
                   />
                   <button
                     onClick={() => coverInputRef.current?.click()}
@@ -304,7 +209,7 @@ export default function StoreProfilePage() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => e.target.files?.[0] && handleBrandingUpload("logo", e.target.files[0])}
+                      onChange={(e) => e.target.files?.[0] && uploadBranding("logo", e.target.files[0])}
                     />
                     <button
                       onClick={() => logoInputRef.current?.click()}
@@ -412,7 +317,7 @@ export default function StoreProfilePage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {savingClose && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#2B1B0E]/40" />}
-                        <ToggleSwitch checked={store.isManuallyClosed} onChange={handleToggleClose} disabled={savingClose} />
+                        <ToggleSwitch checked={store.isManuallyClosed} onChange={toggleManualClose} disabled={savingClose} />
                       </div>
                     </div>
                     <div className="mt-3 flex items-center gap-2 text-xs text-[#2B1B0E]/50">

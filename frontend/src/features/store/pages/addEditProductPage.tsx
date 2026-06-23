@@ -12,8 +12,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { StoreShell } from "./storeShell";
-import { ProductsAPI, CategoriesAPI, type ProductFormValues } from "../productsApi";
-import type { Category, AvailabilityStatus } from "../types/product";
+import { useProductStore } from "../state/productState";
+import type { ProductFormValues } from "../productsApi";
 
 const UNITS = ["unit", "kg", "g", "litre", "ml", "pack", "dozen"];
 
@@ -172,9 +172,18 @@ export default function AddEditProductPage() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
 
+  // Shared/server state comes from the store: categories list (reused across
+  // the products list page too) and the fetch-by-id action for edit mode.
+  const categories = useProductStore((s) => s.categories);
+  const fetchCategories = useProductStore((s) => s.fetchCategories);
+  const fetchProductById = useProductStore((s) => s.fetchProductById);
+  const createProduct = useProductStore((s) => s.createProduct);
+  const updateProduct = useProductStore((s) => s.updateProduct);
+
+  // Form/UI state stays local — it's ephemeral and specific to this page,
+  // not data the rest of the app needs to read or react to.
   const [form, setForm] = useState<ProductFormValues>(initialState);
   const [imageSlots, setImageSlots] = useState<ImageSlot[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -182,9 +191,8 @@ export default function AddEditProductPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    CategoriesAPI.list("ACTIVE")
-      .then(setCategories)
-      .catch(() => setCategories([]));
+    fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -193,7 +201,7 @@ export default function AddEditProductPage() {
     setLoadingProduct(true);
     setLoadError(null);
 
-    ProductsAPI.getById(id)
+    fetchProductById(id)
       .then((product) => {
         if (cancelled) return;
         setForm({
@@ -218,7 +226,7 @@ export default function AddEditProductPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, isEditMode]);
+  }, [id, isEditMode, fetchProductById]);
 
   // Revoke object URLs for any "new" slots on unmount to avoid leaking memory.
   useEffect(() => {
@@ -282,9 +290,9 @@ export default function AddEditProductPage() {
 
       if (isEditMode && id) {
         const keptUrls = imageSlots.filter((s) => s.kind === "existing").map((s) => (s as any).url as string);
-        await ProductsAPI.update(id, form, newFiles, keptUrls);
+        await updateProduct(id, form, newFiles, keptUrls);
       } else {
-        await ProductsAPI.create(form, newFiles);
+        await createProduct(form, newFiles);
       }
 
       setSaved(true);

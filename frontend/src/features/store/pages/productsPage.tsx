@@ -21,10 +21,9 @@ import {
   PackageX,
 } from "lucide-react";
 import { StoreShell } from "./storeShell";
-import { ProductsAPI, CategoriesAPI } from "../productsApi";
+import { useProductStore, selectSortedProducts, type SortKey, type SortDir } from "../state/productState";
 import {
   type Product,
-  type Category,
   type AvailabilityStatus,
   type DerivedStatus,
   getDerivedStatus,
@@ -50,9 +49,6 @@ const statusConfig: Record<DerivedStatus, { label: string; className: string; pu
   },
   HIDDEN: { label: "Hidden", className: "bg-[#2B1B0E]/[0.06] text-[#2B1B0E]/50 ring-1 ring-[#2B1B0E]/10" },
 };
-
-type SortKey = "productName" | "price" | "stockQuantity" | "createdAt";
-type SortDir = "asc" | "desc";
 
 /* -------------------------------------------------------------------------- */
 /*  KPI strip                                                                 */
@@ -371,159 +367,81 @@ function ConfirmDeleteDialog({
 export default function ProductsPage() {
   const navigate = useNavigate();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [total, setTotal] = useState(0);
-  const [pages, setPages] = useState(1);
-  const [page, setPage] = useState(1);
-  const limit = 20;
+  const {
+    categories,
+    total,
+    pages,
+    page,
+    limit,
+    statusFilter,
+    sortKey,
+    sortDir,
+    loading,
+    error,
+    actionError,
+    fetchProducts,
+    fetchCategories,
+    setSearch,
+    setCategoryFilter,
+    setStatusFilter,
+    setPage,
+    clearFilters,
+    setSort,
+    toggleAvailability,
+    updateStock,
+    deleteProduct,
+    setActionError,
+  } = useProductStore();
 
+  // categoryFilter/search are read separately below for the filter bar controls
+  const categoryFilter = useProductStore((s) => s.categoryFilter);
+  const search = useProductStore((s) => s.search);
+
+  const sorted = useProductStore(selectSortedProducts);
+
+  // Raw text input — kept local since it's debounced before becoming the
+  // store's committed `search` value (avoids a network call on every keystroke).
   const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"" | AvailabilityStatus>("");
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Debounce search input -> committed search term
+  // Initial load: categories once, products once.
   useEffect(() => {
-    const t = setTimeout(() => {
-      setSearch(searchInput.trim());
-      setPage(1);
-    }, 350);
-    return () => clearTimeout(t);
-  }, [searchInput]);
-
-  // Load categories once for the filter dropdown
-  useEffect(() => {
-    CategoriesAPI.list("ACTIVE")
-      .then(setCategories)
-      .catch(() => setCategories([]));
+    fetchCategories();
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load products whenever filters/page change
+  // Debounce search input -> committed search term in the store
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    ProductsAPI.list({
-      search: search || undefined,
-      categoryId: categoryFilter || undefined,
-      status: statusFilter || undefined,
-      page,
-      limit,
-    })
-      .then((res) => {
-        if (cancelled) return;
-        setProducts(res.products);
-        setTotal(res.total);
-        setPages(res.pages || 1);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(
-          err?.response?.data?.message || "Couldn't load products. Check your connection and try again."
-        );
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [search, categoryFilter, statusFilter, page]);
+    const t = setTimeout(() => {
+      if (searchInput.trim() !== search) {
+        setSearch(searchInput.trim());
+      }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   // KPIs computed from the current page's data.
   // Note: these reflect only the loaded page, not the full store catalogue,
   // since the backend doesn't expose store-wide aggregate counts yet.
   const kpis = useMemo(() => {
-    const active = products.filter((p) => getDerivedStatus(p) === "ACTIVE").length;
-    const low = products.filter((p) => getDerivedStatus(p) === "LOW_STOCK").length;
-    const out = products.filter((p) => getDerivedStatus(p) === "OUT_OF_STOCK").length;
+    const active = sorted.filter((p) => getDerivedStatus(p) === "ACTIVE").length;
+    const low = sorted.filter((p) => getDerivedStatus(p) === "LOW_STOCK").length;
+    const out = sorted.filter((p) => getDerivedStatus(p) === "OUT_OF_STOCK").length;
     return { active, low, out };
-  }, [products]);
-
-  const sorted = useMemo(() => {
-    const copy = [...products];
-    copy.sort((a, b) => {
-      let av: string | number;
-      let bv: string | number;
-      if (sortKey === "createdAt") {
-        av = new Date(a.createdAt).getTime();
-        bv = new Date(b.createdAt).getTime();
-      } else if (sortKey === "productName") {
-        av = a.productName;
-        bv = b.productName;
-      } else {
-        av = a[sortKey];
-        bv = b[sortKey];
-      }
-      if (typeof av === "string" && typeof bv === "string") {
-        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-      }
-      return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
-    });
-    return copy;
-  }, [products, sortKey, sortDir]);
-
-  const handleSort = (key: SortKey) => {
-    if (key === sortKey) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
-
-  const handleToggleAvailability = async (product: Product) => {
-    setActionError(null);
-    // optimistic update
-    setProducts((prev) =>
-      prev.map((p) =>
-        p._id === product._id
-          ? { ...p, availabilityStatus: p.availabilityStatus === "AVAILABLE" ? "OUT_OF_STOCK" : "AVAILABLE" }
-          : p
-      )
-    );
-    try {
-      await ProductsAPI.toggleAvailability(product._id);
-    } catch (err: any) {
-      // revert on failure
-      setProducts((prev) =>
-        prev.map((p) => (p._id === product._id ? product : p))
-      );
-      setActionError(err?.response?.data?.message || "Couldn't update availability.");
-    }
-  };
+  }, [sorted]);
 
   const handleStockCommit = async (product: Product, newQty: number) => {
-    setActionError(null);
-    try {
-      const updated = await ProductsAPI.updateStock(product._id, newQty);
-      setProducts((prev) => prev.map((p) => (p._id === product._id ? updated : p)));
-    } catch (err: any) {
-      setActionError(err?.response?.data?.message || "Couldn't update stock.");
-      throw err;
-    }
+    await updateStock(product, newQty);
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setActionError(null);
     try {
-      await ProductsAPI.remove(deleteTarget._id);
-      setProducts((prev) => prev.filter((p) => p._id !== deleteTarget._id));
-      setTotal((t) => t - 1);
+      await deleteProduct(deleteTarget._id);
       setDeleteTarget(null);
-    } catch (err: any) {
-      setActionError(err?.response?.data?.message || "Couldn't delete product.");
+    } catch {
       setDeleteTarget(null);
     }
   };
@@ -570,20 +488,14 @@ export default function ProductsPage() {
 
           <SelectFilter
             value={categoryFilter}
-            onChange={(v) => {
-              setCategoryFilter(v);
-              setPage(1);
-            }}
+            onChange={setCategoryFilter}
             placeholder="All categories"
             options={categories.map((c) => ({ value: c._id, label: c.categoryName }))}
           />
 
           <SelectFilter
             value={statusFilter}
-            onChange={(v) => {
-              setStatusFilter(v as typeof statusFilter);
-              setPage(1);
-            }}
+            onChange={(v) => setStatusFilter(v as AvailabilityStatus | "")}
             placeholder="All statuses"
             options={[
               { value: "AVAILABLE", label: "Available" },
@@ -596,10 +508,7 @@ export default function ProductsPage() {
             <button
               onClick={() => {
                 setSearchInput("");
-                setSearch("");
-                setCategoryFilter("");
-                setStatusFilter("");
-                setPage(1);
+                clearFilters();
               }}
               className="text-xs font-medium text-[#C2825A] hover:underline"
             >
@@ -609,8 +518,11 @@ export default function ProductsPage() {
         </div>
 
         {actionError && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700 ring-1 ring-red-600/15">
-            {actionError}
+          <div className="mb-4 flex items-center justify-between rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700 ring-1 ring-red-600/15">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="text-red-700/60 hover:text-red-700">
+              ×
+            </button>
           </div>
         )}
 
@@ -620,16 +532,16 @@ export default function ProductsPage() {
             <thead>
               <tr className="border-b border-[#2B1B0E]/[0.07] bg-[#FBF1E9]/60">
                 <th className="px-4 py-3 text-left">
-                  <SortHeader label="Product" sortKey="productName" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Product" sortKey="productName" activeKey={sortKey} dir={sortDir} onSort={setSort} />
                 </th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#2B1B0E]/50">
                   Category
                 </th>
                 <th className="px-4 py-3 text-right">
-                  <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={handleSort} align="right" />
+                  <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={setSort} align="right" />
                 </th>
                 <th className="px-4 py-3 text-left">
-                  <SortHeader label="Stock" sortKey="stockQuantity" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Stock" sortKey="stockQuantity" activeKey={sortKey} dir={sortDir} onSort={setSort} />
                 </th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#2B1B0E]/50">
                   Status
@@ -710,7 +622,7 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
-                          onClick={() => handleToggleAvailability(product)}
+                          onClick={() => toggleAvailability(product)}
                           disabled={product.availabilityStatus === "HIDDEN"}
                           className={`relative inline-block h-5 w-9 rounded-full transition-colors disabled:opacity-30 ${
                             product.availabilityStatus === "AVAILABLE" ? "bg-[#C2825A]" : "bg-[#2B1B0E]/15"
@@ -752,7 +664,7 @@ export default function ProductsPage() {
             </span>
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-[#2B1B0E]/10 hover:bg-white disabled:opacity-40"
               >
@@ -762,7 +674,7 @@ export default function ProductsPage() {
                 Page {page} of {pages}
               </span>
               <button
-                onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                onClick={() => setPage(Math.min(pages, page + 1))}
                 disabled={page >= pages}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-[#2B1B0E]/10 hover:bg-white disabled:opacity-40"
               >

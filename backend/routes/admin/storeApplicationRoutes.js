@@ -10,6 +10,7 @@ const {
 } = require("../../controllers/admin/storeApplicationController");
 
 router.use(protectRoute);
+router.use(authorizeRoles("ADMIN"))
 
 router.get("/applications", getStoreApplications);
 router.get("/applications/stats", getStoreApplicationStats);

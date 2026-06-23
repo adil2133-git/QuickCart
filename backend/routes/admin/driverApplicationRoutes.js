@@ -11,7 +11,7 @@ const {
 } = require("../../controllers/admin/driverApplicationController");
 
 router.use(protectRoute);
-router.use(authorizeRoles("admin"))
+router.use(authorizeRoles("ADMIN"))
 
 router.get("/applications", getDriverApplications);
 router.get("/applications/stats", getDriverApplicationStats);
