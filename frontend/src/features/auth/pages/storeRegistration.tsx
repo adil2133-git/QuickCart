@@ -1,11 +1,20 @@
 // src/features/auth/components/StoreRegistration.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 import OtpVerificationModal from "../components/otpVerificationModal";
 
+// ─── Leaflet (loaded via CDN in index.html) ──────────────────────────────────
+// Add these to your index.html <head>:
+//   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+//   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+declare const L: any;
+
 type UploadState = { file: File | null };
 
+type Coords = { lat: number; lng: number } | null;
+
+// ─── Password Strength Bar ────────────────────────────────────────────────────
 function PasswordStrengthBar({ password }: { password: string }) {
   const len = password.length;
   const getColor = (index: number) => {
@@ -28,6 +37,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
   );
 }
 
+// ─── Upload Card ─────────────────────────────────────────────────────────────
 function UploadCard({
   icon,
   label,
@@ -78,6 +88,223 @@ function UploadCard({
   );
 }
 
+// ─── Map Picker ───────────────────────────────────────────────────────────────
+function MapPicker({
+  coords,
+  onChange,
+  geocodeQuery,
+}: {
+  coords: Coords;
+  onChange: (c: Coords) => void;
+  geocodeQuery: string; // address + pincode joined
+}) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const [geocoding, setGeocoding] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  // Default center: India
+  const DEFAULT_CENTER: [number, number] = [20.5937, 78.9629];
+  const DEFAULT_ZOOM = 5;
+
+  // ── Init map once ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+
+    // Wait for L to be available
+    const init = () => {
+      if (typeof L === "undefined") {
+        setTimeout(init, 100);
+        return;
+      }
+
+      const map = L.map(mapRef.current, {
+        center: DEFAULT_CENTER,
+        zoom: DEFAULT_ZOOM,
+        zoomControl: true,
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Custom warm-toned marker icon
+      const markerIcon = L.divIcon({
+        className: "",
+        html: `
+          <div style="
+            width:36px;height:36px;
+            background:#c2a383;
+            border:3px solid #291803;
+            border-radius:50% 50% 50% 0;
+            transform:rotate(-45deg);
+            box-shadow:0 4px 12px rgba(41,24,3,0.35);
+          "></div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+      });
+
+      map.on("click", (e: any) => {
+        const { lat, lng } = e.latlng;
+        placeMarker(map, markerIcon, lat, lng);
+        onChange({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) });
+      });
+
+      mapInstanceRef.current = { map, markerIcon };
+      setMapReady(true);
+    };
+
+    init();
+
+    return () => {
+      if (mapInstanceRef.current?.map) {
+        mapInstanceRef.current.map.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const placeMarker = (map: any, icon: any, lat: number, lng: number) => {
+    if (markerRef.current) markerRef.current.remove();
+    const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+    marker.on("dragend", (e: any) => {
+      const pos = e.target.getLatLng();
+      onChange({ lat: +pos.lat.toFixed(6), lng: +pos.lng.toFixed(6) });
+    });
+    markerRef.current = marker;
+  };
+
+  // ── Geocode when query changes ─────────────────────────────────────────────
+  const lastQueryRef = useRef("");
+  const geocode = useCallback(
+    async (query: string) => {
+      if (!query || query === lastQueryRef.current) return;
+      if (!mapInstanceRef.current) return;
+      lastQueryRef.current = query;
+
+      setGeocoding(true);
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          query
+        )}&format=json&limit=1&countrycodes=in`;
+        const res = await fetch(url, {
+          headers: { "Accept-Language": "en" },
+        });
+        const data = await res.json();
+        if (data?.[0]) {
+          const lat = parseFloat(data[0].lat);
+          const lng = parseFloat(data[0].lon);
+          const { map, markerIcon } = mapInstanceRef.current;
+          map.setView([lat, lng], 17);
+          placeMarker(map, markerIcon, lat, lng);
+          onChange({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) });
+        }
+      } catch {
+        // silently fail — user can pin manually
+      } finally {
+        setGeocoding(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mapReady]
+  );
+
+  useEffect(() => {
+    if (mapReady && geocodeQuery.trim().length > 5) {
+      const timer = setTimeout(() => geocode(geocodeQuery), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [geocodeQuery, mapReady, geocode]);
+
+  // ── GPS ────────────────────────────────────────────────────────────────────
+  const handleGPS = () => {
+    if (!navigator.geolocation || !mapInstanceRef.current) return;
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = +pos.coords.latitude.toFixed(6);
+        const lng = +pos.coords.longitude.toFixed(6);
+        const { map, markerIcon } = mapInstanceRef.current;
+        map.setView([lat, lng], 17);
+        placeMarker(map, markerIcon, lat, lng);
+        onChange({ lat, lng });
+        setGpsLoading(false);
+      },
+      () => setGpsLoading(false),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="relative rounded-xl overflow-hidden border-2" style={{ borderColor: coords ? "#735a3e" : "#d2c4b9" }}>
+        {/* GPS button */}
+        <button
+          type="button"
+          onClick={handleGPS}
+          disabled={gpsLoading}
+          title="Use my current location"
+          className="absolute top-3 right-3 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md transition-all hover:brightness-95 active:scale-95 disabled:opacity-60"
+          style={{ backgroundColor: "#291803", color: "#f5ede3" }}
+        >
+          {gpsLoading ? (
+            <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 12a9 9 0 11-6.219-8.56" />
+            </svg>
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            </svg>
+          )}
+          {gpsLoading ? "Locating..." : "My Location"}
+        </button>
+
+        {/* Geocoding indicator */}
+        {geocoding && (
+          <div className="absolute top-3 left-3 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md" style={{ backgroundColor: "#f9f4ee", color: "#735a3e" }}>
+            <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 12a9 9 0 11-6.219-8.56" />
+            </svg>
+            Finding location…
+          </div>
+        )}
+
+        {/* Map */}
+        <div ref={mapRef} style={{ height: "280px", width: "100%", zIndex: 1 }} />
+      </div>
+
+      {/* Status row */}
+      <div className="flex items-center gap-2">
+        {coords ? (
+          <>
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#735a3e" }} />
+            <p className="text-xs" style={{ color: "#735a3e" }}>
+              Pinned at{" "}
+              <span className="font-semibold font-mono">
+                {coords.lat}, {coords.lng}
+              </span>{" "}
+              — drag the marker to fine-tune
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-300" />
+            <p className="text-xs text-gray-400">
+              Click on the map or use "My Location" to pin your storefront
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function StoreRegistration() {
   const navigate = useNavigate();
 
@@ -91,10 +318,13 @@ export default function StoreRegistration() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Location
+  const [coords, setCoords] = useState<Coords>(null);
+  // Trigger geocode only when user finishes typing address+pincode (onBlur)
+  const [geocodeQuery, setGeocodeQuery] = useState("");
+
   // File uploads
-  const [tradeLicense, setTradeLicense] = useState<UploadState>({
-    file: null,
-  });
+  const [tradeLicense, setTradeLicense] = useState<UploadState>({ file: null });
   const [ownerID, setOwnerID] = useState<UploadState>({ file: null });
   const [storeFront, setStoreFront] = useState<UploadState>({ file: null });
 
@@ -103,18 +333,21 @@ export default function StoreRegistration() {
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
 
+  // Fire geocode when address+pincode both have content and user tabs away
+  const triggerGeocode = () => {
+    if (address.trim() && pincode.trim()) {
+      setGeocodeQuery(`${address.trim()}, ${pincode.trim()}, India`);
+    }
+  };
+
   const inputClass =
     "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
   const inputStyle = { borderColor: "#d2c4b9" };
-  const handleFocus = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     e.target.style.borderColor = "#c2a383";
     e.target.style.boxShadow = "0 0 0 2px rgba(194,163,131,0.2)";
   };
-  const handleBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     e.target.style.borderColor = "#d2c4b9";
     e.target.style.boxShadow = "none";
   };
@@ -124,14 +357,9 @@ export default function StoreRegistration() {
     setError("");
 
     if (
-      !storeName.trim() ||
-      !ownerName.trim() ||
-      !address.trim() ||
-      !pincode.trim() ||
-      !email.trim() ||
-      !phone.trim() ||
-      !password ||
-      !confirmPassword
+      !storeName.trim() || !ownerName.trim() || !address.trim() ||
+      !pincode.trim() || !email.trim() || !phone.trim() ||
+      !password || !confirmPassword
     ) {
       setError("All fields are required");
       return;
@@ -147,10 +375,13 @@ export default function StoreRegistration() {
       return;
     }
 
+    if (!coords) {
+      setError("Please pin your store location on the map");
+      return;
+    }
+
     if (!tradeLicense.file || !ownerID.file || !storeFront.file) {
-      setError(
-        "Trade license, owner ID, and store front photo are all required"
-      );
+      setError("Trade license, owner ID, and store front photo are all required");
       return;
     }
 
@@ -166,6 +397,10 @@ export default function StoreRegistration() {
       formData.append("phone", phone.trim());
       formData.append("password", password);
       formData.append("confirmPassword", confirmPassword);
+      // ── Location ──────────────────────────────────────────────────────────
+      formData.append("lat", String(coords.lat));
+      formData.append("lng", String(coords.lng));
+      // ─────────────────────────────────────────────────────────────────────
       formData.append("tradeLicense", tradeLicense.file);
       formData.append("ownerId", ownerID.file);
       formData.append("storeFront", storeFront.file);
@@ -182,21 +417,13 @@ export default function StoreRegistration() {
     }
   };
 
-  /**
-   * Store OTP verified → navigate to pending page.
-   * Same as driver: store is NOT "logged in" yet, they are email-verified
-   * and awaiting admin approval. Do not populate the auth store.
-   */
   const handleStoreVerified = () => {
     setShowOtpModal(false);
     navigate("/store/pending");
   };
 
   return (
-    <div
-      className="flex min-h-screen w-full font-sans"
-      style={{ backgroundColor: "#fff8f4" }}
-    >
+    <div className="flex min-h-screen w-full font-sans" style={{ backgroundColor: "#fff8f4" }}>
       {showOtpModal && (
         <OtpVerificationModal
           email={email.trim().toLowerCase()}
@@ -205,46 +432,31 @@ export default function StoreRegistration() {
         />
       )}
 
-      {/* ── Left Panel ─────────────────────────────────────────────────── */}
+      {/* ── Left Panel ──────────────────────────────────────────────────────── */}
       <aside
         className="hidden md:flex flex-col justify-between w-[40%] min-h-screen px-10 py-10 relative overflow-hidden flex-shrink-0"
         style={{ backgroundColor: "#291803" }}
       >
         <div
           className="absolute inset-0 opacity-20 grayscale pointer-events-none"
-          style={{
-            background: "linear-gradient(135deg,#3a2010 0%,#1a0e06 100%)",
-          }}
+          style={{ background: "linear-gradient(135deg,#3a2010 0%,#1a0e06 100%)" }}
         />
         <div className="relative z-10">
-          <span className="text-white font-bold text-2xl tracking-tight">
-            QuickKart
-          </span>
+          <span className="text-white font-bold text-2xl tracking-tight">QuickKart</span>
           <div className="mt-10 space-y-4">
             <h1 className="text-white text-3xl font-bold leading-tight">
               Grow your business with hyperlocal delivery.
             </h1>
             <p className="text-sm leading-relaxed" style={{ color: "#a08060" }}>
-              Your neighbourhood grocery, delivered fast. Join our network of
-              premium local stores.
+              Your neighbourhood grocery, delivered fast. Join our network of premium local stores.
             </p>
           </div>
           <nav className="mt-10 space-y-1">
             {[
-              {
-                label: "Hyperlocal",
-                icon: (
-                  <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" />
-                ),
-              },
+              { label: "Hyperlocal", icon: <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" /> },
               {
                 label: "Real-time availability",
-                icon: (
-                  <>
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 8 12 12 14 14" />
-                  </>
-                ),
+                icon: (<><circle cx="12" cy="12" r="10" /><polyline points="12 8 12 12 14 14" /></>),
               },
               {
                 label: "Fast delivery",
@@ -258,26 +470,11 @@ export default function StoreRegistration() {
                 ),
               },
             ].map(({ label, icon }, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 py-3 cursor-pointer group"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#C9A97A"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+              <div key={i} className="flex items-center gap-3 py-3 cursor-pointer group">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   {icon}
                 </svg>
-                <span
-                  className="text-xs font-semibold tracking-wide uppercase"
-                  style={{ color: "#a08060" }}
-                >
+                <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: "#a08060" }}>
                   {label}
                 </span>
               </div>
@@ -285,61 +482,33 @@ export default function StoreRegistration() {
           </nav>
         </div>
         <div className="relative z-10 flex items-center gap-1">
-          <span className="text-xs" style={{ color: "#6B4F35" }}>
-            © 2024 QuickKart
-          </span>
+          <span className="text-xs" style={{ color: "#6B4F35" }}>© 2024 QuickKart</span>
         </div>
       </aside>
 
-      {/* ── Right Panel ────────────────────────────────────────────────── */}
+      {/* ── Right Panel ─────────────────────────────────────────────────────── */}
       <main className="flex-1 h-screen overflow-y-auto px-6 md:px-0 py-10">
         <div className="max-w-[480px] mx-auto space-y-8">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs">
-            <button
-              onClick={() => navigate("/login")}
-              className="hover:underline"
-              style={{ color: "#735a3e" }}
-            >
+            <button onClick={() => navigate("/login")} className="hover:underline" style={{ color: "#735a3e" }}>
               Login
             </button>
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#9ca3af"
-              strokeWidth="2"
-            >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            <button
-              onClick={() => navigate("/create-account")}
-              className="hover:underline"
-              style={{ color: "#735a3e" }}
-            >
+            <button onClick={() => navigate("/create-account")} className="hover:underline" style={{ color: "#735a3e" }}>
               Create Account
             </button>
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#9ca3af"
-              strokeWidth="2"
-            >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            <span className="font-bold" style={{ color: "#735a3e" }}>
-              Store Registration
-            </span>
+            <span className="font-bold" style={{ color: "#735a3e" }}>Store Registration</span>
           </nav>
 
           {/* Heading */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              Register your Store
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900">Register your Store</h2>
             <p className="text-sm text-gray-500 mt-1">
               Partner with us to reach thousands of customers in your locality.
             </p>
@@ -348,44 +517,20 @@ export default function StoreRegistration() {
           {/* Admin Review Notice */}
           <div
             className="flex items-start gap-3 p-4 rounded-lg"
-            style={{
-              backgroundColor: "rgba(238,221,199,0.25)",
-              borderLeft: "4px solid #c2a383",
-            }}
+            style={{ backgroundColor: "rgba(238,221,199,0.25)", borderLeft: "4px solid #c2a383" }}
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="#735a3e"
-              stroke="none"
-              className="mt-0.5 flex-shrink-0"
-            >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#735a3e" stroke="none" className="mt-0.5 flex-shrink-0">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
             </svg>
-            <p
-              className="text-xs leading-relaxed"
-              style={{ color: "#6d614f" }}
-            >
-              Your store will be reviewed and approved by our admin team within
-              24–48 hours after submission. Ensure all documents are clear and
-              valid.
+            <p className="text-xs leading-relaxed" style={{ color: "#6d614f" }}>
+              Your store will be reviewed and approved by our admin team within 24–48 hours after submission. Ensure all documents are clear and valid.
             </p>
           </div>
 
           {/* Error Banner */}
           {error && (
             <div className="flex items-center gap-2 rounded-md px-4 py-3 bg-red-50 border border-red-200">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -395,48 +540,26 @@ export default function StoreRegistration() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Section 1: Store Info */}
+            {/* ── Section 1: Store Info ─────────────────────────────────────── */}
             <section className="space-y-5">
-              <div
-                className="flex items-center gap-2 pb-2 border-b"
-                style={{ borderColor: "#e8e1dd" }}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#735a3e"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#e8e1dd" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#735a3e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l1-5h16l1 5" />
                   <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
                   <path d="M9 9v12M15 9v12" />
                 </svg>
-                <h3 className="text-base font-semibold text-gray-900">
-                  Store Info
-                </h3>
+                <h3 className="text-base font-semibold text-gray-900">Store Info</h3>
               </div>
 
               <div className="space-y-4">
+                {/* Store Name */}
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
                     Store Name
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 9l1-5h16l1 5" />
                         <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
                       </svg>
@@ -454,6 +577,7 @@ export default function StoreRegistration() {
                   </div>
                 </div>
 
+                {/* Owner Name */}
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
                     Owner Name
@@ -470,6 +594,7 @@ export default function StoreRegistration() {
                   />
                 </div>
 
+                {/* Address */}
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
                     Address
@@ -482,26 +607,18 @@ export default function StoreRegistration() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     onFocus={handleFocus}
-                    onBlur={handleBlur}
+                    onBlur={(e) => { handleBlur(e); triggerGeocode(); }}
                   />
                 </div>
 
+                {/* Pincode */}
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
                     Pincode
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" />
                         <circle cx="12" cy="10" r="3" />
                       </svg>
@@ -514,42 +631,52 @@ export default function StoreRegistration() {
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                       onFocus={handleFocus}
-                      onBlur={handleBlur}
+                      onBlur={(e) => { handleBlur(e); triggerGeocode(); }}
                     />
                   </div>
+                </div>
+
+                {/* ── Map Location Picker ─────────────────────────────────── */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500">
+                      Store Location
+                    </label>
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                      style={{
+                        backgroundColor: coords ? "rgba(115,90,62,0.12)" : "rgba(220,38,38,0.08)",
+                        color: coords ? "#735a3e" : "#dc2626",
+                      }}
+                    >
+                      {coords ? "✓ Pinned" : "Required"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Type your address above, then confirm the pin or drag it to your exact shopfront.
+                  </p>
+                  <MapPicker
+                    coords={coords}
+                    onChange={setCoords}
+                    geocodeQuery={geocodeQuery}
+                  />
                 </div>
               </div>
             </section>
 
-            {/* Section 2: Credentials */}
+            {/* ── Section 2: Credentials ───────────────────────────────────── */}
             <section className="space-y-5">
-              <div
-                className="flex items-center gap-2 pb-2 border-b"
-                style={{ borderColor: "#e8e1dd" }}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#735a3e"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#e8e1dd" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#735a3e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
-                <h3 className="text-base font-semibold text-gray-900">
-                  Credentials
-                </h3>
+                <h3 className="text-base font-semibold text-gray-900">Credentials</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Email
-                  </label>
+                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Email</label>
                   <input
                     type="email"
                     placeholder="name@store.com"
@@ -562,9 +689,7 @@ export default function StoreRegistration() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Phone
-                  </label>
+                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Phone</label>
                   <input
                     type="tel"
                     placeholder="+91 00000 00000"
@@ -580,9 +705,7 @@ export default function StoreRegistration() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Password
-                  </label>
+                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Password</label>
                   <input
                     type="password"
                     placeholder="Min. 8 characters"
@@ -596,9 +719,7 @@ export default function StoreRegistration() {
                   <PasswordStrengthBar password={password} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Confirm Password
-                  </label>
+                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Confirm Password</label>
                   <input
                     type="password"
                     placeholder="Repeat password"
@@ -613,43 +734,20 @@ export default function StoreRegistration() {
               </div>
             </section>
 
-            {/* Section 3: Documents */}
+            {/* ── Section 3: Documents ─────────────────────────────────────── */}
             <section className="space-y-5">
-              <div
-                className="flex items-center gap-2 pb-2 border-b"
-                style={{ borderColor: "#e8e1dd" }}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#735a3e"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#e8e1dd" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#735a3e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                <h3 className="text-base font-semibold text-gray-900">
-                  Documents
-                </h3>
+                <h3 className="text-base font-semibold text-gray-900">Documents</h3>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 <UploadCard
                   icon={
-                    <svg
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                       <line x1="12" y1="18" x2="12" y2="12" />
@@ -663,16 +761,7 @@ export default function StoreRegistration() {
                 />
                 <UploadCard
                   icon={
-                    <svg
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="2" y="4" width="20" height="16" rx="2" />
                       <path d="M7 15s0-4 5-4 5 4 5 4" />
                       <circle cx="12" cy="9" r="2" />
@@ -685,16 +774,7 @@ export default function StoreRegistration() {
                 />
                 <UploadCard
                   icon={
-                    <svg
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
                       <circle cx="12" cy="13" r="4" />
                     </svg>
@@ -707,7 +787,7 @@ export default function StoreRegistration() {
               </div>
             </section>
 
-            {/* Submit */}
+            {/* ── Submit ───────────────────────────────────────────────────── */}
             <div className="pt-4">
               <button
                 type="submit"
@@ -720,28 +800,11 @@ export default function StoreRegistration() {
                 }}
               >
                 {loading ? (
-                  <svg
-                    className="animate-spin"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12a9 9 0 11-6.219-8.56" />
                   </svg>
                 ) : (
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 9l1-5h16l1 5" />
                     <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
                   </svg>
@@ -750,11 +813,7 @@ export default function StoreRegistration() {
               </button>
               <p className="mt-3 text-xs text-center text-gray-500">
                 By clicking submit, you agree to QuickKart's{" "}
-                <a
-                  href="#"
-                  className="font-semibold underline"
-                  style={{ color: "#735a3e" }}
-                >
+                <a href="#" className="font-semibold underline" style={{ color: "#735a3e" }}>
                   Merchant Terms &amp; Conditions
                 </a>
                 .
