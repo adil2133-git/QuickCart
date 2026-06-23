@@ -6,8 +6,9 @@ const { getLiveStoreStatus, distanceInKm } = require("./storeStatus");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+const VALID_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 // ─── (existing, unchanged) GET /api/store/me ─────────────────────────────────
-// Requires protectRoutes middleware (req.user.userID is set from the JWT)
 const getMyStoreProfile = async (req, res) => {
     try {
         const userId = req.user.userID;
@@ -53,6 +54,7 @@ const getMyStoreProfile = async (req, res) => {
                 coverImageUrl: storeProfile.coverImageUrl,
                 isManuallyClosed: storeProfile.isManuallyClosed,
                 operatingHours: storeProfile.operatingHours,
+                coordinates: storeProfile.coordinates,
                 documents,
             },
         });
@@ -63,7 +65,6 @@ const getMyStoreProfile = async (req, res) => {
 };
 
 // ─── Resolve the logged-in STORE user's StoreProfile._id ────────────────────
-// Same helper as used in productController/categoryController.
 const resolveStoreId = async (req) => {
     const userId = req.user.userID;
     const storeProfile = await StoreProfile.findOne({ userId });
@@ -71,10 +72,6 @@ const resolveStoreId = async (req) => {
 };
 
 // ─── Upload/replace logo + cover image  (PATCH /api/store/branding) ─────────
-// Expects multer fields: `logo` (single) and `coverImage` (single), uploaded
-// via a Cloudinary storage engine the same way uploadProductImages works for
-// product photos. Either field may be sent alone — only the provided one(s)
-// get updated.
 const updateStoreBranding = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -85,7 +82,6 @@ const updateStoreBranding = async (req, res) => {
 
         const updates = {};
 
-        // multer.fields() puts each field's files under req.files[fieldName][0]
         if (req.files?.logo?.[0]) {
             updates.logoUrl = req.files.logo[0].path;
         }
@@ -114,9 +110,6 @@ const updateStoreBranding = async (req, res) => {
 };
 
 // ─── Toggle manual close  (PATCH /api/store/toggleManualClose) ──────────────
-// Lets a store owner mark themselves closed regardless of operatingHours
-// (e.g. "closing early today"). Does not touch storeStatus, which remains
-// reserved for the BUSY signal.
 const toggleManualClose = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -144,11 +137,101 @@ const toggleManualClose = async (req, res) => {
     }
 };
 
+// ─── Update Store Info (name, address, pincode)  (PATCH /api/store/info) ───
+const updateStoreInfo = async (req, res) => {
+    try {
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ success: false, message: "Store profile not found for this account." });
+        }
+
+        const { storeName, address, pincode } = req.body;
+        const updates = {};
+
+        if (storeName !== undefined) {
+            if (!storeName.trim()) {
+                return res.status(400).json({ success: false, message: "Store name cannot be empty." });
+            }
+            updates.storeName = storeName.trim();
+        }
+        if (address !== undefined) {
+            if (!address.trim()) {
+                return res.status(400).json({ success: false, message: "Address cannot be empty." });
+            }
+            updates.address = address.trim();
+        }
+        if (pincode !== undefined) {
+            updates.pincode = pincode ? pincode.trim() : null;
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ success: false, message: "No fields provided to update." });
+        }
+
+        const store = await StoreProfile.findByIdAndUpdate(
+            storeId,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Store information updated.",
+            storeName: store.storeName,
+            address: store.address,
+            pincode: store.pincode,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Server error.", error: error.message });
+    }
+};
+
+// ─── Update Operating Hours  (PATCH /api/store/hours) ──────────────────────
+// Body: { operatingHours: [{ day, openTime, closeTime, isClosed }] }
+const updateOperatingHours = async (req, res) => {
+    try {
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ success: false, message: "Store profile not found for this account." });
+        }
+
+        const { operatingHours } = req.body;
+
+        if (!Array.isArray(operatingHours)) {
+            return res.status(400).json({ success: false, message: "operatingHours must be an array." });
+        }
+
+        for (const entry of operatingHours) {
+            if (!entry.day || !VALID_DAYS.includes(entry.day)) {
+                return res.status(400).json({ success: false, message: `Invalid or missing day: ${entry.day}` });
+            }
+            if (!entry.isClosed && (!entry.openTime || !entry.closeTime)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `${entry.day} must have openTime and closeTime unless marked closed.`,
+                });
+            }
+        }
+
+        const store = await StoreProfile.findByIdAndUpdate(
+            storeId,
+            { $set: { operatingHours } },
+            { new: true, runValidators: true }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Operating hours updated.",
+            operatingHours: store.operatingHours,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Server error.", error: error.message });
+    }
+};
+
 // ─── Public store detail  (GET /api/stores/:storeId) ────────────────────────
-// Customer-facing — no store JWT involved. storeId comes from the URL, not
-// from resolveStoreId. Optionally accepts ?lat=&lng= (the customer's current
-// or selected saved-address coordinates) to compute distance; if omitted,
-// distanceKm is returned as null rather than guessed.
 const getPublicStoreProfile = async (req, res) => {
     try {
         const { storeId } = req.params;
@@ -185,7 +268,7 @@ const getPublicStoreProfile = async (req, res) => {
                 logoUrl: store.logoUrl,
                 coverImageUrl: store.coverImageUrl,
                 operatingHours: store.operatingHours,
-                status: liveStatus.status, // "OPEN" | "CLOSED" | "BUSY", derived
+                status: liveStatus.status,
                 averageRating: store.averageRating,
                 reviewCount,
                 totalOrders: store.totalOrders,
@@ -201,5 +284,7 @@ module.exports = {
     getMyStoreProfile,
     updateStoreBranding,
     toggleManualClose,
+    updateStoreInfo,
+    updateOperatingHours,
     getPublicStoreProfile,
 };
