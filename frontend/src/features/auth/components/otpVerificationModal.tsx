@@ -1,13 +1,31 @@
 import { useState, useRef, useEffect } from "react";
-import api from "../../../api/axios"; 
+import api from "../../../api/axios";
 
+/**
+ * mode="register"      — default, existing behaviour: verifies via /auth/register/verify-otp
+ *                        and calls onVerified() on success.
+ *
+ * mode="forgotPassword" — verifies via /auth/forgot-password/verify-otp,
+ *                         then calls onFpVerified(resetToken) so the parent
+ *                         can move to the ResetPasswordModal step.
+ */
 interface OtpVerificationModalProps {
   email: string;
+  mode?: "register" | "forgotPassword";
   onClose: () => void;
+  /** Called after successful verify in register mode */
   onVerified: () => void;
+  /** Called after successful verify in forgotPassword mode — receives resetToken */
+  onFpVerified?: (resetToken: string) => void;
 }
 
-export default function OtpVerificationModal({ email, onClose, onVerified }: OtpVerificationModalProps) {
+export default function OtpVerificationModal({
+  email,
+  mode = "register",
+  onClose,
+  onVerified,
+  onFpVerified,
+}: OtpVerificationModalProps) {
   const [otp, setOtp] = useState<string[]>(["", "", "", ""]);
   const [count, setCount] = useState(28);
   const [verifying, setVerifying] = useState(false);
@@ -23,7 +41,7 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
   }, [count]);
 
   const handleChange = (value: string, index: number) => {
-    if (!/^\d*$/.test(value)) return; // digits only
+    if (!/^\d*$/.test(value)) return;
     if (value.length > 1) return;
     const newOtp = [...otp];
     newOtp[index] = value;
@@ -44,13 +62,23 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
     e.preventDefault();
     setError("");
     setVerifying(true);
+
     try {
-      await api.post("/auth/register/verify-otp", {
-        email,
-        otp: otp.join(""),
-      });
-      setVerified(true);
-      setTimeout(() => onVerified(), 800);
+      if (mode === "forgotPassword") {
+        const { data } = await api.post("/auth/forgot-password/verify-otp", {
+          email,
+          otp: otp.join(""),
+        });
+        setVerified(true);
+        setTimeout(() => onFpVerified?.(data.resetToken), 800);
+      } else {
+        await api.post("/auth/register/verify-otp", {
+          email,
+          otp: otp.join(""),
+        });
+        setVerified(true);
+        setTimeout(() => onVerified(), 800);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Invalid or expired OTP. Please try again.");
     } finally {
@@ -62,7 +90,12 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
     setError("");
     setResending(true);
     try {
-      await api.post("/auth/register/resend-otp", { email });
+      const resendRoute =
+        mode === "forgotPassword"
+          ? "/auth/forgot-password/resend-otp"
+          : "/auth/register/resend-otp";
+
+      await api.post(resendRoute, { email });
       setCount(28);
       setOtp(["", "", "", ""]);
       inputsRef.current[0]?.focus();
@@ -72,6 +105,11 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
       setResending(false);
     }
   };
+
+  const subtitle =
+    mode === "forgotPassword"
+      ? "Enter the 4-digit code we sent to reset your password."
+      : "We've sent a 4-digit code to verify your account.";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2C1A0E]/40 backdrop-blur-sm px-4">
@@ -91,12 +129,11 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Verify Your Email</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              We've sent a 4-digit code to{" "}
-              <span className="text-gray-900 font-semibold">{email}</span>. Please enter it below to verify your account.
+              {subtitle}{" "}
+              <span className="text-gray-900 font-semibold">{email}</span>
             </p>
           </div>
 
-          {/* ── Error Banner ── */}
           {error && (
             <div className="flex items-center gap-2 rounded-md px-4 py-3 mb-4 bg-red-50 border border-red-200">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -191,7 +228,9 @@ export default function OtpVerificationModal({ email, onClose, onVerified }: Otp
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Your privacy is our priority. We only use this code for account verification.
+              {mode === "forgotPassword"
+                ? "This code is only valid for 2 minutes. Do not share it with anyone."
+                : "Your privacy is our priority. We only use this code for account verification."}
             </p>
           </div>
         </div>
