@@ -7,8 +7,10 @@ const { uploadCategoryImage } = require("../../middleware/uploadCategoryImages")
 
 const {
     getMyStoreProfile,
-    updateStoreBranding,       
-    toggleManualClose,         
+    updateStoreBranding,
+    toggleManualClose,
+    updateStoreInfo,
+    updateOperatingHours,
 } = require("../../controllers/store/storeProfileController");
 const { uploadStoreBranding } = require("../../middleware/uploadStoreBranding");
 
@@ -33,6 +35,8 @@ const {
 router.get("/me", protectRoutes, getMyStoreProfile);
 router.patch("/branding", protectRoutes, uploadStoreBranding, updateStoreBranding);
 router.patch("/toggleManualClose", protectRoutes, toggleManualClose);
+router.patch("/info", protectRoutes, updateStoreInfo);
+router.patch("/hours", protectRoutes, updateOperatingHours);
 
 // ─── Products ─────────────────────────────────────────────────────────────────
 router.post("/addProduct", protectRoutes, uploadProductImages, createProduct);
@@ -53,5 +57,3 @@ router.put("/updateCategory/:id", protectRoutes, uploadCategoryImage, updateCate
 router.delete("/deleteCategory/:id", protectRoutes, deleteCategory);
 
 module.exports = router;
-
-
