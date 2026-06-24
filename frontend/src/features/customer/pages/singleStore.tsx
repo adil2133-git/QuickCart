@@ -112,7 +112,6 @@ function ProductCardSkeleton() {
 }
 
 function ProductCard({ product }: { product: Product }) {
-  const [wishlisted, setWishlisted] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const img = product.images?.[0] || "https://placehold.co/400x400/f3ede4/735a3e?text=No+Image";
   const outOfStock = product.availabilityStatus === "OUT_OF_STOCK";
@@ -123,13 +122,6 @@ function ProductCard({ product }: { product: Product }) {
       onMouseEnter={() => setShowAdd(true)}
       onMouseLeave={() => setShowAdd(false)}
     >
-      <button
-        onClick={() => setWishlisted(!wishlisted)}
-        className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
-        style={{ backgroundColor: "rgba(255,255,255,0.85)" }}
-      >
-        <Heart size={16} fill={wishlisted ? "#ba1a1a" : "none"} stroke={wishlisted ? "#ba1a1a" : PALETTE.muted} />
-      </button>
 
       <div className="aspect-square rounded-2xl overflow-hidden mb-4 relative">
         <img
@@ -154,7 +146,7 @@ function ProductCard({ product }: { product: Product }) {
         </h4>
         <div className="flex items-center justify-between mt-auto pt-4">
           <span className="font-semibold" style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: PALETTE.brown }}>
-            ${Number(product.price).toFixed(2)}
+            ₹{Number(product.price).toFixed(2)}
             {product.unit && <small className="text-xs font-normal" style={{ color: PALETTE.muted }}> /{product.unit}</small>}
           </span>
           {!outOfStock && (
@@ -188,7 +180,7 @@ function BestsellerCard({ item }: { item: Product }) {
         </div>
         <div className="flex justify-between items-center">
           <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: PALETTE.brown }}>
-            ${Number(item.price).toFixed(2)}
+            ₹{Number(item.price).toFixed(2)}
             {item.unit && <small className="text-xs font-normal" style={{ color: PALETTE.muted }}> /{item.unit}</small>}
           </span>
           <AddButton />
@@ -236,46 +228,46 @@ export default function FreshMartStorePage() {
 
 function StorePageContent({ storeId }: { storeId: string }) {
   // ── Zustand selectors ──────────────────────────────────────────────────────
-  const store        = useSingleStoreStore((s) => s.store);
+  const store = useSingleStoreStore((s) => s.store);
   const storeLoading = useSingleStoreStore((s) => s.storeLoading);
-  const storeError   = useSingleStoreStore((s) => s.storeError);
+  const storeError = useSingleStoreStore((s) => s.storeError);
 
-  const bestsellers        = useSingleStoreStore((s) => s.bestsellers);
+  const bestsellers = useSingleStoreStore((s) => s.bestsellers);
   const bestsellersLoading = useSingleStoreStore((s) => s.bestsellersLoading);
 
   const categories = useSingleStoreStore((s) => s.categories);
 
-  const products        = useSingleStoreStore((s) => s.products);
+  const products = useSingleStoreStore((s) => s.products);
   const productsLoading = useSingleStoreStore((s) => s.productsLoading);
-  const productsError   = useSingleStoreStore((s) => s.productsError);
-  const page            = useSingleStoreStore((s) => s.page);
-  const pages           = useSingleStoreStore((s) => s.pages);
-  const loadingMore     = useSingleStoreStore((s) => s.loadingMore);
+  const productsError = useSingleStoreStore((s) => s.productsError);
+  const page = useSingleStoreStore((s) => s.page);
+  const pages = useSingleStoreStore((s) => s.pages);
+  const loadingMore = useSingleStoreStore((s) => s.loadingMore);
 
   const activeCategory = useSingleStoreStore((s) => s.activeCategory);
-  const searchInput    = useSingleStoreStore((s) => s.searchInput);
-  const sort           = useSingleStoreStore((s) => s.sort);
-  const sortOpen       = useSingleStoreStore((s) => s.sortOpen);
+  const searchInput = useSingleStoreStore((s) => s.searchInput);
+  const sort = useSingleStoreStore((s) => s.sort);
+  const sortOpen = useSingleStoreStore((s) => s.sortOpen);
 
-  const ratingSummary  = useSingleStoreStore((s) => s.ratingSummary);
-  const reviews        = useSingleStoreStore((s) => s.reviews);
+  const ratingSummary = useSingleStoreStore((s) => s.ratingSummary);
+  const reviews = useSingleStoreStore((s) => s.reviews);
   const reviewsLoading = useSingleStoreStore((s) => s.reviewsLoading);
 
   const followed = useSingleStoreStore((s) => s.followed);
 
   // ── Actions ────────────────────────────────────────────────────────────────
-  const fetchStore       = useSingleStoreStore((s) => s.fetchStore);
+  const fetchStore = useSingleStoreStore((s) => s.fetchStore);
   const fetchBestsellers = useSingleStoreStore((s) => s.fetchBestsellers);
-  const fetchCategories  = useSingleStoreStore((s) => s.fetchCategories);
-  const fetchProducts    = useSingleStoreStore((s) => s.fetchProducts);
-  const fetchReviews     = useSingleStoreStore((s) => s.fetchReviews);
+  const fetchCategories = useSingleStoreStore((s) => s.fetchCategories);
+  const fetchProducts = useSingleStoreStore((s) => s.fetchProducts);
+  const fetchReviews = useSingleStoreStore((s) => s.fetchReviews);
   const setActiveCategory = useSingleStoreStore((s) => s.setActiveCategory);
-  const setSearchInput    = useSingleStoreStore((s) => s.setSearchInput);
-  const setSearch         = useSingleStoreStore((s) => s.setSearch);
-  const setSort           = useSingleStoreStore((s) => s.setSort);
-  const setSortOpen       = useSingleStoreStore((s) => s.setSortOpen);
-  const toggleFollowed    = useSingleStoreStore((s) => s.toggleFollowed);
-  const resetStore        = useSingleStoreStore((s) => s.resetStore);
+  const setSearchInput = useSingleStoreStore((s) => s.setSearchInput);
+  const setSearch = useSingleStoreStore((s) => s.setSearch);
+  const setSort = useSingleStoreStore((s) => s.setSort);
+  const setSortOpen = useSingleStoreStore((s) => s.setSortOpen);
+  const toggleFollowed = useSingleStoreStore((s) => s.toggleFollowed);
+  const resetStore = useSingleStoreStore((s) => s.resetStore);
 
   // ── Bootstrap all data on mount ────────────────────────────────────────────
   useEffect(() => {
