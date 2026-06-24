@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import api from "../../../api/axios";
 import { useAuthStore } from "../state/authState";
+import LocationPreviewMap from "../../admin/components/locationPreview";
 
 type Role = "driver" | "store";
 
@@ -55,6 +56,7 @@ interface StoreProfileInfo extends BaseProfile {
   address: string;
   pincode: string | null;
   storeStatus: "OPEN" | "CLOSED" | "BUSY";
+  coordinates: { lat: number; lng: number } | null;
 }
 
 type ProfileInfo = DriverProfile | StoreProfileInfo;
@@ -286,6 +288,8 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
   const steps = buildSteps(config.nextStepsDescription);
   const identity = config.getIdentity(profile);
   const extraFields = config.extraFields(profile);
+  const storeCoordinates =
+    role === "store" ? (profile as StoreProfileInfo).coordinates : null;
 
   return (
     <div
@@ -495,6 +499,52 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
             ))}
           </ul>
         </div>
+
+        {/* Store Location — store applicants only */}
+        {role === "store" && (
+          <div
+            className="rounded-2xl p-6 mb-4"
+            style={{ backgroundColor: "#ffffff", border: "1px solid #e8ddd1" }}
+          >
+            <p
+              className="text-xs uppercase tracking-widest mb-4"
+              style={{ color: "#a89070" }}
+            >
+              Store Location
+            </p>
+            {storeCoordinates ? (
+              <>
+                <LocationPreviewMap
+                  lat={storeCoordinates.lat}
+                  lng={storeCoordinates.lng}
+                  height={220}
+                />
+                <div className="flex items-center justify-between mt-3">
+                  <p
+                    className="text-xs font-mono"
+                    style={{ color: "#a89070" }}
+                  >
+                    {storeCoordinates.lat.toFixed(6)}, {storeCoordinates.lng.toFixed(6)}
+                  </p>
+                  <a
+                    href={`https://www.google.com/maps?q=${storeCoordinates.lat},${storeCoordinates.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-semibold underline"
+                    style={{ color: "#7a5c34" }}
+                  >
+                    Open in Google Maps
+                  </a>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm" style={{ color: "#7a6550" }}>
+                No location was pinned during registration. Our team will
+                confirm your address using the details you provided.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* What Happens Next */}
         <div

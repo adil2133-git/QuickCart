@@ -56,9 +56,9 @@ function formatStoreApplication(user, profile, { includeNotes = false } = {}) {
         location: profile.address,
         fullAddress: profile.address,
         pincode: profile.pincode,
-        type: "Retail", // not modeled yet; placeholder until store-type field exists
-        products: 0,    // not modeled yet; wire up once product count is available
-        radius: "—",    // not modeled yet
+        type: "Retail",
+        products: 0,
+        radius: "—",
         logoInitial: logoInitial(profile.storeName),
         status: STATUS_BADGE_MAP[user.status] || "pending",
         checklist,
@@ -67,6 +67,12 @@ function formatStoreApplication(user, profile, { includeNotes = false } = {}) {
         dateLabel: user.createdAt,
         submittedOn: user.createdAt,
         createdAt: user.createdAt,
+        // ── new ──────────────────────────────────────────────────────────
+        coordinates:
+            profile.coordinates &&
+            (profile.coordinates.lat !== 0 || profile.coordinates.lng !== 0)
+                ? { lat: profile.coordinates.lat, lng: profile.coordinates.lng }
+                : null,
     };
 
     if (includeNotes) {

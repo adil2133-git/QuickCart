@@ -13,75 +13,29 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/sidebar";
 import TopBar from "../components/topbar";
-import api from "../../../api/axios";
+import {
+    useStoreApplicationsStore,
+    type StoreApplication,
+} from "../state/storeApplicationState";
 
 const STATUS_FILTERS = ["All", "Pending", "Approved", "Rejected"];
 const CITIES = ["All Cities", "Mumbai, Maharashtra", "Delhi, NCR", "Bangalore, KA", "Hyderabad, TS"];
-const PAGE_SIZE = 4;
 
-// ---------- Types ----------
+// ---------- UI helpers (unchanged) ----------
 
-type StoreStatus = "pending" | "approved" | "rejected";
-
-interface ChecklistDoc {
-    id: string;
-    label: string;
-    fileUrl: string | null;
-    fileName: string | null;
-    status: "verified" | "missing";
-}
-
-interface StoreApplication {
-    id: string;
-    storeCode: string;
-    name: string;
-    owner: string;
-    contactEmail: string;
-    contactPhone: string;
-    location: string;
-    fullAddress: string;
-    pincode: string | null;
-    type: string;
-    products: number;
-    radius: string;
-    logoInitial: string | null;
-    status: StoreStatus;
-    checklist: ChecklistDoc[];
-    documentsSubmitted: number;
-    documentsTotal: number;
-    dateLabel: string;
-    submittedOn: string;
-    createdAt: string;
-}
-
-interface StoreApplicationStats {
-    pending: number;
-    approved: number;
-    rejected: number;
-    requiringAttention: number;
-}
-
-interface PaginationInfo {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-}
-
-// ---------- UI helpers ----------
-
-const STATUS_BADGE: Record<StoreStatus, { label: string; className: string }> = {
+const STATUS_BADGE: Record<string, { label: string; className: string }> = {
     pending: { label: "Pending", className: "bg-[#F7EFE2] text-[#8B6F47]" },
     approved: { label: "Approved", className: "bg-[#EAF6EF] text-[#2E7D52]" },
     rejected: { label: "Rejected", className: "bg-[#FBEAEA] text-[#D94F4F]" },
+    "more-info": { label: "More Info", className: "bg-[#EEF1FB] text-[#3D5A99]" },
 };
 
-const DOC_CHIP: Record<ChecklistDoc["status"], string> = {
+const DOC_CHIP: Record<"verified" | "missing", string> = {
     verified: "bg-[#EAF6EF] text-[#2E7D52]",
     missing: "bg-[#F0E6D6] text-[#A2937F]",
 };
 
-function DocIcon({ status }: { status: ChecklistDoc["status"] }) {
+function DocIcon({ status }: { status: "verified" | "missing" }) {
     if (status === "verified") return <CheckCircle2 size={12} />;
     return <CircleDashed size={12} />;
 }
@@ -136,6 +90,7 @@ function StoreLogo({ app }: { app: StoreApplication }) {
 function primaryAction(status: StoreApplication["status"]) {
     switch (status) {
         case "pending":
+        case "more-info":
             return { label: "Review Application", disabled: false };
         case "approved":
             return { label: "Application Approved", disabled: true };
@@ -145,7 +100,7 @@ function primaryAction(status: StoreApplication["status"]) {
 }
 
 function ApplicationCard({ app, onReview }: { app: StoreApplication; onReview: (id: string) => void }) {
-    const badge = STATUS_BADGE[app.status];
+    const badge = STATUS_BADGE[app.status] ?? STATUS_BADGE.pending;
     const primary = primaryAction(app.status);
 
     return (
@@ -237,80 +192,51 @@ function ApplicationCard({ app, onReview }: { app: StoreApplication; onReview: (
 
 export default function StoreApplicationsPage() {
     const navigate = useNavigate();
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState("All");
-    const [cityFilter, setCityFilter] = useState("All Cities");
-    const [dateFilter, setDateFilter] = useState("");
-    const [page, setPage] = useState(1);
 
-    const [applications, setApplications] = useState<StoreApplication[]>([]);
-    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-    const [stats, setStats] = useState<StoreApplicationStats | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        applications,
+        pagination,
+        stats,
+        filters,
+        listLoading,
+        listError,
+        setFilters,
+        setPage,
+        resetFilters,
+        fetchApplications,
+        fetchStats,
+    } = useStoreApplicationsStore();
 
-    // Debounce search so we don't fire a request on every keystroke.
-    const [debouncedSearch, setDebouncedSearch] = useState(search);
+    // Local-only input value so typing feels instant; debounced before
+    // it's pushed into the store (which triggers a refetch).
+    const [searchInput, setSearchInput] = useState(filters.search);
+
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(search), 350);
+        const t = setTimeout(() => {
+            if (searchInput !== filters.search) {
+                setFilters({ search: searchInput });
+            }
+        }, 350);
         return () => clearTimeout(t);
-    }, [search]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchInput]);
 
-    // Reset to page 1 whenever filters change.
+    // Initial load
     useEffect(() => {
-        setPage(1);
-    }, [debouncedSearch, statusFilter, cityFilter, dateFilter]);
-
-    useEffect(() => {
-        let active = true;
-        setLoading(true);
-        setError(null);
-
-        api
-            .get("/admin/store/applications", {
-                params: {
-                    search: debouncedSearch,
-                    status: statusFilter,
-                    city: cityFilter,
-                    date: dateFilter || undefined,
-                    page,
-                    limit: PAGE_SIZE,
-                },
-            })
-            .then((res) => {
-                if (!active) return;
-                setApplications(res.data.applications);
-                setPagination(res.data.pagination);
-            })
-            .catch((err) => {
-                if (!active) return;
-                setError(err?.response?.data?.message || "Failed to load applications.");
-            })
-            .finally(() => active && setLoading(false));
-
-        return () => {
-            active = false;
-        };
-    }, [debouncedSearch, statusFilter, cityFilter, dateFilter, page]);
-
-    useEffect(() => {
-        api
-            .get("/admin/store/applications/stats")
-            .then((res) => setStats(res.data.stats))
-            .catch(() => setStats(null));
+        fetchApplications();
+        fetchStats();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const resetFilters = () => {
-        setSearch("");
-        setStatusFilter("All");
-        setCityFilter("All Cities");
-        setDateFilter("");
+    const handleResetFilters = () => {
+        setSearchInput("");
+        resetFilters();
     };
 
     const totalPages = pagination?.totalPages ?? 1;
     const total = pagination?.total ?? 0;
-    const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-    const rangeEnd = Math.min(page * PAGE_SIZE, total);
+    const rangeStart = total === 0 ? 0 : (filters.page - 1) * filters.limit + 1;
+    const rangeEnd = Math.min(filters.page * filters.limit, total);
 
     return (
         <div className="flex h-screen w-full bg-[#FBF6EE]">
@@ -323,7 +249,6 @@ export default function StoreApplicationsPage() {
                     <div className="flex flex-col gap-6">
                         <p className="text-[14px] text-[#8C7C6B]">Review and manage store onboarding requests</p>
 
-                        {/* Alert banner */}
                         <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#EBE1D2] bg-[#F7EFE2] px-6 py-4">
                             <div className="flex items-center gap-3">
                                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#3A2C20] text-[#F0DDB8]">
@@ -340,75 +265,57 @@ export default function StoreApplicationsPage() {
                             </div>
                         </div>
 
-                        {/* Stats */}
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                            <StatCard
-                                label="Pending Applications"
-                                value={stats?.pending ?? 0}
-                                icon={CircleDashed}
-                                bg="bg-[#F7EFE2]"
-                                iconColor="text-[#8B6F47]"
-                            />
-                            <StatCard
-                                label="Approved Stores"
-                                value={stats?.approved ?? 0}
-                                icon={CheckCircle2}
-                                bg="bg-[#EAF6EF]"
-                                iconColor="text-[#2E7D52]"
-                            />
-                            <StatCard
-                                label="Rejected"
-                                value={stats?.rejected ?? 0}
-                                icon={XCircle}
-                                bg="bg-[#FBEAEA]"
-                                iconColor="text-[#D94F4F]"
-                            />
-                            <StatCard
-                                label="Requiring Attention"
-                                value={stats?.requiringAttention ?? 0}
-                                icon={AlertTriangle}
-                                bg="bg-[#FBEAEA]"
-                                iconColor="text-[#D94F4F]"
-                            />
+                            <StatCard label="Pending Applications" value={stats?.pending ?? 0} icon={CircleDashed} bg="bg-[#F7EFE2]" iconColor="text-[#8B6F47]" />
+                            <StatCard label="Approved Stores" value={stats?.approved ?? 0} icon={CheckCircle2} bg="bg-[#EAF6EF]" iconColor="text-[#2E7D52]" />
+                            <StatCard label="Rejected" value={stats?.rejected ?? 0} icon={XCircle} bg="bg-[#FBEAEA]" iconColor="text-[#D94F4F]" />
+                            <StatCard label="Requiring Attention" value={stats?.requiringAttention ?? 0} icon={AlertTriangle} bg="bg-[#FBEAEA]" iconColor="text-[#D94F4F]" />
                         </div>
 
-                        {/* Filters */}
                         <div className="flex flex-wrap items-center gap-3">
                             <div className="flex min-w-[240px] flex-1 items-center gap-2.5 rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5">
                                 <Search size={16} className="shrink-0 text-[#8C7C6B]" />
                                 <input
                                     type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
                                     placeholder="Search by store name or owner..."
                                     className="w-full bg-transparent text-[13px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
                                 />
                             </div>
 
-                            <FilterSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_FILTERS} prefix="Status" />
-                            <FilterSelect value={cityFilter} onChange={setCityFilter} options={CITIES} />
+                            <FilterSelect
+                                value={filters.status}
+                                onChange={(v) => setFilters({ status: v })}
+                                options={STATUS_FILTERS}
+                                prefix="Status"
+                            />
+                            <FilterSelect
+                                value={filters.city}
+                                onChange={(v) => setFilters({ city: v })}
+                                options={CITIES}
+                            />
 
                             <input
                                 type="date"
-                                value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
+                                value={filters.date}
+                                onChange={(e) => setFilters({ date: e.target.value })}
                                 className="rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5 text-[13px] text-[#3A2C20] focus:outline-none"
                             />
 
                             <button
-                                onClick={resetFilters}
+                                onClick={handleResetFilters}
                                 className="whitespace-nowrap text-[13px] font-medium text-[#8B6F47] hover:underline"
                             >
                                 Reset Filters
                             </button>
                         </div>
 
-                        {/* Application cards */}
-                        {error ? (
+                        {listError ? (
                             <div className="col-span-full rounded-2xl border border-dashed border-[#D94F4F] bg-white px-6 py-12 text-center">
-                                <p className="text-[14px] font-medium text-[#D94F4F]">{error}</p>
+                                <p className="text-[14px] font-medium text-[#D94F4F]">{listError}</p>
                             </div>
-                        ) : loading ? (
+                        ) : listLoading ? (
                             <div className="col-span-full rounded-2xl border border-dashed border-[#EBE1D2] bg-white px-6 py-12 text-center">
                                 <p className="text-[14px] text-[#8C7C6B]">Loading applications...</p>
                             </div>
@@ -416,12 +323,8 @@ export default function StoreApplicationsPage() {
                             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                                 {applications.length === 0 ? (
                                     <div className="col-span-full rounded-2xl border border-dashed border-[#EBE1D2] bg-white px-6 py-12 text-center">
-                                        <p className="text-[14px] font-medium text-[#3A2C20]">
-                                            No applications match these filters
-                                        </p>
-                                        <p className="mt-1 text-[12.5px] text-[#8C7C6B]">
-                                            Try a different search term or reset the filters above.
-                                        </p>
+                                        <p className="text-[14px] font-medium text-[#3A2C20]">No applications match these filters</p>
+                                        <p className="mt-1 text-[12.5px] text-[#8C7C6B]">Try a different search term or reset the filters above.</p>
                                     </div>
                                 ) : (
                                     applications.map((app) => (
@@ -435,7 +338,6 @@ export default function StoreApplicationsPage() {
                             </div>
                         )}
 
-                        {/* Pagination */}
                         {total > 0 && (
                             <div className="flex items-center justify-between border-t border-[#EBE1D2] pt-5">
                                 <p className="text-[13px] text-[#8C7C6B]">
@@ -444,19 +346,19 @@ export default function StoreApplicationsPage() {
                                 </p>
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        onClick={() => setPage(Math.max(1, filters.page - 1))}
                                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
-                                        disabled={page === 1}
+                                        disabled={filters.page === 1}
                                     >
                                         <ChevronLeft size={16} />
                                     </button>
                                     <span className="px-2 text-[13px] text-[#3A2C20]">
-                                        Page {page} of {totalPages}
+                                        Page {filters.page} of {totalPages}
                                     </span>
                                     <button
-                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                        onClick={() => setPage(Math.min(totalPages, filters.page + 1))}
                                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
-                                        disabled={page === totalPages}
+                                        disabled={filters.page === totalPages}
                                     >
                                         <ChevronRight size={16} />
                                     </button>
@@ -494,10 +396,7 @@ function FilterSelect({
                     </option>
                 ))}
             </select>
-            <ChevronDown
-                size={14}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8C7C6B]"
-            />
+            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8C7C6B]" />
         </div>
     );
 }
