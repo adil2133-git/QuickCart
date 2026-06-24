@@ -104,7 +104,7 @@ const getProductsByStore = async (req, res) => {
         }
 
         if (search) {
-            filter.$text = { $search: search };
+            filter.productName = { $regex: search, $options: "i" };
         }
 
         const skip = (Number(page) - 1) * Number(limit);
