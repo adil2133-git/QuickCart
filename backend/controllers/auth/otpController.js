@@ -6,6 +6,7 @@ const StoreProfile = require("../../models/store/storeProfile")
 const generateToken = require("../../utils/generateToken");
 
 
+
 const verifyOtpController = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -41,6 +42,8 @@ const verifyOtpController = async (req, res) => {
             ownerName,
             address,
             pincode,
+            lat,   
+            lng,   
         } = JSON.parse(userData);
 
         const existingUser = await User.findOne({ email: lowerEmail });
@@ -72,12 +75,19 @@ const verifyOtpController = async (req, res) => {
         // If store, also create StoreProfile
         if (role === "STORE") {
             await StoreProfile.create({
-                userId: newUser._id,
+                userId:    newUser._id,
                 storeName,
                 ownerName,
                 address,
                 pincode,
                 documentUrls,
+                // ── Write coordinates to the model ─────────────────────────
+                // StoreProfile.coordinates = { lat, lng }
+                // The 2dsphere index on this field powers nearby-store queries.
+                coordinates: {
+                    lat: lat ?? 0,
+                    lng: lng ?? 0,
+                },
             });
         }
 
@@ -100,11 +110,11 @@ const verifyOtpController = async (req, res) => {
             .json({
                 message: "User registered successfully",
                 user: {
-                    id: newUser._id,
-                    name: newUser.name,
-                    phone: newUser.phone,
-                    email: newUser.email,
-                    role: newUser.role,
+                    id:     newUser._id,
+                    name:   newUser.name,
+                    phone:  newUser.phone,
+                    email:  newUser.email,
+                    role:   newUser.role,
                     status: newUser.status || "ACTIVE",
                 }
             });

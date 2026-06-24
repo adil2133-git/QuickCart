@@ -165,6 +165,8 @@ const registerStore = async (req, res) => {
             phone,
             password,
             confirmPassword,
+            lat,   // ← new
+            lng,   // ← new
         } = req.body;
 
         if (!storeName || !ownerName || !address || !pincode || !email || !phone || !password || !confirmPassword) {
@@ -179,6 +181,14 @@ const registerStore = async (req, res) => {
             return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
         }
 
+        // ── Validate coordinates ───────────────────────────────────────────
+        const parsedLat = parseFloat(lat);
+        const parsedLng = parseFloat(lng);
+
+        if (isNaN(parsedLat) || isNaN(parsedLng)) {
+            return res.status(400).json({ success: false, message: "Store location is required. Please pin your store on the map." });
+        }
+
         const lowerEmail = email.toLowerCase();
 
         const emailExists = await User.findOne({ email: lowerEmail });
@@ -191,7 +201,7 @@ const registerStore = async (req, res) => {
             return res.status(409).json({ success: false, message: "Phone number is already registered." });
         }
 
-        //Collect Cloudinary URLs from req.files 
+        // Collect Cloudinary URLs from req.files
         const files = req.files || {};
 
         const tradeLicense = files.tradeLicense?.[0]?.path || null;
@@ -206,6 +216,7 @@ const registerStore = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // ── Store coordinates in Redis payload alongside other fields ──────
         await client.setEx(
             `register:${lowerEmail}`,
             120,
@@ -220,6 +231,8 @@ const registerStore = async (req, res) => {
                 address,
                 pincode,
                 documentUrls,
+                lat: parsedLat,   // ← new
+                lng: parsedLng,   // ← new
             })
         );
 
