@@ -955,6 +955,17 @@ export default function StoreRegistration() {
                 </a>
                 .
               </p>
+              <p className="mt-4 text-sm text-center text-gray-500">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="font-semibold underline"
+                  style={{ color: "#735a3e" }}
+                >
+                  Login
+                </button>
+              </p>
             </div>
           </form>
         </div>
