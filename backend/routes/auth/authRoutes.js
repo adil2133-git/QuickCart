@@ -24,6 +24,8 @@ const {
 
 const { Login } = require("../../controllers/auth/loginController");
 
+const tokenRegenerate = require("../../services/tokenRegenerate")
+
 const { getMe } = require("../../controllers/auth/authMe");
 const protectRoutes = require("../../middleware/protectRoute");
 
@@ -58,6 +60,8 @@ router.post("/register/resend-otp", resendOTPController);
 
 // Login
 router.post("/login", Login);
+
+router.post("/refresh", tokenRegenerate);
 
 module.exports = router;
 

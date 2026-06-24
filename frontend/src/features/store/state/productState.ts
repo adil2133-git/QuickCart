@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 import { ProductsAPI, CategoriesAPI, type ProductFormValues } from "../productsApi";
 import type { Product, Category, AvailabilityStatus } from "../types/product";
@@ -159,6 +160,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     } else {
       set({ sortKey: key, sortDir: "asc" });
     }
+    // No fetchProducts() call here — sorting is client-side on the current page
   },
 
   toggleAvailability: async (product) => {
@@ -228,29 +230,35 @@ export const useProductStore = create<ProductState>((set, get) => ({
 }));
 
 /* -------------------------------------------------------------------------- */
-/*  Derived selector helper (sorted view of the current page's products)     */
+/*  Derived selector — use this hook instead of selectSortedProducts         */
+/*  useMemo keeps the array reference stable so Zustand doesn't loop.        */
 /* -------------------------------------------------------------------------- */
 
-export function selectSortedProducts(state: ProductState): Product[] {
-  const { products, sortKey, sortDir } = state;
-  const copy = [...products];
-  copy.sort((a, b) => {
-    let av: string | number;
-    let bv: string | number;
-    if (sortKey === "createdAt") {
-      av = new Date(a.createdAt).getTime();
-      bv = new Date(b.createdAt).getTime();
-    } else if (sortKey === "productName") {
-      av = a.productName;
-      bv = b.productName;
-    } else {
-      av = a[sortKey];
-      bv = b[sortKey];
-    }
-    if (typeof av === "string" && typeof bv === "string") {
-      return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-    }
-    return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
-  });
-  return copy;
+export function useSortedProducts(): Product[] {
+  const products = useProductStore((s) => s.products);
+  const sortKey = useProductStore((s) => s.sortKey);
+  const sortDir = useProductStore((s) => s.sortDir);
+
+  return useMemo(() => {
+    const copy = [...products];
+    copy.sort((a, b) => {
+      let av: string | number;
+      let bv: string | number;
+      if (sortKey === "createdAt") {
+        av = new Date(a.createdAt).getTime();
+        bv = new Date(b.createdAt).getTime();
+      } else if (sortKey === "productName") {
+        av = a.productName;
+        bv = b.productName;
+      } else {
+        av = a[sortKey];
+        bv = b[sortKey];
+      }
+      if (typeof av === "string" && typeof bv === "string") {
+        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    });
+    return copy;
+  }, [products, sortKey, sortDir]);
 }

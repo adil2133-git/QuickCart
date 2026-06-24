@@ -29,9 +29,6 @@ const initialState: ProductFormValues = {
 
 type Errors = Partial<Record<keyof ProductFormValues, string>>;
 
-// One image slot can be either an existing Cloudinary URL (edit mode) or a freshly
-// dropped File pending upload. Keeping them in one ordered list preserves cover-image
-// ordering across both, and lets removal work uniformly regardless of source.
 type ImageSlot = { kind: "existing"; url: string } | { kind: "new"; file: File; previewUrl: string };
 
 /* -------------------------------------------------------------------------- */
@@ -147,8 +144,9 @@ function LivePreview({
           <p className="text-xs font-semibold uppercase tracking-wide text-[#C2825A]">{categoryName || "Category"}</p>
           <div className="mt-1 flex items-start justify-between gap-2">
             <h3 className="text-lg font-semibold text-[#2B1B0E]">{form.productName || "Product name"}</h3>
+            {/* ✅ Changed from $ to ₹ */}
             <span className="shrink-0 text-lg font-bold text-[#2B1B0E]">
-              {form.price ? `$${Number(form.price).toFixed(2)}` : "$0.00"}
+              {form.price ? `₹${Number(form.price).toFixed(2)}` : "₹0.00"}
             </span>
           </div>
           <p className="mt-1.5 line-clamp-2 text-sm text-[#2B1B0E]/55">
@@ -172,16 +170,12 @@ export default function AddEditProductPage() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
 
-  // Shared/server state comes from the store: categories list (reused across
-  // the products list page too) and the fetch-by-id action for edit mode.
   const categories = useProductStore((s) => s.categories);
   const fetchCategories = useProductStore((s) => s.fetchCategories);
   const fetchProductById = useProductStore((s) => s.fetchProductById);
   const createProduct = useProductStore((s) => s.createProduct);
   const updateProduct = useProductStore((s) => s.updateProduct);
 
-  // Form/UI state stays local — it's ephemeral and specific to this page,
-  // not data the rest of the app needs to read or react to.
   const [form, setForm] = useState<ProductFormValues>(initialState);
   const [imageSlots, setImageSlots] = useState<ImageSlot[]>([]);
   const [errors, setErrors] = useState<Errors>({});
@@ -228,7 +222,6 @@ export default function AddEditProductPage() {
     };
   }, [id, isEditMode, fetchProductById]);
 
-  // Revoke object URLs for any "new" slots on unmount to avoid leaking memory.
   useEffect(() => {
     return () => {
       imageSlots.forEach((s) => {
@@ -276,8 +269,6 @@ export default function AddEditProductPage() {
   const handleSave = async () => {
     if (!validate()) return;
 
-    // Image requirement only matters on create — the backend requires at least
-    // one file on addProduct, but update accepts keeping existing images untouched.
     if (!isEditMode && imageSlots.length === 0) {
       setLoadError("Add at least one product image.");
       return;
@@ -380,9 +371,10 @@ export default function AddEditProductPage() {
                 </div>
               </Field>
 
-              <Field label="Price" error={errors.price}>
+              {/* ✅ Changed $ to ₹ in the price field prefix */}
+              <Field label="Price (₹)" error={errors.price}>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2B1B0E]/50">$</span>
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2B1B0E]/50">₹</span>
                   <input
                     type="number"
                     min={0}

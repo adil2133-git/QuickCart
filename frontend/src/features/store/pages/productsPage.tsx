@@ -21,7 +21,8 @@ import {
   PackageX,
 } from "lucide-react";
 import { StoreShell } from "./storeShell";
-import { useProductStore, selectSortedProducts, type SortKey, type SortDir } from "../state/productState";
+// ✅ Import useSortedProducts instead of selectSortedProducts
+import { useProductStore, useSortedProducts, type SortKey, type SortDir } from "../state/productState";
 import {
   type Product,
   type AvailabilityStatus,
@@ -187,9 +188,7 @@ function RowMenu({
   const openMenu = () => {
     const rect = buttonRef.current?.getBoundingClientRect();
     if (rect) {
-      // Default: open below-right of the button. Flip upward if it would
-      // overflow the viewport bottom (e.g. last row in a short table).
-      const menuHeight = 84; // two items, roughly
+      const menuHeight = 84;
       const spaceBelow = window.innerHeight - rect.bottom;
       const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
       const left = Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8);
@@ -393,14 +392,12 @@ export default function ProductsPage() {
     setActionError,
   } = useProductStore();
 
-  // categoryFilter/search are read separately below for the filter bar controls
   const categoryFilter = useProductStore((s) => s.categoryFilter);
   const search = useProductStore((s) => s.search);
 
-  const sorted = useProductStore(selectSortedProducts);
+  // ✅ Use the memoized hook — fixes the infinite loop
+  const sorted = useSortedProducts();
 
-  // Raw text input — kept local since it's debounced before becoming the
-  // store's committed `search` value (avoids a network call on every keystroke).
   const [searchInput, setSearchInput] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
@@ -423,8 +420,6 @@ export default function ProductsPage() {
   }, [searchInput]);
 
   // KPIs computed from the current page's data.
-  // Note: these reflect only the loaded page, not the full store catalogue,
-  // since the backend doesn't expose store-wide aggregate counts yet.
   const kpis = useMemo(() => {
     const active = sorted.filter((p) => getDerivedStatus(p) === "ACTIVE").length;
     const low = sorted.filter((p) => getDerivedStatus(p) === "LOW_STOCK").length;

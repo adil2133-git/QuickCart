@@ -23,7 +23,7 @@ const tokenRegenerate = (req, res) => {
         return res
             .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
-                sameSite: "none",
+                sameSite: "lax",
                 secure: true
             })
             .status(200)
