@@ -1,18 +1,22 @@
 // src/features/auth/components/StoreRegistration.tsx
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import api from "../../../api/axios";
 import OtpVerificationModal from "../components/otpVerificationModal";
 
-// ─── Leaflet (loaded via CDN in index.html) ──────────────────────────────────
-// Add these to your index.html <head>:
-//   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-//   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-declare const L: any;
-
 type UploadState = { file: File | null };
 
-type Coords = { lat: number; lng: number } | null;
+type Coords = { lat: number; lng: number };
+
+// What gets saved to form state once the user clicks "Confirm Location".
+// Until this exists, the form's `location` is null and submission is blocked.
+type ConfirmedLocation = {
+  lat: number;
+  lng: number;
+  resolvedAddress: string | null; // reverse-geocoded label shown to the user, may be null if lookup failed
+};
 
 // ─── Password Strength Bar ────────────────────────────────────────────────────
 function PasswordStrengthBar({ password }: { password: string }) {
@@ -88,24 +92,40 @@ function UploadCard({
   );
 }
 
-// ─── Map Picker ───────────────────────────────────────────────────────────────
-function MapPicker({
-  coords,
-  onChange,
-  geocodeQuery,
+// ─── Location Step ────────────────────────────────────────────────────────────
+// Implements the explicit flow:
+//   1. User clicks "Use Current Location" OR types a search query
+//   2. A marker appears
+//   3. User can drag the marker to fine-tune
+//   4. User clicks "Confirm Location" — only THEN is the location saved
+//      to the parent form. Dragging or re-searching after a confirm
+//      un-confirms it, so a stale confirm can never silently survive a change.
+function LocationStep({
+  confirmed,
+  onConfirm,
+  initialAddressHint,
 }: {
-  coords: Coords;
-  onChange: (c: Coords) => void;
-  geocodeQuery: string; // address + pincode joined
+  confirmed: ConfirmedLocation | null;
+  onConfirm: (loc: ConfirmedLocation | null) => void;
+  initialAddressHint: string; // address+pincode typed earlier in the form, used to prefill the search box once
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const [geocoding, setGeocoding] = useState(false);
+  const mapInstanceRef = useRef<{ map: L.Map; markerIcon: L.DivIcon } | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+
+  const [searchText, setSearchText] = useState("");
+  const [searching, setGeocoding] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [mapReady, setMapReady] = useState(false);
 
-  // Default center: India
+  // Pending = pinned but not yet confirmed by the user.
+  const [pending, setPending] = useState<Coords | null>(null);
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
+  const hintAppliedRef = useRef(false);
+
   const DEFAULT_CENTER: [number, number] = [20.5937, 78.9629];
   const DEFAULT_ZOOM = 5;
 
@@ -113,190 +133,314 @@ function MapPicker({
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Wait for L to be available
-    const init = () => {
-      if (typeof L === "undefined") {
-        setTimeout(init, 100);
-        return;
-      }
+    const map = L.map(mapRef.current, {
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+      zoomControl: true,
+    });
 
-      const map = L.map(mapRef.current, {
-        center: DEFAULT_CENTER,
-        zoom: DEFAULT_ZOOM,
-        zoomControl: true,
-      });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(map);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-        maxZoom: 19,
-      }).addTo(map);
+    const markerIcon = L.divIcon({
+      className: "",
+      html: `
+        <div style="
+          width:36px;height:36px;
+          background:#c2a383;
+          border:3px solid #291803;
+          border-radius:50% 50% 50% 0;
+          transform:rotate(-45deg);
+          box-shadow:0 4px 12px rgba(41,24,3,0.35);
+        "></div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+    });
 
-      // Custom warm-toned marker icon
-      const markerIcon = L.divIcon({
-        className: "",
-        html: `
-          <div style="
-            width:36px;height:36px;
-            background:#c2a383;
-            border:3px solid #291803;
-            border-radius:50% 50% 50% 0;
-            transform:rotate(-45deg);
-            box-shadow:0 4px 12px rgba(41,24,3,0.35);
-          "></div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
-      });
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      placeMarker(map, markerIcon, lat, lng);
+      setPendingCoords(lat, lng);
+    });
 
-      map.on("click", (e: any) => {
-        const { lat, lng } = e.latlng;
-        placeMarker(map, markerIcon, lat, lng);
-        onChange({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) });
-      });
-
-      mapInstanceRef.current = { map, markerIcon };
-      setMapReady(true);
-    };
-
-    init();
+    mapInstanceRef.current = { map, markerIcon };
+    setMapReady(true);
 
     return () => {
-      if (mapInstanceRef.current?.map) {
-        mapInstanceRef.current.map.remove();
-        mapInstanceRef.current = null;
-      }
+      map.remove();
+      mapInstanceRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const placeMarker = (map: any, icon: any, lat: number, lng: number) => {
+  // If a location was already confirmed (e.g. user went back a step and returned),
+  // re-show it on the map without requiring re-confirmation.
+  useEffect(() => {
+    if (!mapReady || !confirmed || !mapInstanceRef.current) return;
+    const { map, markerIcon } = mapInstanceRef.current;
+    map.setView([confirmed.lat, confirmed.lng], 17);
+    placeMarker(map, markerIcon, confirmed.lat, confirmed.lng);
+    setPending({ lat: confirmed.lat, lng: confirmed.lng });
+    setResolvedAddress(confirmed.resolvedAddress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady]);
+
+  // Prefill the search box from the address typed earlier in the form, once,
+  // so the user isn't forced to retype something they already wrote above.
+  useEffect(() => {
+    if (!hintAppliedRef.current && initialAddressHint && !searchText) {
+      hintAppliedRef.current = true;
+      setSearchText(initialAddressHint);
+    }
+  }, [initialAddressHint, searchText]);
+
+  const placeMarker = (map: L.Map, icon: L.DivIcon, lat: number, lng: number) => {
     if (markerRef.current) markerRef.current.remove();
     const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
-    marker.on("dragend", (e: any) => {
-      const pos = e.target.getLatLng();
-      onChange({ lat: +pos.lat.toFixed(6), lng: +pos.lng.toFixed(6) });
+    marker.on("dragend", (e) => {
+      const pos = (e.target as L.Marker).getLatLng();
+      setPendingCoords(pos.lat, pos.lng);
     });
     markerRef.current = marker;
   };
 
-  // ── Geocode when query changes ─────────────────────────────────────────────
-  const lastQueryRef = useRef("");
-  const geocode = useCallback(
-    async (query: string) => {
-      if (!query || query === lastQueryRef.current) return;
-      if (!mapInstanceRef.current) return;
-      lastQueryRef.current = query;
+  // Any change to the pin — click, drag, search, GPS — resets confirmation
+  // state, so a previously-confirmed location can't survive a silent move.
+  const setPendingCoords = (lat: number, lng: number) => {
+    const rounded = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
+    setPending(rounded);
+    onConfirm(null); // un-confirm in parent until user re-confirms
+    reverseGeocode(rounded.lat, rounded.lng);
+  };
 
-      setGeocoding(true);
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          query
-        )}&format=json&limit=1&countrycodes=in`;
-        const res = await fetch(url, {
-          headers: { "Accept-Language": "en" },
-        });
-        const data = await res.json();
-        if (data?.[0]) {
-          const lat = parseFloat(data[0].lat);
-          const lng = parseFloat(data[0].lon);
-          const { map, markerIcon } = mapInstanceRef.current;
-          map.setView([lat, lng], 17);
-          placeMarker(map, markerIcon, lat, lng);
-          onChange({ lat: +lat.toFixed(6), lng: +lng.toFixed(6) });
-        }
-      } catch {
-        // silently fail — user can pin manually
-      } finally {
-        setGeocoding(false);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mapReady]
-  );
-
-  useEffect(() => {
-    if (mapReady && geocodeQuery.trim().length > 5) {
-      const timer = setTimeout(() => geocode(geocodeQuery), 600);
-      return () => clearTimeout(timer);
+  // ── Reverse geocode (pin → human-readable address, shown before confirming) ─
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    setResolving(true);
+    setResolvedAddress(null);
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+      const data = await res.json();
+      setResolvedAddress(data?.display_name || null);
+    } catch {
+      setResolvedAddress(null);
+    } finally {
+      setResolving(false);
     }
-  }, [geocodeQuery, mapReady, geocode]);
+  }, []);
+
+  // ── Forward geocode (search box → pin) ───────────────────────────────────
+  const handleSearch = async () => {
+    const query = searchText.trim();
+    if (!query || !mapInstanceRef.current) return;
+    setSearchError("");
+    setGeocoding(true);
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+        query
+      )}&format=json&limit=1&countrycodes=in`;
+      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+      const data = await res.json();
+      if (data?.[0]) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        const { map, markerIcon } = mapInstanceRef.current;
+        map.setView([lat, lng], 17);
+        placeMarker(map, markerIcon, lat, lng);
+        setPendingCoords(lat, lng);
+      } else {
+        setSearchError("Couldn't find that address. Try a nearby landmark, or pin it manually on the map.");
+      }
+    } catch {
+      setSearchError("Search failed. Check your connection and try again.");
+    } finally {
+      setGeocoding(false);
+    }
+  };
 
   // ── GPS ────────────────────────────────────────────────────────────────────
   const handleGPS = () => {
     if (!navigator.geolocation || !mapInstanceRef.current) return;
+    setSearchError("");
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const lat = +pos.coords.latitude.toFixed(6);
-        const lng = +pos.coords.longitude.toFixed(6);
-        const { map, markerIcon } = mapInstanceRef.current;
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const { map, markerIcon } = mapInstanceRef.current!;
         map.setView([lat, lng], 17);
         placeMarker(map, markerIcon, lat, lng);
-        onChange({ lat, lng });
+        setPendingCoords(lat, lng);
         setGpsLoading(false);
       },
-      () => setGpsLoading(false),
+      () => {
+        setSearchError("Couldn't get your location. Check location permissions, or search/pin manually.");
+        setGpsLoading(false);
+      },
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
 
+  const handleConfirm = () => {
+    if (!pending) return;
+    onConfirm({ lat: pending.lat, lng: pending.lng, resolvedAddress });
+  };
+
+  const isConfirmed = !!confirmed;
+
   return (
-    <div className="space-y-2">
-      <div className="relative rounded-xl overflow-hidden border-2" style={{ borderColor: coords ? "#735a3e" : "#d2c4b9" }}>
-        {/* GPS button */}
+    <div className="space-y-3">
+      {/* Search row */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            placeholder="Search for your store's address"
+            className="w-full h-11 pl-9 pr-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400"
+            style={{ borderColor: "#d2c4b9" }}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
+          />
+        </div>
         <button
           type="button"
-          onClick={handleGPS}
-          disabled={gpsLoading}
-          title="Use my current location"
-          className="absolute top-3 right-3 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md transition-all hover:brightness-95 active:scale-95 disabled:opacity-60"
+          onClick={handleSearch}
+          disabled={searching || !searchText.trim()}
+          className="h-11 px-4 rounded-lg text-sm font-semibold transition-all hover:brightness-95 active:scale-95 disabled:opacity-50 flex-shrink-0"
           style={{ backgroundColor: "#291803", color: "#f5ede3" }}
         >
-          {gpsLoading ? (
-            <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21 12a9 9 0 11-6.219-8.56" />
-            </svg>
-          ) : (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-            </svg>
-          )}
-          {gpsLoading ? "Locating..." : "My Location"}
+          {searching ? "Searching…" : "Search"}
         </button>
+      </div>
 
-        {/* Geocoding indicator */}
-        {geocoding && (
-          <div className="absolute top-3 left-3 z-[999] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md" style={{ backgroundColor: "#f9f4ee", color: "#735a3e" }}>
-            <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21 12a9 9 0 11-6.219-8.56" />
-            </svg>
-            Finding location…
-          </div>
+      <button
+        type="button"
+        onClick={handleGPS}
+        disabled={gpsLoading}
+        className="w-full h-11 flex items-center justify-center gap-2 rounded-lg text-sm font-semibold border-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-60"
+        style={{ borderColor: "#c2a383", color: "#735a3e", backgroundColor: "#faf2ee" }}
+      >
+        {gpsLoading ? (
+          <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M21 12a9 9 0 11-6.219-8.56" />
+          </svg>
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+          </svg>
         )}
+        {gpsLoading ? "Locating…" : "Use Current Location"}
+      </button>
 
-        {/* Map */}
+      {searchError && (
+        <p className="text-xs flex items-start gap-1.5" style={{ color: "#dc2626" }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          {searchError}
+        </p>
+      )}
+
+      {/* Map */}
+      <div
+        className="relative rounded-xl overflow-hidden border-2"
+        style={{ borderColor: isConfirmed ? "#735a3e" : pending ? "#c2a383" : "#d2c4b9" }}
+      >
         <div ref={mapRef} style={{ height: "280px", width: "100%", zIndex: 1 }} />
       </div>
 
-      {/* Status row */}
-      <div className="flex items-center gap-2">
-        {coords ? (
+      {/* Pin / confirm panel */}
+      <div
+        className="rounded-lg p-3 space-y-2"
+        style={{
+          backgroundColor: isConfirmed ? "rgba(115,90,62,0.08)" : pending ? "#faf2ee" : "#f5f1ee",
+          border: `1px solid ${isConfirmed ? "#735a3e" : pending ? "#d2c4b9" : "#e8e1dd"}`,
+        }}
+      >
+        {!pending && (
+          <p className="text-xs text-gray-400">
+            No pin yet — search above, use your current location, or click directly on the map.
+          </p>
+        )}
+
+        {pending && (
           <>
-            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#735a3e" }} />
-            <p className="text-xs" style={{ color: "#735a3e" }}>
-              Pinned at{" "}
-              <span className="font-semibold font-mono">
-                {coords.lat}, {coords.lng}
-              </span>{" "}
-              — drag the marker to fine-tune
+            <div className="flex items-center gap-2">
+              <div
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: isConfirmed ? "#735a3e" : "#c2a383" }}
+              />
+              <p className="text-xs font-mono font-semibold" style={{ color: "#5c4a35" }}>
+                {pending.lat}, {pending.lng}
+              </p>
+              {isConfirmed && (
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full font-semibold ml-auto"
+                  style={{ backgroundColor: "rgba(115,90,62,0.15)", color: "#735a3e" }}
+                >
+                  ✓ Confirmed
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs leading-relaxed" style={{ color: "#6d614f" }}>
+              {resolving ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <svg className="animate-spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21 12a9 9 0 11-6.219-8.56" />
+                  </svg>
+                  Looking up address for this pin…
+                </span>
+              ) : resolvedAddress ? (
+                <>Nearest match: <span className="font-medium">{resolvedAddress}</span></>
+              ) : (
+                "Couldn't resolve an address for this exact pin — that's fine, the coordinates will still be saved."
+              )}
             </p>
-          </>
-        ) : (
-          <>
-            <div className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-300" />
-            <p className="text-xs text-gray-400">
-              Click on the map or use "My Location" to pin your storefront
-            </p>
+
+            {!isConfirmed && (
+              <>
+                <p className="text-xs" style={{ color: "#80756b" }}>
+                  Drag the marker to fine-tune, then confirm.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  className="w-full h-10 rounded-lg text-sm font-semibold transition-all hover:brightness-95 active:scale-[0.98]"
+                  style={{ backgroundColor: "#c2a383", color: "#291803" }}
+                >
+                  Confirm Location
+                </button>
+              </>
+            )}
+
+            {isConfirmed && (
+              <button
+                type="button"
+                onClick={() => onConfirm(null)}
+                className="text-xs font-semibold underline"
+                style={{ color: "#735a3e" }}
+              >
+                Change location
+              </button>
+            )}
           </>
         )}
       </div>
@@ -318,10 +462,8 @@ export default function StoreRegistration() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Location
-  const [coords, setCoords] = useState<Coords>(null);
-  // Trigger geocode only when user finishes typing address+pincode (onBlur)
-  const [geocodeQuery, setGeocodeQuery] = useState("");
+  // Location — null until the user explicitly confirms a pin
+  const [location, setLocation] = useState<ConfirmedLocation | null>(null);
 
   // File uploads
   const [tradeLicense, setTradeLicense] = useState<UploadState>({ file: null });
@@ -332,13 +474,6 @@ export default function StoreRegistration() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
-
-  // Fire geocode when address+pincode both have content and user tabs away
-  const triggerGeocode = () => {
-    if (address.trim() && pincode.trim()) {
-      setGeocodeQuery(`${address.trim()}, ${pincode.trim()}, India`);
-    }
-  };
 
   const inputClass =
     "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
@@ -375,8 +510,8 @@ export default function StoreRegistration() {
       return;
     }
 
-    if (!coords) {
-      setError("Please pin your store location on the map");
+    if (!location) {
+      setError("Please confirm your store location on the map");
       return;
     }
 
@@ -398,8 +533,8 @@ export default function StoreRegistration() {
       formData.append("password", password);
       formData.append("confirmPassword", confirmPassword);
       // ── Location ──────────────────────────────────────────────────────────
-      formData.append("lat", String(coords.lat));
-      formData.append("lng", String(coords.lng));
+      formData.append("lat", String(location.lat));
+      formData.append("lng", String(location.lng));
       // ─────────────────────────────────────────────────────────────────────
       formData.append("tradeLicense", tradeLicense.file);
       formData.append("ownerId", ownerID.file);
@@ -607,7 +742,7 @@ export default function StoreRegistration() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     onFocus={handleFocus}
-                    onBlur={(e) => { handleBlur(e); triggerGeocode(); }}
+                    onBlur={handleBlur}
                   />
                 </div>
 
@@ -631,12 +766,12 @@ export default function StoreRegistration() {
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                       onFocus={handleFocus}
-                      onBlur={(e) => { handleBlur(e); triggerGeocode(); }}
+                      onBlur={handleBlur}
                     />
                   </div>
                 </div>
 
-                {/* ── Map Location Picker ─────────────────────────────────── */}
+                {/* ── Location Step ───────────────────────────────────────── */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500">
@@ -645,20 +780,22 @@ export default function StoreRegistration() {
                     <span
                       className="text-xs px-2 py-0.5 rounded-full font-semibold"
                       style={{
-                        backgroundColor: coords ? "rgba(115,90,62,0.12)" : "rgba(220,38,38,0.08)",
-                        color: coords ? "#735a3e" : "#dc2626",
+                        backgroundColor: location ? "rgba(115,90,62,0.12)" : "rgba(220,38,38,0.08)",
+                        color: location ? "#735a3e" : "#dc2626",
                       }}
                     >
-                      {coords ? "✓ Pinned" : "Required"}
+                      {location ? "✓ Confirmed" : "Required"}
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 mb-2">
-                    Type your address above, then confirm the pin or drag it to your exact shopfront.
+                    Search your address or use your current location, adjust the pin, then confirm.
                   </p>
-                  <MapPicker
-                    coords={coords}
-                    onChange={setCoords}
-                    geocodeQuery={geocodeQuery}
+                  <LocationStep
+                    confirmed={location}
+                    onConfirm={setLocation}
+                    initialAddressHint={
+                      address.trim() && pincode.trim() ? `${address.trim()}, ${pincode.trim()}, India` : ""
+                    }
                   />
                 </div>
               </div>
