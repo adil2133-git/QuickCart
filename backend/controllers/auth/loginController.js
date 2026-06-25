@@ -48,26 +48,27 @@ const Login = async (req, res) => {
             .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
                 sameSite: "lax",
-                secure: false
+                // ✅ Use env-based flag — never hardcode false or true
+                secure: process.env.NODE_ENV === "production",
             })
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
                 sameSite: "lax",
-                secure: false
+                // ✅ Same secure flag for both cookies — must always match
+                secure: process.env.NODE_ENV === "production",
             })
             .status(200)
             .json({
                 message: "Login successful",
                 token: AccessToken,
                 user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    status: user.status || "ACTIVE", 
-                }
+                    id:     user._id,
+                    name:   user.name,
+                    email:  user.email,
+                    role:   user.role,
+                    status: user.status || "ACTIVE",
+                },
             });
-
 
     } catch (err) {
         console.log("LOGIN ERROR:", err);

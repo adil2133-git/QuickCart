@@ -1,15 +1,13 @@
 import {
   useState,
   useEffect,
-  useMemo,
   useRef,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Star,
   StarHalf,
-  Heart,
   Share2,
   ShoppingCart,
   Check,
@@ -25,18 +23,7 @@ import {
 } from "lucide-react";
 import NavBar from "../components/navbar";
 import { useSingleStoreStore, type Product, type OperatingHour, type RatingBar } from "../state/singleStoreState";
-
-// ─── Debounce utility ─────────────────────────────────────────────────────────
-
-function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
-  let timer: ReturnType<typeof setTimeout>;
-  const debounced = (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
-  debounced.cancel = () => clearTimeout(timer);
-  return debounced;
-}
+import { useCartStore } from "../state/cartState";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
@@ -64,12 +51,17 @@ function StarRow({ rating = 0, size = 14, color = PALETTE.brown }: { rating?: nu
   );
 }
 
-function AddButton({ withLabel = false, onAdd }: { withLabel?: boolean; onAdd?: () => void }) {
+function AddButton({ withLabel = false, onAdd, productId }: { withLabel?: boolean; onAdd?: () => void; productId?: string }) {
   const [added, setAdded] = useState(false);
-  const handleClick = (e: ReactMouseEvent<HTMLButtonElement>) => {
+  const addToCart = useCartStore((s) => s.addToCart);
+
+  const handleClick = async (e: ReactMouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    setAdded(true);
+    if (productId) {
+      await addToCart(productId, 1);
+    }
     onAdd?.();
+    setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   };
 
@@ -111,18 +103,27 @@ function ProductCardSkeleton() {
   );
 }
 
-function ProductCard({ product }: { product: Product }) {
+// ─── FIX: accept storeId as a prop so we always use the URL param string,
+//         never product.storeId which may be a populated object. ─────────────
+
+function ProductCard({ product, storeId }: { product: Product; storeId: string }) {
+  const navigate = useNavigate();
   const [showAdd, setShowAdd] = useState(false);
   const img = product.images?.[0] || "https://placehold.co/400x400/f3ede4/735a3e?text=No+Image";
   const outOfStock = product.availabilityStatus === "OUT_OF_STOCK";
 
+  const handleCardClick = () => {
+    // Use the storeId prop (from useParams) — never product.storeId
+    navigate(`/customer/store/${storeId}/product/${product._id}`);
+  };
+
   return (
     <div
-      className="relative bg-white rounded-3xl p-4 border border-[#d2c4b9]/30 hover:shadow-2xl transition-all duration-300 flex flex-col"
+      onClick={handleCardClick}
+      className="relative bg-white rounded-3xl p-4 border border-[#d2c4b9]/30 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer"
       onMouseEnter={() => setShowAdd(true)}
       onMouseLeave={() => setShowAdd(false)}
     >
-
       <div className="aspect-square rounded-2xl overflow-hidden mb-4 relative">
         <img
           src={img}
@@ -141,11 +142,11 @@ function ProductCard({ product }: { product: Product }) {
         <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: PALETTE.muted }}>
           {product.categoryId?.categoryName || "Uncategorised"}
         </span>
-        <h4 className="text-base font-semibold leading-snug" style={{ fontFamily: "'Playfair Display', serif", color: PALETTE.ink }}>
+        <h4 className="text-base font-semibold leading-snug" style={{ fontFamily: "'Inter', sans-serif", color: PALETTE.ink }}>
           {product.productName}
         </h4>
         <div className="flex items-center justify-between mt-auto pt-4">
-          <span className="font-semibold" style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: PALETTE.brown }}>
+          <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: PALETTE.brown }}>
             ₹{Number(product.price).toFixed(2)}
             {product.unit && <small className="text-xs font-normal" style={{ color: PALETTE.muted }}> /{product.unit}</small>}
           </span>
@@ -154,7 +155,7 @@ function ProductCard({ product }: { product: Product }) {
               className="transition-all duration-300"
               style={{ opacity: showAdd ? 1 : 0, transform: showAdd ? "translateY(0)" : "translateY(8px)" }}
             >
-              <AddButton withLabel />
+              <AddButton withLabel productId={product._id} />
             </div>
           )}
         </div>
@@ -163,10 +164,23 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-function BestsellerCard({ item }: { item: Product }) {
+// ─── FIX: same fix for BestsellerCard ────────────────────────────────────────
+
+function BestsellerCard({ item, storeId }: { item: Product; storeId: string }) {
+  const navigate = useNavigate();
   const img = item.images?.[0] || "https://placehold.co/400x400/f3ede4/735a3e?text=No+Image";
+
+  const handleCardClick = () => {
+    // Use the storeId prop (from useParams) — never item.storeId
+    navigate(`/customer/store/${storeId}/product/${item._id}`);
+  };
+
   return (
-    <div className="flex bg-white rounded-3xl overflow-hidden border border-[#d2c4b9]/30 hover:shadow-xl transition-all duration-300 group" style={{ height: 224 }}>
+    <div
+      onClick={handleCardClick}
+      className="flex bg-white rounded-3xl overflow-hidden border border-[#d2c4b9]/30 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+      style={{ height: 224 }}
+    >
       <div className="w-2/5 relative overflow-hidden flex-shrink-0">
         <span className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-[10px] font-bold text-white shadow-lg" style={{ backgroundColor: PALETTE.brown }}>
           BESTSELLER
@@ -175,15 +189,15 @@ function BestsellerCard({ item }: { item: Product }) {
       </div>
       <div className="w-3/5 p-6 flex flex-col justify-between">
         <div>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: PALETTE.ink }}>{item.productName}</h3>
+          <h3 style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, fontWeight: 600, color: PALETTE.ink }}>{item.productName}</h3>
           <p className="text-sm mt-1 line-clamp-2" style={{ color: PALETTE.muted }}>{item.description}</p>
         </div>
         <div className="flex justify-between items-center">
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: PALETTE.brown }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, fontWeight: 600, color: PALETTE.brown }}>
             ₹{Number(item.price).toFixed(2)}
             {item.unit && <small className="text-xs font-normal" style={{ color: PALETTE.muted }}> /{item.unit}</small>}
           </span>
-          <AddButton />
+          <AddButton productId={item._id} />
         </div>
       </div>
     </div>
@@ -254,6 +268,8 @@ function StorePageContent({ storeId }: { storeId: string }) {
   const reviewsLoading = useSingleStoreStore((s) => s.reviewsLoading);
 
   const followed = useSingleStoreStore((s) => s.followed);
+  const cartCount = useCartStore((s) => s.cartItemCount());
+  const fetchCart = useCartStore((s) => s.fetchCart);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const fetchStore = useSingleStoreStore((s) => s.fetchStore);
@@ -275,18 +291,17 @@ function StorePageContent({ storeId }: { storeId: string }) {
     fetchBestsellers(storeId);
     fetchCategories();
     fetchReviews(storeId);
+    void fetchCart();
     return () => resetStore();
-  }, [storeId]);
+  }, [storeId, fetchCart]);
 
   // ── Debounced search ───────────────────────────────────────────────────────
-  const debouncedSetSearch = useMemo(
-    () => debounce((val: string) => setSearch(val), 400),
-    []
-  );
   useEffect(() => {
-    debouncedSetSearch(searchInput);
-    return () => debouncedSetSearch.cancel();
-  }, [searchInput, debouncedSetSearch]);
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // ── Re-fetch products when filters change ──────────────────────────────────
   const search = useSingleStoreStore((s) => s.search);
@@ -308,9 +323,9 @@ function StorePageContent({ storeId }: { storeId: string }) {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <NavBar />
+      <NavBar cartCount={cartCount} />
       <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400..900&family=DM+Sans:wght@100..900&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
         rel="stylesheet"
       />
       <style>{`
@@ -324,7 +339,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
         }
       `}</style>
 
-      <div className="min-h-screen overflow-x-hidden" style={{ backgroundColor: PALETTE.bg, color: PALETTE.ink, fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="min-h-screen overflow-x-hidden" style={{ backgroundColor: PALETTE.bg, color: PALETTE.ink, fontFamily: "'Inter', sans-serif" }}>
         <main className="max-w-[1200px] mx-auto w-full px-4 md:px-10 pb-20">
 
           {/* ── Hero ── */}
@@ -364,7 +379,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
                     </div>
                   ) : (
                     <>
-                      <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", color: PALETTE.ink }} className="mb-2">
+                      <h1 style={{ fontFamily: "'Inter', sans-serif", fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", color: PALETTE.ink }} className="mb-2">
                         {store?.storeName}
                       </h1>
                       <div className="flex flex-wrap items-center gap-3">
@@ -420,7 +435,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
               { value: store?.reviewCount ?? "—", label: "Reviews" },
             ].map((stat) => (
               <div key={stat.label} className="glass-card p-4 rounded-2xl flex flex-col items-center text-center shadow-sm">
-                <span className="font-semibold" style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: PALETTE.brown }}>
+                <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: PALETTE.brown }}>
                   {storeLoading ? "–" : stat.value}
                 </span>
                 <span className="text-[10px] uppercase tracking-widest mt-1 font-medium" style={{ color: PALETTE.muted }}>
@@ -433,7 +448,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
           {/* ── Curated Bestsellers ── */}
           <section className="mt-16">
             <div className="flex justify-between items-end mb-8">
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700 }}>Curated Bestsellers</h2>
+              <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: 24, fontWeight: 700 }}>Curated Bestsellers</h2>
             </div>
             {bestsellersLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -446,7 +461,8 @@ function StorePageContent({ storeId }: { storeId: string }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {bestsellers.map((item) => <BestsellerCard key={item._id} item={item} />)}
+                {/* ── FIX: pass storeId prop ── */}
+                {bestsellers.map((item) => <BestsellerCard key={item._id} item={item} storeId={storeId} />)}
               </div>
             )}
           </section>
@@ -537,7 +553,8 @@ function StorePageContent({ storeId }: { storeId: string }) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {productsLoading
                   ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
-                  : products.map((p) => <ProductCard key={p._id} product={p} />)}
+                  : /* ── FIX: pass storeId prop ── */
+                    products.map((p) => <ProductCard key={p._id} product={p} storeId={storeId} />)}
                 {!productsLoading && products.length === 0 && (
                   <div className="col-span-full flex flex-col items-center justify-center py-16 gap-2" style={{ color: PALETTE.muted }}>
                     <PackageOpen size={28} />
@@ -566,7 +583,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
           {/* ── Store Info & Reviews ── */}
           <section className="mt-24 grid grid-cols-1 md:grid-cols-12 gap-12">
             <div className="md:col-span-5 space-y-8">
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700 }}>Store Intelligence</h2>
+              <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: 24, fontWeight: 700 }}>Store Intelligence</h2>
               <div className="space-y-4">
                 <div className="p-6 rounded-2xl border flex items-start gap-4" style={{ backgroundColor: PALETTE.card, borderColor: "rgba(210,196,185,0.3)" }}>
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(115,90,62,0.1)", color: PALETTE.brown }}>
@@ -599,7 +616,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
             </div>
 
             <div className="md:col-span-7 space-y-8">
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700 }}>Customer Sentiment</h2>
+              <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: 24, fontWeight: 700 }}>Customer Sentiment</h2>
               <div className="bg-white p-8 rounded-3xl border border-[#d2c4b9]/30 shadow-sm">
                 <div className="flex flex-col md:flex-row gap-8 items-center mb-8">
                   <div className="text-center md:pr-8 flex-shrink-0" style={{ borderRight: "1px solid rgba(210,196,185,0.3)" }}>
@@ -659,7 +676,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
 
         <footer className="border-t py-12 px-10 text-center" style={{ backgroundColor: PALETTE.card, borderColor: PALETTE.line }}>
           <div className="max-w-[1200px] mx-auto">
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: PALETTE.brown }} className="mb-2">
+            <h3 style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, fontWeight: 600, color: PALETTE.brown }} className="mb-2">
               QuickKart
             </h3>
             <p className="text-sm" style={{ color: PALETTE.muted }}>Empowering local artisans and bringing fresh produce to your doorstep.</p>

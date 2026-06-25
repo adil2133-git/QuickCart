@@ -106,7 +106,7 @@ const updateCategory = async (req, res) => {
         const category = await Category.findByIdAndUpdate(
             categoryId,
             { $set: updates },
-            { new: true, runValidators: true }
+            { returnDocument: "after", runValidators: true }
         );
 
         if (!category) {

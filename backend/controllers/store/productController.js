@@ -213,7 +213,7 @@ const updateProduct = async (req, res) => {
         const product = await Product.findOneAndUpdate(
             { _id: productId, storeId },
             { $set: updates },
-            { new: true, runValidators: true }
+            { returnDocument: "after", runValidators: true }
         ).populate("categoryId", "categoryName image status");
 
         if (!product) {
@@ -330,7 +330,7 @@ const updateStock = async (req, res) => {
                     availabilityStatus: stockQuantity === 0 ? "OUT_OF_STOCK" : "AVAILABLE",
                 },
             },
-            { new: true, runValidators: true }
+            { returnDocument: "after", runValidators: true }
         );
 
         if (!product) {
@@ -401,7 +401,7 @@ const getPublicStoreProducts = async (req, res) => {
         }
 
         if (search) {
-            filter.$text = { $search: search };
+            filter.productName = { $regex: search, $options: "i" };
         }
 
         const sortMap = {
@@ -460,6 +460,36 @@ const getStoreBestsellers = async (req, res) => {
     }
 };
 
+// ─── Public Product Detail  (GET /api/customer/:storeId/products/:productId) ───
+const getPublicProductDetail = async (req, res) => {
+    try {
+        const { storeId, productId } = req.params;
+
+        if (!isValidObjectId(storeId)) {
+            return res.status(400).json({ message: "Invalid storeId." });
+        }
+        if (!isValidObjectId(productId)) {
+            return res.status(400).json({ message: "Invalid productId." });
+        }
+
+        const product = await Product.findOne({
+            _id: productId,
+            storeId,
+            availabilityStatus: { $ne: "HIDDEN" },
+        })
+            .populate("categoryId", "categoryName image status")
+            .populate("storeId", "storeName averageRating");
+
+        if (!product) {
+            return res.status(404).json({ message: "Product not found." });
+        }
+
+        return res.status(200).json({ product });
+    } catch (error) {
+        return res.status(500).json({ message: "Server error.", error: error.message });
+    }
+};
+
 module.exports = {
     createProduct,
     getProductsByStore,
@@ -471,4 +501,5 @@ module.exports = {
     deleteProduct,
     getPublicStoreProducts,
     getStoreBestsellers,
+    getPublicProductDetail,
 };

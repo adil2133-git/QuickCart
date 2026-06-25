@@ -10,7 +10,6 @@ const api = axios.create({
   },
 });
 
-// Track if a refresh is already in progress to prevent multiple simultaneous refresh calls
 let isRefreshing = false;
 let failedQueue: { resolve: (value: unknown) => void; reject: (reason?: unknown) => void }[] = [];
 
@@ -25,43 +24,47 @@ const processQueue = (error: unknown) => {
   failedQueue = [];
 };
 
+const logoutUser = () => {
+  useAuthStore.getState().clearUser();
+  toast.error("Your session has expired. Please log in again.", {
+    id: "session-expired",
+    duration: 4000,
+  });
+  setTimeout(() => {
+    window.location.href = "/login";
+  }, 500);
+};
+
 // ─── Response Interceptor ─────────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const status = error.response?.status;
-    const message = error.response?.data?.message || "";
-    const isAuthCheck = originalRequest?.url?.includes("/auth/me");
-    const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
+    const status          = error.response?.status;
+    const isAuthCheck     = originalRequest?.url?.includes("/auth/me");
+    const isRefreshCall   = originalRequest?.url?.includes("/auth/refresh");
 
-    // Silent "am I logged in" check
+    // Silent "am I logged in" check — never redirect, just clear state
     if (status === 401 && isAuthCheck) {
       useAuthStore.getState().clearUser();
       return Promise.reject(error);
     }
 
-    // If the refresh call itself failed, log out — no infinite loop
+    // Refresh call itself failed — refresh token expired or invalid, must log out
     if (status === 401 && isRefreshCall) {
-      useAuthStore.getState().clearUser();
-      toast.error("Your session has expired. Please log in again.", {
-        id: "session-expired",
-        duration: 4000,
-      });
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
+      logoutUser();
       return Promise.reject(error);
     }
 
-    // ── Token expired: attempt silent refresh then retry ──────────────────
+    // ── Token expired: attempt silent refresh then retry ──────────────────────
     if (status === 401 && !originalRequest._retry) {
-      // If a refresh is already running, queue this request until it's done
+
+      // Another refresh is already in-flight — queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => api(originalRequest))  // retry original after refresh
+          .then(() => api(originalRequest))
           .catch((err) => Promise.reject(err));
       }
 
@@ -69,22 +72,20 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Call your token refresh endpoint
         await api.post("/auth/refresh");
 
-        processQueue(null);   // let queued requests retry
-        return api(originalRequest);  // retry the original failed request
+        // ✅ Bug 3 fix: yield to the browser's microtask queue so the new
+        // Set-Cookie from the refresh response is fully committed before we
+        // replay the original request. Without this, the retry fires with the
+        // old (expired) cookie still in the jar and gets another 401.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        processQueue(null);
+        return api(originalRequest);
 
       } catch (refreshError) {
-        processQueue(refreshError);  // reject all queued requests
-        useAuthStore.getState().clearUser();
-        toast.error("Your session has expired. Please log in again.", {
-          id: "session-expired",
-          duration: 4000,
-        });
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 500);
+        processQueue(refreshError);
+        logoutUser();
         return Promise.reject(refreshError);
 
       } finally {

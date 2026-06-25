@@ -96,7 +96,7 @@ const updateStoreBranding = async (req, res) => {
             });
         }
 
-        const store = await StoreProfile.findByIdAndUpdate(storeId, { $set: updates }, { new: true });
+        const store = await StoreProfile.findByIdAndUpdate(storeId, { $set: updates }, { returnDocument: "after" });
 
         return res.status(200).json({
             success: true,

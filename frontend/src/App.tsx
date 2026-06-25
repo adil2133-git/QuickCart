@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import ProtectedRoute from './router/protectedRoute'
 import NotFound from './router/notFound'
-import { useAuthStore } from './features/auth/state/authState'
+import { useAuthStore, type UserRole } from './features/auth/state/authState'
 
 import QuickKartLogin from './features/auth/pages/login'
 import CreateAccountModal from './features/auth/components/createAccountModal'
@@ -32,20 +32,51 @@ import DriverApplicationReview from './features/admin/pages/driverReview'
 
 import QuickKartLanding from './features/marketing/pages/landing'
 import QuickKartAbout from './features/marketing/pages/about'
+import ProductDetailPage from './features/customer/pages/prductDetailsPage'
+import StoresPage from './features/customer/pages/storesPage'
+import CartPage from './features/customer/pages/cartPage'
+
+/* -------------------------------------------------------------------------- */
+/*  Role → home path (shared between PublicOnlyRoute and NavBar)             */
+/* -------------------------------------------------------------------------- */
+
+const ROLE_HOME: Record<UserRole, string> = {
+  CUSTOMER: '/customer/home',
+  ADMIN: '/admin/dashboard',
+  DRIVER: '/driver/dashboard',
+  STORE: '/store/dashboard',
+}
+
+/* -------------------------------------------------------------------------- */
+/*  PublicOnlyRoute                                                           */
+/*  Wraps pages that logged-in users should never see (landing, login, etc). */
+/*  If the auth store says the user is authenticated, redirect them straight  */
+/*  to their role's home — no flash, no back-button loop.                    */
+/* -------------------------------------------------------------------------- */
+
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated } = useAuthStore()
+
+  if (isAuthenticated && user) {
+    const home = ROLE_HOME[user.role] ?? '/login'
+    return <Navigate to={home} replace />
+  }
+
+  return <>{children}</>
+}
+
+/* -------------------------------------------------------------------------- */
+/*  App                                                                       */
+/* -------------------------------------------------------------------------- */
 
 function App() {
   const hydrate = useAuthStore((state) => state.hydrate)
   const [ready, setReady] = useState(false)
 
-  // On every hard refresh, silently verify the cookie is still valid
-  // and re-populate the store. Takes one network round-trip (~100–200ms).
   useEffect(() => {
     hydrate().finally(() => setReady(true))
   }, [hydrate])
 
-  // Blank screen while the cookie check resolves — prevents a flash
-  // where a logged-in user briefly sees the login page before the
-  // store is populated.
   if (!ready) {
     return (
       <div
@@ -66,103 +97,137 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* Sonner toaster — sits outside Routes so it works on every page */}
       <Toaster position="top-right" richColors closeButton />
 
       <Routes>
-        {/* ── Public routes (no auth needed) ──────────────────────────── */}
+        {/* ── Public routes ────────────────────────────────────────────── */}
         <Route path="/" element={<Navigate to="/landing" replace />} />
-        <Route path="/login" element={<QuickKartLogin />} />
-        <Route path="/landing" element={<QuickKartLanding />} />
+
+        {/* Landing — logged-in users are sent to their dashboard instead */}
+        <Route
+          path="/landing"
+          element={
+            <PublicOnlyRoute>
+              <QuickKartLanding />
+            </PublicOnlyRoute>
+          }
+        />
+
+        {/* Login — also guard so logged-in users aren't stuck here */}
+        <Route
+          path="/login"
+          element={
+            <PublicOnlyRoute>
+              <QuickKartLogin />
+            </PublicOnlyRoute>
+          }
+        />
+
         <Route path="/about" element={<QuickKartAbout />} />
         <Route path="/create-account" element={<CreateAccountModal />} />
         <Route path="/register/customer" element={<CustomerRegistration />} />
         <Route path="/register/store" element={<StoreRegistration />} />
         <Route path="/register/delivery" element={<DeliveryPartnerRegistration />} />
 
-        {/* Pending approval — cookie present but user not fully logged in */}
         <Route path="/driver/pending" element={<PendingApproval role="driver" />} />
         <Route path="/store/pending" element={<PendingApproval role="store" />} />
 
         {/* ── Customer routes ──────────────────────────────────────────── */}
         <Route path="/customer/home" element={
-          <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
             <CustomerHome />
           </ProtectedRoute>
         } />
+        <Route path="/customer/stores" element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <StoresPage />
+          </ProtectedRoute>
+        } />
         <Route path="/customer/store/:storeId" element={
-          <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
             <FreshMartStorePage />
           </ProtectedRoute>
         } />
         <Route path="/customer/discovery" element={
-          <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
             <ProductDiscoveryPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/customer/store/:storeId/product/:productId" element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <ProductDetailPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/customer/cart" element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <CartPage />
           </ProtectedRoute>
         } />
 
         {/* ── Driver routes ────────────────────────────────────────────── */}
         <Route path="/driver/dashboard" element={
-          <ProtectedRoute allowedRoles={["DRIVER"]}>
+          <ProtectedRoute allowedRoles={['DRIVER']}>
             <QuickKartDashboard />
           </ProtectedRoute>
         } />
 
         {/* ── Store routes ─────────────────────────────────────────────── */}
         <Route path="/store/dashboard" element={
-          <ProtectedRoute allowedRoles={["STORE"]}>
+          <ProtectedRoute allowedRoles={['STORE']}>
             <DashboardPage />
           </ProtectedRoute>
         } />
         <Route path="/store/products/new" element={
-          <ProtectedRoute allowedRoles={["STORE"]}>
+          <ProtectedRoute allowedRoles={['STORE']}>
             <AddProductPage />
           </ProtectedRoute>
         } />
         <Route path="/store/products" element={
-          <ProtectedRoute allowedRoles={["STORE"]}>
+          <ProtectedRoute allowedRoles={['STORE']}>
             <ProductsPage />
           </ProtectedRoute>
         } />
         <Route path="/store/products/:id/edit" element={
-          <ProtectedRoute allowedRoles={["STORE"]}>
+          <ProtectedRoute allowedRoles={['STORE']}>
             <AddProductPage />
           </ProtectedRoute>
         } />
         <Route path="/store/profile" element={
-          <ProtectedRoute allowedRoles={["STORE"]}>
+          <ProtectedRoute allowedRoles={['STORE']}>
             <StoreProfilePage />
           </ProtectedRoute>
         } />
         <Route path="/store/settings" element={
-          <ProtectedRoute allowedRoles={["STORE"]}>
+          <ProtectedRoute allowedRoles={['STORE']}>
             <StoreSettingsPage />
           </ProtectedRoute>
         } />
 
         {/* ── Admin routes ─────────────────────────────────────────────── */}
         <Route path="/admin/dashboard" element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
             <Dashboard />
           </ProtectedRoute>
         } />
         <Route path="/admin/approvals/store" element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
             <StoreApplicationsPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/approvals/store/:id" element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
             <StoreApplicationReview />
           </ProtectedRoute>
         } />
         <Route path="/admin/approvals/drivers" element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
             <DriverApplicationsPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/approvals/driver/:id" element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
             <DriverApplicationReview />
           </ProtectedRoute>
         } />

@@ -13,18 +13,18 @@ const tokenRegenerate = (req, res) => {
         const AccessToken = jwt.sign(
             {
                 email: decoded.email,
-                id: decoded.id,
-                role: decoded.role
+                id:    decoded.id,
+                role:  decoded.role,
             },
             process.env.ACCESS_TOKEN,
-            { expiresIn: "15m" }
+            { expiresIn: "1m" }
         );
 
         return res
             .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
                 sameSite: "lax",
-                secure: true
+                secure: process.env.NODE_ENV === "production",
             })
             .status(200)
             .json({ message: "Token refreshed" });
