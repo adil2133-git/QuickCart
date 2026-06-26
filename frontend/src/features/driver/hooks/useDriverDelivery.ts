@@ -206,7 +206,7 @@ export function useDriverDeliveryActions() {
 
 export interface StageButtonConfig {
   primary: { label: string; variant: "dark" | "green" | "outline" };
-  secondary?: { label: string; variant: "outline" | "muted" };
+  secondary?: { label: string; variant: "outline" | "muted" | "dark" | "green" };
   nextStage?: DeliveryStage;
   isFinalAction?: boolean;
 }

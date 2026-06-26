@@ -1,5 +1,7 @@
 const Order = require("../../models/shared/order");
 const StoreProfile = require("../../models/store/storeProfile");
+const DriverProfile = require("../../models/driver/driverProfile");
+const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 
 const resolveStoreId = async (req) => {
     const store = await StoreProfile.findOne({ userId: req.user.userID }).select("_id");
@@ -8,18 +10,17 @@ const resolveStoreId = async (req) => {
 };
 
 const ALLOWED_TRANSITIONS = {
-    PENDING:          ["ACCEPTED", "CANCELLED"],   // also allow direct cancel from PENDING
+    PENDING:          ["ACCEPTED", "CANCELLED"],
     ACCEPTED:         ["PACKING"],
     PACKING:          ["READY_FOR_PICKUP"],
     READY_FOR_PICKUP: [],
 };
 
-// Tab → actual DB statuses
 const TAB_STATUS_MAP = {
     PENDING:  ["PENDING"],
     ACCEPTED: ["ACCEPTED"],
     READY:    ["READY_FOR_PICKUP"],
-    ALL:      [
+    ALL: [
         "PENDING", "ACCEPTED", "PACKING", "READY_FOR_PICKUP",
         "DRIVER_ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY",
         "DELIVERED", "CANCELLED",
@@ -43,17 +44,42 @@ const toListShape = (order) => ({
     products:        order.products || [],
 });
 
-// ── Helper: prevent browser/proxy caching so tab changes always hit the DB ───
 const setNoCacheHeaders = (res) => {
     res.set({
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma":        "no-cache",
-        "Expires":       "0",
+        "Cache-Control":     "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma":            "no-cache",
+        "Expires":           "0",
         "Surrogate-Control": "no-store",
     });
 };
 
-// ─── GET /api/store/orders?tab=ALL&search=&page=1&limit=10 ───────────────────
+// ─── Broadcast delivery request to all ONLINE drivers ────────────────────────
+// Called internally when a store accepts an order.
+// Creates one DriverDeliveryRequest row per online driver — first to accept wins.
+const broadcastDeliveryRequestToDrivers = async (orderId) => {
+    const onlineDrivers = await DriverProfile.find({
+        availabilityStatus: "ONLINE",
+    }).select("_id");
+
+    if (!onlineDrivers.length) {
+        console.warn(`[broadcastDelivery] No online drivers available for order ${orderId}`);
+        return;
+    }
+
+    const requests = onlineDrivers.map((d) => ({
+        orderId,
+        driverId: d._id,
+        status:   "PENDING",
+    }));
+
+    await DriverDeliveryRequest.insertMany(requests, { ordered: false });
+
+    console.log(
+        `[broadcastDelivery] Sent delivery request to ${onlineDrivers.length} driver(s) for order ${orderId}`
+    );
+};
+
+// ─── GET /api/store/orders ────────────────────────────────────────────────────
 const getStoreOrders = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -64,13 +90,8 @@ const getStoreOrders = async (req, res) => {
         const limit  = Math.max(1, parseInt(req.query.limit) || 10);
         const skip   = (page - 1) * limit;
 
-        // ── Build filter ──────────────────────────────────────────────────────
         const statusList = TAB_STATUS_MAP[tab] ?? TAB_STATUS_MAP.ALL;
-
-        const filter = {
-            storeId,
-            orderStatus: { $in: statusList },
-        };
+        const filter = { storeId, orderStatus: { $in: statusList } };
 
         if (search.trim()) {
             filter.$or = [
@@ -80,24 +101,17 @@ const getStoreOrders = async (req, res) => {
             ];
         }
 
-        // ── Query ─────────────────────────────────────────────────────────────
         const [orders, total] = await Promise.all([
             Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
             Order.countDocuments(filter),
         ]);
 
-        // ── Disable caching so different tabs always get fresh results ────────
         setNoCacheHeaders(res);
 
         return res.status(200).json({
             success: true,
             orders:  orders.map(toListShape),
-            pagination: {
-                total,
-                page,
-                limit,
-                pages: Math.ceil(total / limit),
-            },
+            pagination: { total, page, limit, pages: Math.ceil(total / limit) },
         });
     } catch (err) {
         console.error("GET STORE ORDERS ERROR:", err);
@@ -109,20 +123,15 @@ const getStoreOrders = async (req, res) => {
 const getStoreOrderDetail = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
-        const { id } = req.params;
+        const { id }  = req.params;
 
         const order = await Order.findOne({ _id: id, storeId }).lean();
-
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found." });
         }
 
         setNoCacheHeaders(res);
-
-        return res.status(200).json({
-            success: true,
-            order: toListShape(order),
-        });
+        return res.status(200).json({ success: true, order: toListShape(order) });
     } catch (err) {
         console.error("GET STORE ORDER DETAIL ERROR:", err);
         return res.status(500).json({ success: false, message: "Internal server error." });
@@ -132,8 +141,8 @@ const getStoreOrderDetail = async (req, res) => {
 // ─── PATCH /api/store/orders/:id/status ──────────────────────────────────────
 const updateOrderStatus = async (req, res) => {
     try {
-        const storeId = await resolveStoreId(req);
-        const { id } = req.params;
+        const storeId    = await resolveStoreId(req);
+        const { id }     = req.params;
         const { status } = req.body;
 
         if (!status) {
@@ -141,7 +150,6 @@ const updateOrderStatus = async (req, res) => {
         }
 
         const order = await Order.findOne({ _id: id, storeId });
-
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found." });
         }
@@ -157,12 +165,20 @@ const updateOrderStatus = async (req, res) => {
         order.orderStatus = status;
         await order.save();
 
+        // ── When store accepts the order, broadcast to all online drivers ─────
+        if (status === "ACCEPTED") {
+            // Fire-and-forget — don't hold up the store's response
+            broadcastDeliveryRequestToDrivers(order._id).catch((err) =>
+                console.error("[broadcastDelivery] Failed:", err)
+            );
+        }
+
         setNoCacheHeaders(res);
 
         return res.status(200).json({
             success: true,
             message: `Order status updated to ${status}.`,
-            order: toListShape(order.toObject()),
+            order:   toListShape(order.toObject()),
         });
     } catch (err) {
         console.error("UPDATE ORDER STATUS ERROR:", err);

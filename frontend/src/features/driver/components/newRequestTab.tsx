@@ -10,11 +10,31 @@ import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 
 function StatsCards() {
   const stats = useDriverDeliveryStore((s) => s.todayStats);
+  const statsLoading = useDriverDeliveryStore((s) => s.statsLoading);
+
+  if (statsLoading && !stats) {
+    return (
+      <div className="mb-6 grid grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 animate-pulse rounded-2xl border border-[#EADFD3] bg-white p-5"
+          />
+        ))}
+      </div>
+    );
+  }
 
   if (!stats) return null;
 
-  const progress = Math.min((stats.currentCount / stats.dailyTarget) * 100, 100);
-  const remaining = Math.max(stats.dailyTarget - stats.currentCount, 0);
+  const progress = Math.min(
+    ((stats.currentCount ?? 0) / (stats.dailyTarget ?? 1)) * 100,
+    100
+  );
+  const remaining = Math.max(
+    (stats.dailyTarget ?? 0) - (stats.currentCount ?? 0),
+    0
+  );
 
   return (
     <div className="mb-6 grid grid-cols-3 gap-4">
@@ -24,14 +44,14 @@ function StatsCards() {
           <p className="text-xs font-medium uppercase tracking-wide text-[#A38F7D]">
             Today's Earnings
           </p>
-          {stats.earningsChangePercent !== 0 && (
+          {(stats.earningsChangePercent ?? 0) !== 0 && (
             <span className="text-xs font-semibold text-emerald-600">
               +{stats.earningsChangePercent}% vs yesterday
             </span>
           )}
         </div>
         <p className="text-3xl font-bold text-[#2B1B0E]">
-          ₹{stats.todayEarnings.toFixed(2)}
+          ₹{(stats.todayEarnings ?? 0).toFixed(2)}
         </p>
       </div>
 
@@ -41,7 +61,7 @@ function StatsCards() {
           Completed
         </p>
         <p className="text-3xl font-bold text-[#2B1B0E]">
-          {stats.completedCount}{" "}
+          {stats.completedCount ?? 0}{" "}
           <span className="text-base font-normal text-[#A38F7D]">Deliveries</span>
         </p>
       </div>
@@ -51,12 +71,12 @@ function StatsCards() {
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-semibold text-emerald-800">Daily Target Bonus</p>
           <span className="text-xs font-bold text-emerald-800">
-            {stats.currentCount} / {stats.dailyTarget}
+            {stats.currentCount ?? 0} / {stats.dailyTarget ?? 0}
           </span>
         </div>
         {remaining > 0 ? (
           <p className="mb-3 text-sm text-emerald-700">
-            Deliver {remaining} more to unlock ₹{stats.targetBonus} bonus.
+            Deliver {remaining} more to unlock ₹{stats.targetBonus ?? 0} bonus.
           </p>
         ) : (
           <p className="mb-3 text-sm font-semibold text-emerald-700">
@@ -70,8 +90,8 @@ function StatsCards() {
           />
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-emerald-700">
-          <span>Daily Target: {stats.dailyTarget}</span>
-          <span>Earn: ₹{stats.targetBonus}.00</span>
+          <span>Daily Target: {stats.dailyTarget ?? 0}</span>
+          <span>Earn: ₹{stats.targetBonus ?? 0}.00</span>
         </div>
       </div>
     </div>
@@ -92,7 +112,10 @@ function CountdownRing({
 
   useEffect(() => {
     if (remaining <= 0) {
-      if (!called.current) { called.current = true; onExpire(); }
+      if (!called.current) {
+        called.current = true;
+        onExpire();
+      }
       return;
     }
     const id = setInterval(() => setRemaining((r) => r - 1), 1000);
@@ -103,12 +126,20 @@ function CountdownRing({
   const circ = 2 * Math.PI * radius;
   const frac = remaining / totalSeconds;
   const dash = circ * frac;
-  const color = remaining > 15 ? "#2B7A3E" : remaining > 5 ? "#D97706" : "#DC2626";
+  const color =
+    remaining > 15 ? "#2B7A3E" : remaining > 5 ? "#D97706" : "#DC2626";
 
   return (
     <div className="relative flex h-12 w-12 items-center justify-center">
       <svg className="absolute inset-0 -rotate-90" width="48" height="48">
-        <circle cx="24" cy="24" r={radius} fill="none" stroke="#EADFD3" strokeWidth="3" />
+        <circle
+          cx="24"
+          cy="24"
+          r={radius}
+          fill="none"
+          stroke="#EADFD3"
+          strokeWidth="3"
+        />
         <circle
           cx="24"
           cy="24"
@@ -223,7 +254,11 @@ interface NewRequestsTabProps {
   error: string | null;
 }
 
-export default function NewRequestsTab({ requests, loading, error }: NewRequestsTabProps) {
+export default function NewRequestsTab({
+  requests,
+  loading,
+  error,
+}: NewRequestsTabProps) {
   return (
     <div>
       <StatsCards />
@@ -239,13 +274,17 @@ export default function NewRequestsTab({ requests, loading, error }: NewRequests
       )}
 
       {error && (
-        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{error}</div>
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">
+          {error}
+        </div>
       )}
 
       {!loading && !error && requests.length === 0 && (
         <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#EADFD3] text-center">
           <p className="font-medium text-[#7A6350]">No requests right now</p>
-          <p className="text-sm text-[#A38F7D]">Stay online to receive new delivery requests.</p>
+          <p className="text-sm text-[#A38F7D]">
+            Stay online to receive new delivery requests.
+          </p>
         </div>
       )}
 
