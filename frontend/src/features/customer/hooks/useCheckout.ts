@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useCheckoutStore, LOCAL_COUPON_DISCOUNT } from "../state/checkoutState";
-import api from "../../../api/axios";
+import api from "../../../api/axios"; // adjust to your real path
 import type {
   CartProductLine,
   CheckoutSummaryResponse,
@@ -10,7 +10,9 @@ import type {
   SavedAddress,
 } from "../types/checkout";
 
-
+// ── Load summary on mount ──────────────────────────────────────────────────
+// Call this once near the top of CheckoutPage. Every other hook below just
+// reads from the store, so only one network call happens per page visit.
 export function useLoadCheckoutSummary() {
   const setSummaryLoading = useCheckoutStore((s) => s.setSummaryLoading);
   const setSummaryData = useCheckoutStore((s) => s.setSummaryData);
@@ -54,9 +56,14 @@ export function useLoadCheckoutSummary() {
   return { isLoadingSummary, summaryError };
 }
 
+// Stable reference so the selector never returns a fresh array when cart is
+// null — returning a new [] literal each render breaks Zustand/React's
+// reference-equality check and triggers "getSnapshot should be cached".
+const EMPTY_CART_ITEMS: CartProductLine[] = [];
+
 // ── Cart items, shaped for the existing OrderSummary UI ───────────────────
 export function useCartItems(): CartProductLine[] {
-  return useCheckoutStore((s) => s.cart?.products ?? []);
+  return useCheckoutStore((s) => s.cart?.products ?? EMPTY_CART_ITEMS);
 }
 
 export function useOrderTotals() {

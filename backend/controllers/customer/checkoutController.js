@@ -181,7 +181,7 @@ const placeOrder = async (req, res) => {
                 const updated = await Product.findOneAndUpdate(
                     { _id: item.productId, stockQuantity: { $gte: item.quantity } },
                     { $inc: { stockQuantity: -item.quantity } },
-                    { session, new: true }
+                    { session, returnDocument: "after" }
                 );
                 if (!updated) {
                     throw new Error(`Insufficient stock for ${item.productName}.`);

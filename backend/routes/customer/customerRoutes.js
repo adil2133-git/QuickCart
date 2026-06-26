@@ -42,6 +42,11 @@ const {
     placeOrder,
 } = require("../../controllers/customer/checkoutController");
 
+const {
+    getOrders,
+    getOrderDetail,
+} = require("../../controllers/customer/ordersController");
+
 // ════════════════════════════════════════════════════════════════════════════
 //  All routes mounted at /api/customer
 // ════════════════════════════════════════════════════════════════════════════
@@ -67,6 +72,9 @@ router.delete("/cart", protectRoutes, clearCart);
 
 router.get("/checkout/summary", protectRoutes, getCheckoutSummary);
 router.post("/checkout/place-order", protectRoutes, placeOrder);
+
+router.get("/orders", protectRoutes, getOrders);
+router.get("/orders/:id", protectRoutes, getOrderDetail);
 
 // ─── Single Store Page (public, storeId from URL) ─────────────────────────────
 router.get("/:storeId", getPublicStoreProfile);

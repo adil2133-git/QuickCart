@@ -76,4 +76,25 @@ const Login = async (req, res) => {
     }
 };
 
-module.exports = { Login };
+const logoutUser = async (req, res) => {
+    try {
+        res
+            .clearCookie("Access_Token", {
+                httpOnly: true,
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production",
+            })
+            .clearCookie("Refresh_Token", {
+                httpOnly: true,
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production",
+            })
+            .status(200)
+            .json({ message: "Logged out successfully" });
+    } catch (err) {
+        console.error("LOGOUT ERROR:", err);
+        return res.status(500).json({ message: "Internal server error", Error: err.message });
+    }
+};
+
+module.exports = { Login, logoutUser };

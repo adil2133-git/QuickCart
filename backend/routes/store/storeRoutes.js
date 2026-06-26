@@ -31,6 +31,12 @@ const {
     deleteCategory,
 } = require("../../controllers/store/categoryController");
 
+const {
+    getStoreOrders,
+    getStoreOrderDetail,
+    updateOrderStatus,
+} = require("../../controllers/store/storeOrdersController");
+
 // GET /api/store/me
 router.get("/me", protectRoutes, getMyStoreProfile);
 router.patch("/branding", protectRoutes, uploadStoreBranding, updateStoreBranding);
@@ -55,5 +61,9 @@ router.get("/getCategories", getCategories);
 router.get("/getSingleCategory/:id", protectRoutes, getCategoryById);
 router.put("/updateCategory/:id", protectRoutes, uploadCategoryImage, updateCategory);
 router.delete("/deleteCategory/:id", protectRoutes, deleteCategory);
+
+router.get("/orders", protectRoutes, getStoreOrders);
+router.get("/orders/:id", protectRoutes, getStoreOrderDetail);
+router.patch("/orders/:id/status", protectRoutes, updateOrderStatus);
 
 module.exports = router;

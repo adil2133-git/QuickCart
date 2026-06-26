@@ -6,9 +6,9 @@ const orderProductSchema = new mongoose.Schema({
         ref: "Product",
         required: true,
     },
-    productName: { type: String, required: true }, 
+    productName: { type: String, required: true },
     quantity: { type: Number, required: true },
-    price: { type: Number, required: true }, 
+    price: { type: Number, required: true },
 });
 
 const orderSchema = new mongoose.Schema(
@@ -66,11 +66,8 @@ const orderSchema = new mongoose.Schema(
 );
 
 
-orderSchema.pre("validate", async function (next) {
-    if (!this.orderNumber) {
-        this.orderNumber = "QK" + Date.now();
-    }
-    next();
+orderSchema.path("orderNumber").default(function () {
+    return "QK" + Date.now();
 });
 
 module.exports = mongoose.model("Order", orderSchema);

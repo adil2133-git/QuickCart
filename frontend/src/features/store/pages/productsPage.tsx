@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Plus,
-  Archive,
   CheckCircle2,
   AlertTriangle,
   Ban,
@@ -20,8 +19,6 @@ import {
   Loader2,
   PackageX,
 } from "lucide-react";
-import { StoreShell } from "./storeShell";
-// ✅ Import useSortedProducts instead of selectSortedProducts
 import { useProductStore, useSortedProducts, type SortKey, type SortDir } from "../state/productState";
 import {
   type Product,
@@ -33,7 +30,7 @@ import {
 } from "../types/product";
 
 /* -------------------------------------------------------------------------- */
-/*  Status badge config                                                      */
+/*  Status badge config                                                       */
 /* -------------------------------------------------------------------------- */
 
 const statusConfig: Record<DerivedStatus, { label: string; className: string; pulse?: boolean }> = {
@@ -83,7 +80,7 @@ function KpiCard({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Inline-editable stock cell                                               */
+/*  Inline-editable stock cell                                                */
 /* -------------------------------------------------------------------------- */
 
 function StockCell({
@@ -168,7 +165,7 @@ function StockCell({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Row actions menu                                                         */
+/*  Row actions menu                                                          */
 /* -------------------------------------------------------------------------- */
 
 function RowMenu({
@@ -183,7 +180,7 @@ function RowMenu({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const MENU_WIDTH = 144; // matches w-36
+  const MENU_WIDTH = 144;
 
   const openMenu = () => {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -241,19 +238,13 @@ function RowMenu({
               className="z-50 overflow-hidden rounded-xl border border-[#2B1B0E]/[0.08] bg-white py-1 shadow-lg"
             >
               <button
-                onClick={() => {
-                  setOpen(false);
-                  onEdit();
-                }}
+                onClick={() => { setOpen(false); onEdit(); }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[#2B1B0E] hover:bg-[#FBF1E9]"
               >
                 <Pencil size={13} /> Edit
               </button>
               <button
-                onClick={() => {
-                  setOpen(false);
-                  onDelete();
-                }}
+                onClick={() => { setOpen(false); onDelete(); }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-red-600 hover:bg-red-50"
               >
                 <Trash2 size={13} /> Delete
@@ -268,7 +259,7 @@ function RowMenu({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Sortable column header                                                   */
+/*  Sortable column header                                                    */
 /* -------------------------------------------------------------------------- */
 
 function SortHeader({
@@ -296,11 +287,7 @@ function SortHeader({
     >
       {label}
       {isActive ? (
-        dir === "asc" ? (
-          <ChevronUp size={12} />
-        ) : (
-          <ChevronDown size={12} />
-        )
+        dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
       ) : (
         <ArrowUpDown size={11} className="opacity-30" />
       )}
@@ -309,7 +296,7 @@ function SortHeader({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Confirm-delete dialog                                                    */
+/*  Confirm-delete dialog                                                     */
 /* -------------------------------------------------------------------------- */
 
 function ConfirmDeleteDialog({
@@ -343,10 +330,7 @@ function ConfirmDeleteDialog({
             Cancel
           </button>
           <button
-            onClick={async () => {
-              setDeleting(true);
-              await onConfirm();
-            }}
+            onClick={async () => { setDeleting(true); await onConfirm(); }}
             disabled={deleting}
             className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
           >
@@ -355,6 +339,38 @@ function ConfirmDeleteDialog({
           </button>
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Filter select                                                             */
+/* -------------------------------------------------------------------------- */
+
+function SelectFilter({
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none rounded-full border border-[#2B1B0E]/10 bg-[#FBF1E9] py-2 pl-3.5 pr-8 text-sm font-medium text-[#2B1B0E] focus:border-[#C2825A] focus:outline-none"
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      <ChevronDown size={13} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#2B1B0E]/40" />
     </div>
   );
 }
@@ -394,32 +410,25 @@ export default function ProductsPage() {
 
   const categoryFilter = useProductStore((s) => s.categoryFilter);
   const search = useProductStore((s) => s.search);
-
-  // ✅ Use the memoized hook — fixes the infinite loop
   const sorted = useSortedProducts();
 
   const [searchInput, setSearchInput] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
-  // Initial load: categories once, products once.
   useEffect(() => {
     fetchCategories();
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debounce search input -> committed search term in the store
   useEffect(() => {
     const t = setTimeout(() => {
-      if (searchInput.trim() !== search) {
-        setSearch(searchInput.trim());
-      }
+      if (searchInput.trim() !== search) setSearch(searchInput.trim());
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
-  // KPIs computed from the current page's data.
   const kpis = useMemo(() => {
     const active = sorted.filter((p) => getDerivedStatus(p) === "ACTIVE").length;
     const low = sorted.filter((p) => getDerivedStatus(p) === "LOW_STOCK").length;
@@ -444,7 +453,7 @@ export default function ProductsPage() {
   const hasFilters = Boolean(search || categoryFilter || statusFilter);
 
   return (
-    <StoreShell>
+    <>
       <div className="px-8 py-6">
         {/* Page heading + primary action */}
         <div className="mb-5 flex items-center justify-between">
@@ -501,10 +510,7 @@ export default function ProductsPage() {
 
           {hasFilters && (
             <button
-              onClick={() => {
-                setSearchInput("");
-                clearFilters();
-              }}
+              onClick={() => { setSearchInput(""); clearFilters(); }}
               className="text-xs font-medium text-[#C2825A] hover:underline"
             >
               Clear filters
@@ -515,9 +521,7 @@ export default function ProductsPage() {
         {actionError && (
           <div className="mb-4 flex items-center justify-between rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700 ring-1 ring-red-600/15">
             <span>{actionError}</span>
-            <button onClick={() => setActionError(null)} className="text-red-700/60 hover:text-red-700">
-              ×
-            </button>
+            <button onClick={() => setActionError(null)} className="text-red-700/60 hover:text-red-700">×</button>
           </div>
         )}
 
@@ -557,9 +561,7 @@ export default function ProductsPage() {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center text-sm text-red-600">
-                    {error}
-                  </td>
+                  <td colSpan={7} className="px-4 py-16 text-center text-sm text-red-600">{error}</td>
                 </tr>
               ) : sorted.length === 0 ? (
                 <tr>
@@ -665,9 +667,7 @@ export default function ProductsPage() {
               >
                 <ChevronLeft size={15} />
               </button>
-              <span className="px-2 text-xs font-medium">
-                Page {page} of {pages}
-              </span>
+              <span className="px-2 text-xs font-medium">Page {page} of {pages}</span>
               <button
                 onClick={() => setPage(Math.min(pages, page + 1))}
                 disabled={page >= pages}
@@ -689,40 +689,6 @@ export default function ProductsPage() {
           />
         )}
       </AnimatePresence>
-    </StoreShell>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Filter select                                                            */
-/* -------------------------------------------------------------------------- */
-
-function SelectFilter({
-  value,
-  onChange,
-  placeholder,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="appearance-none rounded-full border border-[#2B1B0E]/10 bg-[#FBF1E9] py-2 pl-3.5 pr-8 text-sm font-medium text-[#2B1B0E] focus:border-[#C2825A] focus:outline-none"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown size={13} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#2B1B0E]/40" />
-    </div>
+    </>
   );
 }

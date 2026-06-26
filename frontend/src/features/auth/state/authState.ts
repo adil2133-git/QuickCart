@@ -3,11 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type UserRole = "CUSTOMER" | "ADMIN" | "DRIVER" | "STORE";
-export type UserStatus =
-  | "ACTIVE"
-  | "PENDING_APPROVAL"
-  | "SUSPENDED"
-  | "REJECTED";
+export type UserStatus = "ACTIVE" | "PENDING_APPROVAL" | "SUSPENDED" | "REJECTED";
 
 export interface AuthUser {
   id: string;
@@ -20,34 +16,10 @@ export interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
-
-  /** Populate store after login or after /auth/me resolves */
   setUser: (user: AuthUser) => void;
-
-  /** Wipe store on logout or 401 */
   clearUser: () => void;
-
-  /**
-   * Call /auth/me on app startup so a hard-refresh re-hydrates the store
-   * without asking the user to log in again (cookie is still valid).
-   *
-   * Usage: call once inside a top-level <App> useEffect.
-   *
-   * Returns true if the session is still valid, false otherwise.
-   */
+  logout: () => Promise<void>;
   hydrate: () => Promise<boolean>;
-}
-
-// Lazy import so we don't create a circular dep between authState ↔ axios
-async function fetchMe(): Promise<AuthUser | null> {
-  try {
-    // Dynamic import avoids circular dependency (axios imports authState)
-    const { default: api } = await import("../../../api/axios");
-    const { data } = await api.get<{ user: AuthUser }>("/auth/me");
-    return data.user;
-  } catch {
-    return null;
-  }
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -57,25 +29,40 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setUser: (user) => set({ user, isAuthenticated: true }),
-
       clearUser: () => set({ user: null, isAuthenticated: false }),
 
-      hydrate: async () => {
-        // If store already has a user (persisted from last session), trust it
-        // but still silently verify the cookie is still valid in the background.
-        const existing = get().user;
-
-        const fresh = await fetchMe();
-        if (fresh) {
-          set({ user: fresh, isAuthenticated: true });
-          return true;
-        }
-
-        // Cookie is gone / expired — clear stale persisted data
-        if (existing) {
+      logout: async () => {
+        try {
+          const { default: api } = await import("../../../api/axios");
+          await api.post("/auth/logout");
+        } catch {
+          // Server call failed — still clear local state
+        } finally {
           set({ user: null, isAuthenticated: false });
+          window.location.href = "/login";
         }
-        return false;
+      },
+
+      hydrate: async () => {
+        const existing = get().user;
+        try {
+          const { default: api } = await import("../../../api/axios");
+
+          // _skipRefresh tells the interceptor: if this 401s, it means
+          // "no session" — do NOT attempt a token refresh, just reject.
+          // This breaks the infinite loop on first load with no cookies.
+          const { data } = await api.get<{ user: AuthUser }>("/auth/me", {
+            _skipRefresh: true,
+          } as never);
+
+          set({ user: data.user, isAuthenticated: true });
+          return true;
+        } catch {
+          if (existing) {
+            set({ user: null, isAuthenticated: false });
+          }
+          return false;
+        }
       },
     }),
     {

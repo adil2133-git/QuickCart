@@ -65,9 +65,9 @@ interface NavBarProps {
 
 const ROLE_HOME: Record<string, string> = {
     CUSTOMER: "/customer/home",
-    ADMIN:    "/admin/dashboard",
-    DRIVER:   "/driver/dashboard",
-    STORE:    "/store/dashboard",
+    ADMIN: "/admin/dashboard",
+    DRIVER: "/driver/dashboard",
+    STORE: "/store/dashboard",
 };
 
 /* -------------------------------------------------------------------------- */
@@ -77,25 +77,25 @@ const ROLE_HOME: Record<string, string> = {
 const RECENT_SEARCHES: string[] = ["Free range eggs", "Wildflower honey", "Greek yogurt"];
 
 const SEARCH_INDEX: SearchItem[] = [
-    { type: "product", label: "Aged Sharp Cheddar",     meta: "The Curd Shop · 200g" },
-    { type: "product", label: "Estate Coffee Beans",    meta: "Mountain Roast · 250g" },
-    { type: "product", label: "Seedless Green Grapes",  meta: "Green Garden Organics · 500g" },
-    { type: "product", label: "Honey Nut Granola",      meta: "Heritage Farm · 400g" },
-    { type: "product", label: "Full Cream Milk",        meta: "Heritage Farm · 1L" },
-    { type: "store",   label: "Green Garden Organics",  meta: "1.2 km · 25–35 mins" },
-    { type: "store",   label: "Heritage Farm",          meta: "0.8 km · 15–20 mins" },
-    { type: "store",   label: "Boutique Greens",        meta: "Hydroponic · Exotics" },
+    { type: "product", label: "Aged Sharp Cheddar", meta: "The Curd Shop · 200g" },
+    { type: "product", label: "Estate Coffee Beans", meta: "Mountain Roast · 250g" },
+    { type: "product", label: "Seedless Green Grapes", meta: "Green Garden Organics · 500g" },
+    { type: "product", label: "Honey Nut Granola", meta: "Heritage Farm · 400g" },
+    { type: "product", label: "Full Cream Milk", meta: "Heritage Farm · 1L" },
+    { type: "store", label: "Green Garden Organics", meta: "1.2 km · 25–35 mins" },
+    { type: "store", label: "Heritage Farm", meta: "0.8 km · 15–20 mins" },
+    { type: "store", label: "Boutique Greens", meta: "Hydroponic · Exotics" },
 ];
 
 const NOTIFICATIONS: NotificationItem[] = [
-    { id: 1, title: "Order delivered",  body: "Your order from Heritage Farm has arrived.", time: "2m ago",  unread: true  },
-    { id: 2, title: "Price drop",       body: "Estate Coffee Beans is now ₹449.",           time: "1h ago",  unread: true  },
-    { id: 3, title: "Welcome back",     body: "Here's ₹50 off your next order over ₹500.",  time: "1d ago",  unread: false },
+    { id: 1, title: "Order delivered", body: "Your order from Heritage Farm has arrived.", time: "2m ago", unread: true },
+    { id: 2, title: "Price drop", body: "Estate Coffee Beans is now ₹449.", time: "1h ago", unread: true },
+    { id: 3, title: "Welcome back", body: "Here's ₹50 off your next order over ₹500.", time: "1d ago", unread: false },
 ];
 
 const NAV_LINKS: NavLinkItem[] = [
     { label: "Stores", to: "/customer/stores" },
-    { label: "Deals",  to: "/deals"  },
+    { label: "Deals", to: "/deals" },
 ];
 
 interface IdleMessage {
@@ -107,9 +107,9 @@ interface IdleMessage {
 }
 
 const IDLE_MESSAGES: IdleMessage[] = [
-    { icon: Clock,      text: "Avg delivery: 20–30 min",  iconBg: "#735A3E", textColor: "#735A3E", pillBg: "#F3EAE0" },
-    { icon: Gift,       text: "Free delivery over ₹300",  iconBg: "#A8632F", textColor: "#8A4F23", pillBg: "#FBE9D8" },
-    { icon: BadgeCheck, text: "Fresh & quality assured",  iconBg: "#376847", textColor: "#2F5B3D", pillBg: "#EAF2EC" },
+    { icon: Clock, text: "Avg delivery: 20–30 min", iconBg: "#735A3E", textColor: "#735A3E", pillBg: "#F3EAE0" },
+    { icon: Gift, text: "Free delivery over ₹300", iconBg: "#A8632F", textColor: "#8A4F23", pillBg: "#FBE9D8" },
+    { icon: BadgeCheck, text: "Fresh & quality assured", iconBg: "#376847", textColor: "#2F5B3D", pillBg: "#EAF2EC" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -117,7 +117,7 @@ const IDLE_MESSAGES: IdleMessage[] = [
 /* -------------------------------------------------------------------------- */
 
 const FONT_BRAND = "'Fraunces', serif";
-const FONT_UI    = "'Inter', sans-serif";
+const FONT_UI = "'Inter', sans-serif";
 
 /* -------------------------------------------------------------------------- */
 /*  Label → icon map                                                          */
@@ -286,7 +286,7 @@ function LocationPicker() {
                             Deliver to
                         </span>
                         <span
-                            className="block max-w-[120px] truncate text-[12px] font-semibold sm:max-w-[170px] lg:max-w-[220px]"
+                            className="block max-w-[100px] truncate text-[12px] font-semibold sm:max-w-[140px] lg:max-w-[220px]"
                             style={{ fontFamily: FONT_UI, color: "#4E453D" }}
                             title={active ? `${active.label} · ${active.address}` : undefined}
                         >
@@ -306,7 +306,7 @@ function LocationPicker() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -6, scale: 0.98 }}
                             transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border shadow-lg"
+                            className="absolute left-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border shadow-lg"
                             style={{ borderColor: "#E5DAC9", backgroundColor: "#FFFDF9" }}
                         >
                             <div className="px-4 pt-3.5 pb-2">
@@ -412,14 +412,14 @@ function SearchBar() {
         return SEARCH_INDEX.filter((item) => item.label.toLowerCase().includes(q)).slice(0, 6);
     }, [query]);
 
-    const showRecent  = open && !query.trim();
+    const showRecent = open && !query.trim();
     const showResults = open && query.trim().length > 0;
 
     const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         const list: (SearchItem | string)[] = showResults ? results : showRecent ? RECENT_SEARCHES : [];
-        if (e.key === "ArrowDown")  { e.preventDefault(); setHighlight((h) => Math.min(h + 1, list.length - 1)); }
-        else if (e.key === "ArrowUp")   { e.preventDefault(); setHighlight((h) => Math.max(h - 1, 0)); }
-        else if (e.key === "Escape")    { setOpen(false); inputRef.current?.blur(); }
+        if (e.key === "ArrowDown") { e.preventDefault(); setHighlight((h) => Math.min(h + 1, list.length - 1)); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); setHighlight((h) => Math.max(h - 1, 0)); }
+        else if (e.key === "Escape") { setOpen(false); inputRef.current?.blur(); }
         else if (e.key === "Enter" && highlight >= 0) {
             const picked = showResults ? results[highlight]?.label : (list[highlight] as string | undefined);
             if (picked) { setQuery(picked); setOpen(false); }
@@ -523,7 +523,7 @@ function SearchBar() {
                                                     fontFamily: FONT_UI,
                                                     letterSpacing: "0.06em",
                                                     backgroundColor: item.type === "store" ? "#EAF2EC" : "#F3EAE0",
-                                                    color:           item.type === "store" ? "#376847" : "#735A3E",
+                                                    color: item.type === "store" ? "#376847" : "#735A3E",
                                                 }}
                                             >
                                                 {item.type}
@@ -564,12 +564,12 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
         if (!isLive) setIdleIndex(0);
     }, [isLive]);
 
-    const idle      = IDLE_MESSAGES[idleIndex];
-    const Icon      = isLive ? Truck : idle.icon;
-    const pillBg    = isLive ? "#EAF2EC" : idle.pillBg;
-    const iconBg    = isLive ? "#376847" : idle.iconBg;
+    const idle = IDLE_MESSAGES[idleIndex];
+    const Icon = isLive ? Truck : idle.icon;
+    const pillBg = isLive ? "#EAF2EC" : idle.pillBg;
+    const iconBg = isLive ? "#376847" : idle.iconBg;
     const textColor = isLive ? "#2F5B3D" : idle.textColor;
-    const label     = isLive ? `Arriving in ${etaMinutes} min` : idle.text;
+    const label = isLive ? `Arriving in ${etaMinutes} min` : idle.text;
 
     return (
         <motion.div
@@ -586,7 +586,7 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
                     : { backgroundColor: iconBg }
                 }
                 transition={{
-                    scale:           { duration: 1.6, repeat: isLive ? Infinity : 0, ease: "easeInOut" },
+                    scale: { duration: 1.6, repeat: isLive ? Infinity : 0, ease: "easeInOut" },
                     backgroundColor: { duration: 0.25 },
                 }}
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
@@ -640,7 +640,7 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
 function NotificationBell() {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[]>(NOTIFICATIONS);
-    const btnRef  = useRef<HTMLButtonElement>(null);
+    const btnRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     useClickOutside([btnRef, panelRef], () => setOpen(false));
 
@@ -674,7 +674,7 @@ function NotificationBell() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border shadow-lg"
+                        className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border shadow-lg"
                         style={{ borderColor: "#E5DAC9", backgroundColor: "#FFFDF9" }}
                     >
                         <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
@@ -739,11 +739,83 @@ function NotificationBell() {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  MobileMenu                                                                */
+/* -------------------------------------------------------------------------- */
+
+function MobileMenu({ onClose }: { onClose: () => void }) {
+    const panelRef = useRef<HTMLDivElement>(null);
+    useClickOutside([panelRef], onClose);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[60] bg-black/30 lg:hidden"
+        >
+            <motion.div
+                ref={panelRef}
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="absolute right-0 top-0 flex h-full w-[88%] max-w-sm flex-col gap-5 overflow-y-auto px-5 py-5"
+                style={{ backgroundColor: "#FFF9EF" }}
+            >
+                <div className="flex items-center justify-between">
+                    <span
+                        className="text-[15px] font-semibold"
+                        style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                    >
+                        Menu
+                    </span>
+                    <button
+                        onClick={onClose}
+                        aria-label="Close menu"
+                        className="rounded-full p-1.5 hover:bg-[#EFE6D8]"
+                    >
+                        <X size={18} color="#4E453D" />
+                    </button>
+                </div>
+
+                <SearchBar />
+                <LocationPicker />
+
+                <Link
+                    to="/customer/profile"
+                    onClick={onClose}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#F9F3EA]"
+                    style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                >
+                    <User size={16} /> Profile
+                </Link>
+
+                <nav className="flex flex-col gap-1 border-t pt-3" style={{ borderColor: "#EFE6D8" }}>
+                    {NAV_LINKS.map((link) => (
+                        <Link
+                            key={link.to}
+                            to={link.to}
+                            onClick={onClose}
+                            className="rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#F9F3EA]"
+                            style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                        >
+                            {link.label}
+                        </Link>
+                    ))}
+                </nav>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  NavBar                                                                    */
 /* -------------------------------------------------------------------------- */
 
 export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBarProps) {
     const { pathname } = useLocation();
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     const { user, isAuthenticated } = useAuthStore();
     const cartCountFromStore = useCartStore((s) => s.cartItemCount());
@@ -760,8 +832,14 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
         }
     }, [fetchCart, isAuthenticated]);
 
-    // ── Fixed: cart route is /customer/cart ──────────────────────────────────
+    // ── Fixed routes ──────────────────────────────────────────────────────────
     const CART_PATH = "/customer/cart";
+    const PROFILE_PATH = "/customer/profile";
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileOpen(false);
+    }, [pathname]);
 
     return (
         <motion.header
@@ -776,21 +854,22 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
             }}
         >
             <div
-                className="mx-auto flex items-center gap-4 px-5 sm:px-8 lg:px-10"
-                style={{ maxWidth: 1280, height: 80 }}
+                className="mx-auto flex items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-10"
+                style={{ maxWidth: 1280, height: 72 }}
             >
                 {/* ── Logo ── */}
-                <Link to={logoHref} className="flex flex-shrink-0 items-center gap-2.5">
+                <Link to={logoHref} className="flex flex-shrink-0 items-center gap-2 sm:gap-2.5">
                     <motion.span
                         whileHover={{ rotate: -6 }}
                         transition={{ duration: 0.2 }}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl"
+                        className="flex h-8 w-8 items-center justify-center rounded-xl sm:h-9 sm:w-9"
                         style={{ backgroundColor: "#735A3E" }}
                     >
-                        <Leaf size={18} color="#FFF9EF" strokeWidth={2.25} />
+                        <Leaf size={16} color="#FFF9EF" strokeWidth={2.25} className="sm:hidden" />
+                        <Leaf size={18} color="#FFF9EF" strokeWidth={2.25} className="hidden sm:block" />
                     </motion.span>
                     <span
-                        className="cursor-pointer text-[21px] font-semibold leading-none tracking-tight"
+                        className="hidden cursor-pointer text-[19px] font-semibold leading-none tracking-tight sm:block lg:text-[21px]"
                         style={{
                             fontFamily: FONT_BRAND,
                             fontWeight: 480,
@@ -802,27 +881,42 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                     </span>
                 </Link>
 
-                {/* Location */}
-                <LocationPicker />
+                {/* Location — visible from sm up; lives in the mobile drawer below sm */}
+                <div className="hidden sm:block">
+                    <LocationPicker />
+                </div>
 
-                {/* Search */}
-                <SearchBar />
+                {/* Search — visible from md up; lives in the mobile drawer below md */}
+                <div className="hidden md:block md:flex-1">
+                    <SearchBar />
+                </div>
 
-                {/* Nav Links */}
+                {/* Nav Links — desktop only */}
                 <nav className="hidden flex-shrink-0 items-center gap-6 lg:flex">
                     {NAV_LINKS.map((link) => (
                         <NavTextLink key={link.to} label={link.label} to={link.to} />
                     ))}
                 </nav>
 
-                {/* Delivery status pill */}
-                <DeliveryStatusPill etaMinutes={activeOrderEta} />
+                {/* Delivery status pill — desktop only */}
+                <div className="hidden lg:block">
+                    <DeliveryStatusPill etaMinutes={activeOrderEta} />
+                </div>
 
                 {/* Action icons */}
-                <div className="ml-auto flex flex-shrink-0 items-center gap-4">
+                <div className="ml-auto flex flex-shrink-0 items-center gap-2.5 sm:gap-4">
+                    {/* Search trigger — opens the drawer below md, where the inline search bar is hidden */}
+                    <button
+                        onClick={() => setMobileOpen(true)}
+                        aria-label="Open search"
+                        className="flex items-center justify-center rounded-full p-1 md:hidden"
+                    >
+                        <Search size={19} color="#735A3E" />
+                    </button>
+
                     <NotificationBell />
 
-                    {/* ── Cart — fixed to /customer/cart ── */}
+                    {/* ── Cart ── */}
                     <motion.div whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.92 }} className="relative">
                         <Link
                             to={CART_PATH}
@@ -858,14 +952,15 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                         </AnimatePresence>
                     </motion.div>
 
-                    <motion.div whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.92 }}>
+                    {/* ── Profile — hidden below sm; reachable via drawer instead ── */}
+                    <motion.div whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.92 }} className="hidden lg:block">
                         <Link
-                            to="/profile"
+                            to={PROFILE_PATH}
                             aria-label="Profile"
-                            aria-current={pathname === "/profile" ? "page" : undefined}
+                            aria-current={pathname === PROFILE_PATH ? "page" : undefined}
                             className="flex items-center justify-center rounded-full p-1"
                             style={{
-                                backgroundColor: pathname === "/profile"
+                                backgroundColor: pathname === PROFILE_PATH
                                     ? "rgba(115,90,62,0.1)"
                                     : "transparent",
                             }}
@@ -873,8 +968,23 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                             <User size={18} color="#735A3E" />
                         </Link>
                     </motion.div>
+
+                    {/* ── Hamburger — mobile/tablet only ── */}
+                    <button
+                        onClick={() => setMobileOpen(true)}
+                        aria-label="Open menu"
+                        className="flex flex-col items-center justify-center gap-[3px] rounded-full p-1.5 lg:hidden"
+                    >
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#735A3E" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#735A3E" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#735A3E" }} />
+                    </button>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {mobileOpen && <MobileMenu onClose={() => setMobileOpen(false)} />}
+            </AnimatePresence>
         </motion.header>
     );
 }

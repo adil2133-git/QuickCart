@@ -1,3 +1,4 @@
+// src/features/store/components/Sidebar.tsx
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutGrid,
@@ -11,6 +12,7 @@ import {
   UserCircle,
   LogOut,
 } from "lucide-react";
+import { useLogout } from "../../auth/hooks/useLogout";
 
 export type SidebarNavKey =
   | "dashboard"
@@ -29,28 +31,26 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard",  label: "Dashboard",  icon: LayoutGrid, path: "/store/dashboard" },
+  { key: "dashboard",  label: "Dashboard",  icon: LayoutGrid,  path: "/store/dashboard" },
   { key: "orders",     label: "Orders",     icon: ShoppingBag, path: "/store/orders" },
-  { key: "products",   label: "Products",   icon: Package,    path: "/store/products" },
-  { key: "inventory",  label: "Inventory",  icon: Warehouse,  path: "/store/inventory" },
-  { key: "categories", label: "Categories", icon: Tags,       path: "/store/categories" },
-  { key: "analytics",  label: "Analytics",  icon: LineChart,  path: "/store/analytics" },
-  { key: "revenue",    label: "Revenue",    icon: Wallet,     path: "/store/revenue" },
+  { key: "products",   label: "Products",   icon: Package,     path: "/store/products" },
+  { key: "inventory",  label: "Inventory",  icon: Warehouse,   path: "/store/inventory" },
+  { key: "categories", label: "Categories", icon: Tags,        path: "/store/categories" },
+  { key: "analytics",  label: "Analytics",  icon: LineChart,   path: "/store/analytics" },
+  { key: "revenue",    label: "Revenue",    icon: Wallet,      path: "/store/revenue" },
 ];
 
 interface SidebarProps {
   storeName?: string;
-  onLogoutClick?: () => void;
 }
 
-export default function Sidebar({ storeName = "QuickKart", onLogoutClick }: SidebarProps) {
+export default function Sidebar({ storeName = "QuickKart" }: SidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { logout, isLoggingOut } = useLogout();
 
-  // Match active key from current path — products/new and products/:id/edit
-  // both live under /store/products so they stay highlighted correctly.
-  const activeKey = NAV_ITEMS.find((item) =>
-    pathname === item.path || pathname.startsWith(item.path + "/")
+  const activeKey = NAV_ITEMS.find(
+    (item) => pathname === item.path || pathname.startsWith(item.path + "/")
   )?.key;
 
   return (
@@ -100,6 +100,7 @@ export default function Sidebar({ storeName = "QuickKart", onLogoutClick }: Side
           <Settings className="h-[18px] w-[18px]" />
           <span>Settings</span>
         </button>
+
         <button
           type="button"
           onClick={() => navigate("/store/profile")}
@@ -113,13 +114,15 @@ export default function Sidebar({ storeName = "QuickKart", onLogoutClick }: Side
           <UserCircle className="h-[18px] w-[18px]" />
           <span>Profile</span>
         </button>
+
         <button
           type="button"
-          onClick={onLogoutClick}
-          className="flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-[#D9CCBE] transition-colors hover:bg-white/5 hover:text-white"
+          onClick={logout}
+          disabled={isLoggingOut}
+          className="flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-[#D9CCBE] transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
         >
           <LogOut className="h-[18px] w-[18px]" />
-          <span>Logout</span>
+          <span>{isLoggingOut ? "Logging out…" : "Logout"}</span>
         </button>
       </div>
     </aside>

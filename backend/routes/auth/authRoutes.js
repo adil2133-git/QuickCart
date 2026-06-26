@@ -22,7 +22,7 @@ const {
   resendOTPController,
 } = require("../../controllers/auth/otpController");
 
-const { Login } = require("../../controllers/auth/loginController");
+const { Login, logoutUser } = require("../../controllers/auth/loginController");
 
 const tokenRegenerate = require("../../services/tokenRegenerate")
 
@@ -60,6 +60,8 @@ router.post("/register/resend-otp", resendOTPController);
 
 // Login
 router.post("/login", Login);
+
+router.post("/logout", logoutUser);
 
 router.post("/refresh", tokenRegenerate);
 
