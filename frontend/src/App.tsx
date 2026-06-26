@@ -35,6 +35,7 @@ import QuickKartAbout from './features/marketing/pages/about'
 import ProductDetailPage from './features/customer/pages/prductDetailsPage'
 import StoresPage from './features/customer/pages/storesPage'
 import CartPage from './features/customer/pages/cartPage'
+import CheckoutPage from './features/customer/pages/checkoutPage'
 
 /* -------------------------------------------------------------------------- */
 /*  Role → home path (shared between PublicOnlyRoute and NavBar)             */
@@ -163,6 +164,12 @@ function App() {
         <Route path="/customer/cart" element={
           <ProtectedRoute allowedRoles={['CUSTOMER']}>
             <CartPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/customer/checkout" element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <CheckoutPage />
           </ProtectedRoute>
         } />
 
