@@ -1,47 +1,73 @@
-export interface Address {
-  id: string;
-  label: string;
-  name: string;
-  line1: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
+// ── Backend-shaped types ───────────────────────────────────────────────────
+// These mirror what GET /api/customer/checkout/summary actually returns,
+// not the flat mock shapes the UI used before.
+
+export interface Coordinates {
+  lat: number;
+  lng: number;
 }
 
-export interface CartItem {
-  id: string;
-  name: string;
-  description: string;
-  qty: number;
+export interface SavedAddress {
+  _id: string;
+  label?: string;
+  address: string;
+  coordinates?: Coordinates;
+}
+
+export interface PopulatedProduct {
+  _id: string;
+  productName: string;
+  images?: string[];
   price: number;
-  image: string;
+  unit?: string;
+  availabilityStatus?: string;
+  stockQuantity: number;
+  storeId?: { _id: string; storeName: string; logoUrl?: string };
 }
 
-export type PaymentMethod = "online" | "cod";
+export interface CartProductLine {
+  productId: PopulatedProduct;
+  quantity: number;
+  price: number; // cached price at time of add — display only, never trust for totals
+}
+
+export interface CartResponse {
+  _id?: string;
+  products: CartProductLine[];
+  totalAmount: number;
+}
 
 export interface OrderTotals {
   productTotal: number;
   deliveryCharge: number;
   packagingFee: number;
-  couponDiscount: number;
   grandTotal: number;
 }
 
-export interface CheckoutState {
-  selectedAddressId: string;
-  deliveryInstructions: string;
+export interface CheckoutSummaryResponse {
+  success: boolean;
+  cart: CartResponse;
+  addresses: SavedAddress[];
+  defaultAddressId: string | null;
+  codAllowed: boolean;
+  totals: OrderTotals | null;
+}
+
+export type PaymentMethod = "COD"; // "ONLINE" will be added when that's wired up
+
+export interface PlaceOrderPayload {
+  addressId: string;
   paymentMethod: PaymentMethod;
-  couponCode: string;
-  couponApplied: boolean;
+  deliveryInstructions?: string;
 }
 
-export interface CheckoutActions {
-  setSelectedAddressId: (id: string) => void;
-  setDeliveryInstructions: (value: string) => void;
-  setPaymentMethod: (method: PaymentMethod) => void;
-  setCouponCode: (value: string) => void;
-  applyCoupon: () => void;
+export interface PlaceOrderResponse {
+  success: boolean;
+  message: string;
+  order: {
+    _id: string;
+    orderNumber: string;
+    totalAmount: number;
+    orderStatus: string;
+  };
 }
-
-export type CheckoutStore = CheckoutState & CheckoutActions;
