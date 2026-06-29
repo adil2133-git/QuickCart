@@ -1,5 +1,6 @@
 const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
+const { resolveCustomerProfile } = require("../../services/customerProfileService");
 const Product = require("../../models/store/product");
 const Category = require("../../models/store/category");
 const User = require("../../models/shared/user")
@@ -11,11 +12,9 @@ const { getLiveStoreStatus, distanceInKm } = require("../store/storeStatus");
 // Creates a profile automatically if this is the customer's first visit.
 const getProfile = async (req, res) => {
     try {
-        let profile = await CustomerProfile.findOne({ userId: req.user.userID });
+        const profile = await resolveCustomerProfile(req.user.userID);
 
-        if (!profile) {
-            profile = await CustomerProfile.create({ userId: req.user.userID });
-        }
+        return res.status(200).json({ success: true, profile });
 
         return res.status(200).json({ success: true, profile });
     } catch (err) {
@@ -35,10 +34,7 @@ const addAddress = async (req, res) => {
             return res.status(400).json({ success: false, message: "Address and coordinates are required" });
         }
 
-        let profile = await CustomerProfile.findOne({ userId: req.user.userID });
-        if (!profile) {
-            profile = await CustomerProfile.create({ userId: req.user.userID });
-        }
+        const profile = await resolveCustomerProfile(req.user.userID);
 
         const newAddress = { label: label || "Home", address, coordinates };
         profile.savedAddresses.push(newAddress);
