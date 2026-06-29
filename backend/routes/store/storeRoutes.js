@@ -42,7 +42,7 @@ const {
 // GET /api/store/me
 router.get("/me", protectRoutes, authorizeRoles("STORE"), getMyStoreProfile);
 router.patch("/branding", protectRoutes, authorizeRoles("STORE"), uploadStoreBranding, updateStoreBranding);
-router.patch("/toggleManualClose", protectRoutes, toggleManualClose);
+router.patch("/toggleManualClose", protectRoutes, authorizeRoles("STORE"), toggleManualClose);
 router.patch("/info", protectRoutes, authorizeRoles("STORE"), updateStoreInfo);
 router.patch("/hours", protectRoutes, authorizeRoles("STORE"), updateOperatingHours);
 
