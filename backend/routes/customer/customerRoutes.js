@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const protectRoutes = require("../../middleware/protectRoute");
+const authorizeRoles = require("../../middleware/authorizeRoles");
 
 const {
     getProfile,
@@ -52,29 +53,29 @@ const {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── Profile & Addresses (protected) ─────────────────────────────────────────
-router.get("/profile", protectRoutes, getProfile);
-router.post("/address", protectRoutes, addAddress);
-router.patch("/address/:id/default", protectRoutes, setDefaultAddress);
-router.delete("/address/:id", protectRoutes, deleteAddress);
+router.get("/profile", protectRoutes, authorizeRoles("CUSTOMER"), getProfile);
+router.post("/address", protectRoutes, authorizeRoles("CUSTOMER"), addAddress);
+router.patch("/address/:id/default", protectRoutes, authorizeRoles("CUSTOMER"), setDefaultAddress);
+router.delete("/address/:id", protectRoutes, authorizeRoles("CUSTOMER"), deleteAddress);
 
 // ─── Discovery (protected) ────────────────────────────────────────────────────
-router.get("/stores/nearby", protectRoutes, getNearbyStores);
-router.get("/products/popular", protectRoutes, getPopularProducts);
-router.get("/products/trending", protectRoutes, getTrendingProducts);
+router.get("/stores/nearby", protectRoutes, authorizeRoles("CUSTOMER"), getNearbyStores);
+router.get("/products/popular", protectRoutes, authorizeRoles("CUSTOMER"), getPopularProducts);
+router.get("/products/trending", protectRoutes, authorizeRoles("CUSTOMER"), getTrendingProducts);
 router.get("/categories", getCategories); // public
- 
+
 // ─── Cart routes must stay before the dynamic /:storeId route ──────────────
-router.get("/cart", protectRoutes, getCart);
-router.post("/cart/add", protectRoutes, addToCart);
-router.patch("/cart/item/:productId", protectRoutes, updateCartItem);
-router.delete("/cart/item/:productId", protectRoutes, removeFromCart);
-router.delete("/cart", protectRoutes, clearCart);
+router.get("/cart", protectRoutes, authorizeRoles("CUSTOMER"), getCart);
+router.post("/cart/add", protectRoutes, authorizeRoles("CUSTOMER"), addToCart);
+router.patch("/cart/item/:productId", protectRoutes, authorizeRoles("CUSTOMER"), updateCartItem);
+router.delete("/cart/item/:productId", protectRoutes, authorizeRoles("CUSTOMER"), removeFromCart);
+router.delete("/cart", protectRoutes, authorizeRoles("CUSTOMER"), clearCart);
 
-router.get("/checkout/summary", protectRoutes, getCheckoutSummary);
-router.post("/checkout/place-order", protectRoutes, placeOrder);
+router.get("/checkout/summary", protectRoutes, authorizeRoles("CUSTOMER"), getCheckoutSummary);
+router.post("/checkout/place-order", protectRoutes, authorizeRoles("CUSTOMER"), placeOrder);
 
-router.get("/orders", protectRoutes, getOrders);
-router.get("/orders/:id", protectRoutes, getOrderDetail);
+router.get("/orders", protectRoutes, authorizeRoles("CUSTOMER"), getOrders);
+router.get("/orders/:id", protectRoutes, authorizeRoles("CUSTOMER"), getOrderDetail);
 
 // ─── Single Store Page (public, storeId from URL) ─────────────────────────────
 router.get("/:storeId", getPublicStoreProfile);

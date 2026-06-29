@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const protectRoutes = require("../../middleware/protectRoute");
+const authorizeRoles = require("../../middleware/authorizeRoles");
 
 const {
     getDeliveryRequests,
@@ -17,6 +18,7 @@ const {
 
 // All routes require a valid JWT
 router.use(protectRoutes);
+router.use(authorizeRoles("DRIVER"));
 
 // ── Delivery requests (broadcast from store accept) ──────────────────────────
 router.get("/deliveries/requests", getDeliveryRequests);
