@@ -1,13 +1,11 @@
-// hooks/useCustomerProfile.ts
+// src/features/customer/hooks/useCustomerProfile.ts
 import { useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../../../api/axios"; // ← adjust to your actual axios instance path
+import api from "../../../api/axios";
 import { useCustomerProfileStore } from "../state/customerProfileState";
-import { useAuthStore } from "../../../features/auth/state/authState"; // ← adjust to your actual auth store path
+import { useAuthStore } from "../../../features/auth/state/authState";
 import type { AddAddressPayload } from "../types/customerProfile";
 
 export const useCustomerProfile = () => {
-  const navigate = useNavigate();
   const {
     profile,
     isLoading,
@@ -18,10 +16,8 @@ export const useCustomerProfile = () => {
     addAddress,
     removeAddress,
     setDefaultAddressLocal,
-    clearProfile,
   } = useCustomerProfileStore();
 
-  const clearUser = useAuthStore((s) => s.clearUser);
   const user = useAuthStore((s) => s.user);
 
   const fetchProfile = useCallback(async () => {
@@ -30,7 +26,7 @@ export const useCustomerProfile = () => {
     try {
       const res = await api.get("/customer/profile");
       setProfile(res.data.profile);
-    } catch (err) {
+    } catch {
       setError("Failed to load profile");
     } finally {
       setLoading(false);
@@ -65,16 +61,6 @@ export const useCustomerProfile = () => {
     [removeAddress]
   );
 
-  const logout = useCallback(async () => {
-    try {
-      await api.post("/auth/logout");
-    } finally {
-      clearUser();
-      clearProfile();
-      navigate("/login");
-    }
-  }, [clearUser, clearProfile, navigate]);
-
   return {
     profile,
     user,
@@ -83,6 +69,5 @@ export const useCustomerProfile = () => {
     addNewAddress,
     setDefault,
     deleteAddress,
-    logout,
   };
 };

@@ -1,5 +1,6 @@
-// state/customerProfileStore.ts
+// src/features/customer/state/customerProfileStore.ts
 import { create } from "zustand";
+import { useAuthStore } from "../../../features/auth/state/authState";
 import type { CustomerProfile, SavedAddress } from "../types/customerProfile";
 
 interface CustomerProfileState {
@@ -64,3 +65,13 @@ export const useCustomerProfileStore = create<CustomerProfileState>((set) => ({
 
   clearProfile: () => set({ profile: null, isLoading: false, error: null }),
 }));
+
+// Reactively clear profile when user logs out
+useAuthStore.subscribe(
+  (state) => state.isAuthenticated,
+  (isAuthenticated) => {
+    if (!isAuthenticated) {
+      useCustomerProfileStore.getState().clearProfile();
+    }
+  }
+);
