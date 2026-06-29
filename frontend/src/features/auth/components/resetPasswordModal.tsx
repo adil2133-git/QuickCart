@@ -22,8 +22,7 @@ export default function ResetPasswordModal({
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { handleFocus, handleBlur } = useInputFocusStyle();
-
+  const { handleFocus, handleBlur } = useInputFocusStyle("muted");
   const strength = (() => {
     if (newPassword.length === 0) return 0;
     let score = 0;

@@ -456,8 +456,7 @@ export default function StoreRegistration() {
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
 
-  const { handleFocus, handleBlur } = useInputFocusStyle();
-
+const { handleFocus, handleBlur } = useInputFocusStyle("muted");
   const inputClass =
     "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
   const inputStyle = { borderColor: "#d2c4b9" };

@@ -175,7 +175,6 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
   // intentionally empty for pending users.
 
   const storeUser = useAuthStore((state) => state.user);
-  const clearUser = useAuthStore((state) => state.clearUser);
 
   const fetchProfile = async () => {
     try {

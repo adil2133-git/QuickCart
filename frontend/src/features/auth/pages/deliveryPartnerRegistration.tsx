@@ -99,8 +99,7 @@ export default function DeliveryPartnerRegistration() {
   const [vehicleNumber, setVehicleNo] = useState("");
   const [licenseNumber, setLicenseNo] = useState("");
 
-  const { handleFocus, handleBlur } = useInputFocusStyle();
-
+  const { handleFocus, handleBlur } = useInputFocusStyle("muted");
   const [drivingLicense, setDrivingLicense] = useState<UploadState>({
     file: null,
     name: null,
@@ -172,7 +171,7 @@ export default function DeliveryPartnerRegistration() {
     } catch (err: any) {
       setApiError(
         err?.response?.data?.message ||
-          "Something went wrong. Please try again."
+        "Something went wrong. Please try again."
       );
     } finally {
       setSubmitting(false);
