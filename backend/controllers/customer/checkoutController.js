@@ -1,22 +1,17 @@
 const mongoose = require("mongoose");
 const Cart = require("../../models/customer/cart");
 const Product = require("../../models/store/product");
-const CustomerProfile = require("../../models/customer/customerProfile");
-const Order = require("../../models/shared/order"); // adjust path to match where you saved Order
+const { resolveCustomerProfile } = require("../../services/customerProfileService");
+const Order = require("../../models/shared/order"); 
 const User = require("../../models/shared/user");
 
 const DELIVERY_CHARGE = 30;
-const PACKAGING_FEE = 15; // folded into deliveryCharge on the Order until a dedicated field exists
+const PACKAGING_FEE = 15; 
 
 // ─── Helper: resolve customerId from the JWT user ─────────────────────────────
 const resolveCustomerId = async (req) => {
-    let profile = await CustomerProfile.findOne({ userId: req.user.userID });
-
-    if (!profile) {
-        profile = await CustomerProfile.create({ userId: req.user.userID });
-    }
-
-    return profile;
+    const profile = await resolveCustomerProfile(req.user.userID);
+    return profile._id;
 };
 
 // ─── Helper: flatten a savedAddress sub-doc into the string Order expects ─────

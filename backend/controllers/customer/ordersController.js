@@ -1,27 +1,13 @@
 const Order = require("../../models/shared/order");
-const CustomerProfile = require("../../models/customer/customerProfile");
 const Product = require("../../models/store/product");
+const { resolveCustomerProfile } = require("../../services/customerProfileService");
 
-// ─── Helper: resolve customerId from the JWT user ─────────────────────────────
 const resolveCustomerId = async (req) => {
-    let profile = await CustomerProfile.findOne({ userId: req.user.userID }).select("_id");
-
-    if (!profile) {
-        profile = await CustomerProfile.create({ userId: req.user.userID });
-    }
-
+    const profile = await resolveCustomerProfile(req.user.userID);
     return profile._id;
 };
 
-// ─── Status mapping ───────────────────────────────────────────────────────────
-// The real orderStatus enum has 9 states (driver/pickup granularity that the
-// store + driver apps need). The customer-facing "My Orders" UI only shows a
-// simplified 3-stage tracker (Processing → Packed → Delivery), so we collapse
-// the real enum down here rather than exposing all 9 states to the frontend.
-//
-// Adjust this mapping if you want READY_FOR_PICKUP to visually count as
-// "Packed" instead of "Delivery" — it's a judgment call, currently grouped
-// with the delivery stage since the order has left the store's hands.
+
 const STAGE_FOR_STATUS = {
     PENDING: "PROCESSING",
     ACCEPTED: "PROCESSING",

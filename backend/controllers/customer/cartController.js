@@ -1,19 +1,14 @@
 const Cart = require("../../models/customer/cart");
 const Product = require("../../models/store/product");
-const CustomerProfile = require("../../models/customer/customerProfile");
+const { resolveCustomerProfile } = require("../../services/customerProfileService");
 const mongoose = require("mongoose");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // ─── Helper: resolve customerId from the JWT user ─────────────────────────────
 const resolveCustomerId = async (req) => {
-    let profile = await CustomerProfile.findOne({ userId: req.user.userID }).select("_id");
-
-    if (!profile) {
-        profile = await CustomerProfile.create({ userId: req.user.userID });
-    }
-
-    return profile ? profile._id : null;
+    const profile = await resolveCustomerProfile(req.user.userID);
+    return profile._id;
 };
 
 // ─── Helper: recalculate totalAmount ─────────────────────────────────────────
