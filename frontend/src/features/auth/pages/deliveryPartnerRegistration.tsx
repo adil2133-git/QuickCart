@@ -3,6 +3,9 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerDriver } from "../../driver/driverAuthService";
 import OtpVerificationModal from "../components/otpVerificationModal";
+import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
+import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
+
 
 type VehicleType = "Bike" | "Scooter";
 
@@ -12,32 +15,7 @@ interface UploadState {
   uploaded: boolean;
 }
 
-function PasswordStrengthBar({ password }: { password: string }) {
-  const getStrength = () => {
-    if (!password) return { width: "0%", color: "transparent" };
-    if (password.length <= 5) return { width: "33%", color: "#ba1a1a" };
-    if (password.length <= 8) return { width: "66%", color: "#eeddc7" };
-    if (
-      /[0-9]/.test(password) &&
-      /[A-Z]/.test(password) &&
-      password.length > 8
-    )
-      return { width: "100%", color: "#4f6072" };
-    return { width: "66%", color: "#eeddc7" };
-  };
-  const { width, color } = getStrength();
-  return (
-    <div
-      className="w-full h-1 rounded-full overflow-hidden mt-1.5"
-      style={{ backgroundColor: "#f4ece8" }}
-    >
-      <div
-        className="h-full rounded-full transition-all duration-500"
-        style={{ width, backgroundColor: color }}
-      />
-    </div>
-  );
-}
+
 
 function DocumentCard({
   icon,
@@ -121,6 +99,8 @@ export default function DeliveryPartnerRegistration() {
   const [vehicleNumber, setVehicleNo] = useState("");
   const [licenseNumber, setLicenseNo] = useState("");
 
+  const { handleFocus, handleBlur } = useInputFocusStyle();
+
   const [drivingLicense, setDrivingLicense] = useState<UploadState>({
     file: null,
     name: null,
@@ -144,14 +124,6 @@ export default function DeliveryPartnerRegistration() {
   const inputClass =
     "w-full h-11 px-3 bg-white border outline-none text-sm text-gray-800 placeholder-gray-400 rounded-lg transition-all";
   const inputStyle = { borderColor: "#d2c4b9" };
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#c2a383";
-    e.target.style.boxShadow = "0 0 0 2px rgba(194,163,131,0.2)";
-  };
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#d2c4b9";
-    e.target.style.boxShadow = "none";
-  };
 
   const SectionHeader = ({
     icon,

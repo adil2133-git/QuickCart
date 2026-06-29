@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import api from "../../../api/axios";
 import { useAuthStore } from "../state/authState";
+import EyeIcon from "../components/shared/eyeIcon";
+import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 
 export default function CustomerRegistration() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,46 +20,15 @@ export default function CustomerRegistration() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const setUser = useAuthStore((state) => state.setUser);
+  const hydrate = useAuthStore((state) => state.hydrate);
+  const { handleFocus, handleBlur } = useInputFocusStyle();
 
   const inputClass =
     "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400";
   const inputStyle = { borderColor: "#D6C5B0", backgroundColor: "#FAFAF8" };
 
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#C9A97A";
-    e.target.style.boxShadow = "0 0 0 2px #C9A97A33";
-  };
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#D6C5B0";
-    e.target.style.boxShadow = "none";
-  };
 
-  const EyeIcon = ({ open }: { open: boolean }) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {open ? (
-        <>
-          <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-          <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-          <line x1="1" y1="1" x2="23" y2="23" />
-        </>
-      ) : (
-        <>
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </>
-      )}
-    </svg>
-  );
+
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,38 +61,9 @@ export default function CustomerRegistration() {
     }
   };
 
-  /**
-   * Called by OtpVerificationModal once the OTP is accepted.
-   *
-   * At this point the backend has set the Access_Token cookie, so we can
-   * call /auth/me to get the full user object and populate the store —
-   * the customer is immediately "logged in".
-   */
   const handleVerified = async () => {
     setShowOtp(false);
-    try {
-      const { data } = await api.get<{
-        user: {
-          id: string;
-          name: string;
-          email: string;
-          role: "CUSTOMER";
-          status?: string;
-        };
-      }>("/auth/me");
-
-      setUser({
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-        status: data.user.status as any,
-      });
-    } catch {
-      // /auth/me failed for some reason — the customer can still reach home;
-      // the store will be populated next time via hydrate() or on any
-      // subsequent protected request.
-    }
+    await hydrate();
     navigate("/customer/home");
   };
 

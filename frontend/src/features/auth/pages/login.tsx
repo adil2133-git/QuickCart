@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { FocusEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import ForgotPasswordModal from "../components/forgotPasswordModal";
 import api from "../../../api/axios";
 import { useAuthStore } from "../state/authState";
+import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 
 const ROLE_ROUTES: Record<string, string> = {
   CUSTOMER: "/customer/home",
@@ -34,18 +34,11 @@ export default function QuickKartLogin() {
 
   const navigate = useNavigate();
   const setUser = useAuthStore((state) => state.setUser);
+  const { handleFocus, handleBlur } = useInputFocusStyle();
 
   const inputClass = "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400";
   const inputStyle = { borderColor: "#D6C5B0", backgroundColor: "#FAFAF8" };
 
-  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#C9A97A";
-    e.target.style.boxShadow = "0 0 0 2px #C9A97A33";
-  };
-  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#D6C5B0";
-    e.target.style.boxShadow = "none";
-  };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

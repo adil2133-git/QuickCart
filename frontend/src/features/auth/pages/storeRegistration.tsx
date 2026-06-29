@@ -5,6 +5,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../../../api/axios";
 import OtpVerificationModal from "../components/otpVerificationModal";
+import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
+import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 
 type UploadState = { file: File | null };
 
@@ -18,28 +20,7 @@ type ConfirmedLocation = {
   resolvedAddress: string | null; // reverse-geocoded label shown to the user, may be null if lookup failed
 };
 
-// ─── Password Strength Bar ────────────────────────────────────────────────────
-function PasswordStrengthBar({ password }: { password: string }) {
-  const len = password.length;
-  const getColor = (index: number) => {
-    if (len === 0) return "#e8e1dd";
-    if (len <= 4) return index < 1 ? "#ba1a1a" : "#e8e1dd";
-    if (len <= 8) return index < 2 ? "#f1e0ca" : "#e8e1dd";
-    if (len <= 12) return index < 3 ? "#735a3e" : "#e8e1dd";
-    return "#4f6072";
-  };
-  return (
-    <div className="flex gap-1 mt-2">
-      {[0, 1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="flex-1 h-1 rounded-sm transition-all duration-300"
-          style={{ backgroundColor: getColor(i) }}
-        />
-      ))}
-    </div>
-  );
-}
+
 
 // ─── Upload Card ─────────────────────────────────────────────────────────────
 function UploadCard({
@@ -475,17 +456,11 @@ export default function StoreRegistration() {
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
 
+  const { handleFocus, handleBlur } = useInputFocusStyle();
+
   const inputClass =
     "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
   const inputStyle = { borderColor: "#d2c4b9" };
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.target.style.borderColor = "#c2a383";
-    e.target.style.boxShadow = "0 0 0 2px rgba(194,163,131,0.2)";
-  };
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.target.style.borderColor = "#d2c4b9";
-    e.target.style.boxShadow = "none";
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
