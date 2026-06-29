@@ -1,58 +1,52 @@
-export interface DashboardKpi {
-  value: number;
-  trendPct?: number | null;
+export type StoreStatus = "OPEN" | "BUSY" | "CLOSED";
+export type AvailabilityStatus = "AVAILABLE" | "OUT_OF_STOCK" | "HIDDEN";
+
+export type OrderStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "PACKING"
+  | "READY_FOR_PICKUP"
+  | "DRIVER_ASSIGNED"
+  | "PICKED_UP"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
+  | "CANCELLED";
+
+export interface DashboardStats {
+  todaysOrders: number;
+  todaysOrdersChangePct: number | null;
+  todaysRevenue: number;
+  todaysRevenueChangePct: number | null;
+  pendingOrdersCount: number;
+  lowStockCount: number;
 }
 
-export interface DashboardOrder {
-  id: string;
-  customer: string;
-  total: number;
-  status: string;
+export interface Order {
+  _id: string;
+  orderNumber: string;
+  customerName: string;
+  totalAmount: number;
+  orderStatus: OrderStatus;
 }
 
 export interface BestSellingItem {
-  name: string;
-  sold: number;
-  maxSold: number;
+  productId: string;
+  productName: string;
+  unitsSold: number;
 }
 
-export interface LowStockProduct {
-  name: string;
+export interface LowStockProductSummary {
+  productId: string;
+  productName: string;
   stockQuantity: number;
 }
 
-export type StoreVisibility = "OPEN" | "CLOSED" | "BUSY";
-
-export interface OperatingHour {
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isClosed: boolean;
-}
-
 export interface DashboardSummary {
-  store: {
-    storeName: string;
-    visibility: StoreVisibility;
-    isManuallyClosed: boolean;
-    operatingHours: OperatingHour[];
-  };
-  kpis: {
-    todaysOrders: DashboardKpi;
-    todaysRevenue: DashboardKpi;
-    pendingOrders: DashboardKpi;
-    lowStockAlerts: DashboardKpi;
-  };
-  incomingOrders: DashboardOrder[];
+  storeName: string;
+  status: StoreStatus;
+  todaysHours: string;
+  stats: DashboardStats;
+  incomingOrders: Order[];
   bestSelling: BestSellingItem[];
-  lowStockProducts: LowStockProduct[];
-}
-
-export interface GetDashboardSummaryResponse {
-  success: boolean;
-  store: DashboardSummary["store"];
-  kpis: DashboardSummary["kpis"];
-  incomingOrders: DashboardOrder[];
-  bestSelling: BestSellingItem[];
-  lowStockProducts: LowStockProduct[];
+  lowStockProducts: LowStockProductSummary[];
 }

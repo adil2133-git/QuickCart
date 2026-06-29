@@ -1,10 +1,15 @@
 import { useEffect } from "react";
 import api from "../../../api/axios";
 import { useDashboardStore } from "../state/dashboardState";
-import type { GetDashboardSummaryResponse } from "../types/dashboard";
+import type { DashboardSummary } from "../types/dashboard";
+
+interface GetDashboardSummaryResponse {
+  success: boolean;
+  summary: DashboardSummary;
+}
 
 export function useStoreDashboard() {
-  const { data, isLoading, error, setLoading, setData, setError } = useDashboardStore();
+  const { summary, isLoading, error, setLoading, setSummary, setError } = useDashboardStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -12,18 +17,10 @@ export function useStoreDashboard() {
     async function load() {
       setLoading();
       try {
-        const { data: res } = await api.get<GetDashboardSummaryResponse>(
-          "/store/dashboard/summary"
-        );
+        const { data } = await api.get<GetDashboardSummaryResponse>("/store/dashboard/summary");
         if (cancelled) return;
-        if (!res.success) throw new Error("Failed to load dashboard");
-        setData({
-          store: res.store,
-          kpis: res.kpis,
-          incomingOrders: res.incomingOrders,
-          bestSelling: res.bestSelling,
-          lowStockProducts: res.lowStockProducts,
-        });
+        if (!data.success) throw new Error("Failed to load dashboard");
+        setSummary(data.summary);
       } catch (err) {
         if (cancelled) return;
         const message =
@@ -38,5 +35,5 @@ export function useStoreDashboard() {
     };
   }, []);
 
-  return { data, isLoading, error };
+  return { summary, isLoading, error };
 }

@@ -3,13 +3,11 @@ const Product = require("../../models/store/product");
 const { resolveStoreProfile } = require("../../services/storeProfileService");
 const { getLiveStoreStatus } = require("./storeStatus");
 
-// Products at or below this stock level count as "low stock" on the
-// dashboard alert. Adjust here if you want this configurable per store
-// later (e.g. a field on StoreProfile) instead of a global constant.
-const LOW_STOCK_THRESHOLD = 5;
+// Matches LOW_STOCK_THRESHOLD already defined on the frontend in
+// components/store/lib/dashboardUtils.ts — keep these two in sync until
+// this becomes a real per-store/per-product config value.
+const LOW_STOCK_THRESHOLD = 10;
 
-// Statuses that still count as "pending" from the store's point of view —
-// i.e. the store still owes the customer an action (accept/pack/hand off).
 const PENDING_STATUSES = ["PENDING", "ACCEPTED", "PACKING", "READY_FOR_PICKUP"];
 
 function startOfToday() {
@@ -24,6 +22,21 @@ function startOfYesterday() {
   return d;
 }
 
+function pctChange(today, yesterday) {
+  if (yesterday === 0) return null;
+  return Math.round(((today - yesterday) / yesterday) * 1000) / 10;
+}
+
+// Builds a "HH:mm – HH:mm" label for today, or "Closed today" / "Hours not set".
+function formatTodaysHours(operatingHours = []) {
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const today = dayNames[new Date().getDay()];
+  const entry = operatingHours.find((h) => h.day === today);
+  if (!entry || entry.isClosed) return "Closed today";
+  if (!entry.openTime || !entry.closeTime) return "Hours not set";
+  return `${entry.openTime} – ${entry.closeTime}`;
+}
+
 // ─── GET /api/store/dashboard/summary ─────────────────────────────────────────
 const getDashboardSummary = async (req, res) => {
   try {
@@ -33,8 +46,7 @@ const getDashboardSummary = async (req, res) => {
     const todayStart = startOfToday();
     const yesterdayStart = startOfYesterday();
 
-    // ── Today's orders + revenue, and yesterday's for trend comparison ──────
-    const [todaysOrders, yesterdaysOrders, pendingOrders, lowStockProducts] =
+    const [todaysOrders, yesterdaysOrders, pendingOrdersCount, lowStockProducts] =
       await Promise.all([
         Order.find({ storeId, createdAt: { $gte: todayStart } }).select(
           "orderNumber totalAmount orderStatus createdAt recipientName products"
@@ -43,77 +55,70 @@ const getDashboardSummary = async (req, res) => {
           storeId,
           createdAt: { $gte: yesterdayStart, $lt: todayStart },
         }).select("totalAmount"),
-        Order.find({ storeId, orderStatus: { $in: PENDING_STATUSES } }).countDocuments(),
+        Order.countDocuments({ storeId, orderStatus: { $in: PENDING_STATUSES } }),
         Product.find({
           storeId,
-          stockQuantity: { $lte: LOW_STOCK_THRESHOLD },
+          availabilityStatus: "AVAILABLE",
+          stockQuantity: { $gt: 0, $lte: LOW_STOCK_THRESHOLD },
         }).select("productName stockQuantity"),
       ]);
 
     const todaysRevenue = todaysOrders.reduce((sum, o) => sum + o.totalAmount, 0);
     const yesterdaysRevenue = yesterdaysOrders.reduce((sum, o) => sum + o.totalAmount, 0);
 
-    const revenueTrendPct =
-      yesterdaysRevenue === 0
-        ? null
-        : Math.round(((todaysRevenue - yesterdaysRevenue) / yesterdaysRevenue) * 1000) / 10;
-
-    const ordersTrendPct =
-      yesterdaysOrders.length === 0
-        ? null
-        : Math.round(
-            ((todaysOrders.length - yesterdaysOrders.length) / yesterdaysOrders.length) * 1000
-          ) / 10;
-
-    // ── Best selling today: aggregate quantity sold per product from
-    //    today's orders only ────────────────────────────────────────────────
-    const soldByProduct = new Map(); // productId -> { name, sold }
+    // ── Best selling today: aggregate quantity sold per product ─────────────
+    const soldByProduct = new Map(); // productId -> { productName, unitsSold }
     for (const order of todaysOrders) {
       for (const item of order.products || []) {
         const key = item.productId.toString();
-        const entry = soldByProduct.get(key) || { name: item.productName, sold: 0 };
-        entry.sold += item.quantity;
+        const entry = soldByProduct.get(key) || {
+          productId: key,
+          productName: item.productName,
+          unitsSold: 0,
+        };
+        entry.unitsSold += item.quantity;
         soldByProduct.set(key, entry);
       }
     }
     const bestSelling = Array.from(soldByProduct.values())
-      .sort((a, b) => b.sold - a.sold)
+      .sort((a, b) => b.unitsSold - a.unitsSold)
       .slice(0, 5);
-    const maxSold = bestSelling.length > 0 ? bestSelling[0].sold : 0;
 
-    // ── Incoming orders: most recent few, regardless of status ──────────────
     const incomingOrders = [...todaysOrders]
       .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, 5)
+      .slice(0, 8)
       .map((o) => ({
-        id: o.orderNumber,
-        customer: o.recipientName,
-        total: o.totalAmount,
-        status: o.orderStatus,
+        _id: o._id.toString(),
+        orderNumber: o.orderNumber,
+        customerName: o.recipientName,
+        totalAmount: o.totalAmount,
+        orderStatus: o.orderStatus,
       }));
 
     const liveStatus = getLiveStoreStatus(store);
 
     return res.status(200).json({
       success: true,
-      store: {
+      summary: {
         storeName: store.storeName,
-        visibility: liveStatus.status, // "OPEN" | "CLOSED" | "BUSY"
-        isManuallyClosed: store.isManuallyClosed,
-        operatingHours: store.operatingHours,
+        status: liveStatus.status, // "OPEN" | "CLOSED" | "BUSY"
+        todaysHours: formatTodaysHours(store.operatingHours),
+        stats: {
+          todaysOrders: todaysOrders.length,
+          todaysOrdersChangePct: pctChange(todaysOrders.length, yesterdaysOrders.length),
+          todaysRevenue,
+          todaysRevenueChangePct: pctChange(todaysRevenue, yesterdaysRevenue),
+          pendingOrdersCount,
+          lowStockCount: lowStockProducts.length,
+        },
+        incomingOrders,
+        bestSelling,
+        lowStockProducts: lowStockProducts.map((p) => ({
+          productId: p._id.toString(),
+          productName: p.productName,
+          stockQuantity: p.stockQuantity,
+        })),
       },
-      kpis: {
-        todaysOrders: { value: todaysOrders.length, trendPct: ordersTrendPct },
-        todaysRevenue: { value: todaysRevenue, trendPct: revenueTrendPct },
-        pendingOrders: { value: pendingOrders },
-        lowStockAlerts: { value: lowStockProducts.length },
-      },
-      incomingOrders,
-      bestSelling: bestSelling.map((p) => ({ name: p.name, sold: p.sold, maxSold })),
-      lowStockProducts: lowStockProducts.map((p) => ({
-        name: p.productName,
-        stockQuantity: p.stockQuantity,
-      })),
     });
   } catch (err) {
     console.error("GET DASHBOARD SUMMARY ERROR:", err);

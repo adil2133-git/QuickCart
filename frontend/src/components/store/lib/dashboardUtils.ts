@@ -1,5 +1,4 @@
-import type { OrderStatus, StoreStatus, AvailabilityStatus } from "../types/store";
-
+import type { OrderStatus, StoreStatus, AvailabilityStatus } from "../../../features/store/types/dashboard";
 // ---------------------------------------------------------------------------
 // Order status -> display config
 // Statuses are grouped so "Pending Orders" on the dashboard has one

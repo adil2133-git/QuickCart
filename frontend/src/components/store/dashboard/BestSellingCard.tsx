@@ -1,4 +1,4 @@
-import type { BestSellingItem } from "../types/store";
+import type { BestSellingItem } from "../../../features/store/types/dashboard";
 
 interface BestSellingCardProps {
   items: BestSellingItem[];

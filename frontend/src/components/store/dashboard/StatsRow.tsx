@@ -1,6 +1,6 @@
 import { ShoppingCart, Wallet, ClipboardList, ClipboardCheck } from "lucide-react";
 import StatCard from "./StatCard";
-import type { DashboardStats } from "../types/store";
+import type { DashboardStats } from "../../../features/store/types/dashboard";
 import { formatCurrency } from "../lib/dashboardUtils";
 
 interface StatsRowProps {
