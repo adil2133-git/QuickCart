@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { ACCESS_COOKIE_OPTIONS } = require("../utils/cookieOptions");
 
 const tokenRegenerate = (req, res) => {
     try {
@@ -21,11 +22,7 @@ const tokenRegenerate = (req, res) => {
         );
 
         return res
-            .cookie("Access_Token", AccessToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                secure: process.env.NODE_ENV === "production",
-            })
+            .cookie("Access_Token", AccessToken, ACCESS_COOKIE_OPTIONS)
             .status(200)
             .json({ message: "Token refreshed" });
 

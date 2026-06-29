@@ -4,6 +4,7 @@ const User = require("../../models/shared/user");
 const DriverProfile = require("../../models/driver/driverProfile"); 
 const StoreProfile = require("../../models/store/storeProfile")
 const generateToken = require("../../utils/generateToken");
+const { ACCESS_COOKIE_OPTIONS, REFRESH_COOKIE_OPTIONS } = require("../../utils/cookieOptions");
 
 
 
@@ -96,16 +97,8 @@ const verifyOtpController = async (req, res) => {
         const { AccessToken, RefreshToken } = generateToken(newUser.email, newUser._id, newUser.role);
 
         return res
-            .cookie("Access_Token", AccessToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                secure: false
-            })
-            .cookie("Refresh_Token", RefreshToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                secure: false
-            })
+            .cookie("Access_Token", AccessToken, ACCESS_COOKIE_OPTIONS)
+            .cookie("Refresh_Token", RefreshToken, REFRESH_COOKIE_OPTIONS)
             .status(201)
             .json({
                 message: "User registered successfully",

@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/shared/user");
 const generateToken = require("../../utils/generateToken");
+const { ACCESS_COOKIE_OPTIONS, REFRESH_COOKIE_OPTIONS } = require("../../utils/cookieOptions");
 
 const Login = async (req, res) => {
     try {
@@ -45,18 +46,8 @@ const Login = async (req, res) => {
         const { AccessToken, RefreshToken } = generateToken(user.email, user._id, user.role);
 
         res
-            .cookie("Access_Token", AccessToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                // ✅ Use env-based flag — never hardcode false or true
-                secure: process.env.NODE_ENV === "production",
-            })
-            .cookie("Refresh_Token", RefreshToken, {
-                httpOnly: true,
-                sameSite: "lax",
-                // ✅ Same secure flag for both cookies — must always match
-                secure: process.env.NODE_ENV === "production",
-            })
+            .cookie("Access_Token", AccessToken, ACCESS_COOKIE_OPTIONS)
+            .cookie("Refresh_Token", RefreshToken, REFRESH_COOKIE_OPTIONS)
             .status(200)
             .json({
                 message: "Login successful",
@@ -79,16 +70,8 @@ const Login = async (req, res) => {
 const logoutUser = async (req, res) => {
     try {
         res
-            .clearCookie("Access_Token", {
-                httpOnly: true,
-                sameSite: "lax",
-                secure: process.env.NODE_ENV === "production",
-            })
-            .clearCookie("Refresh_Token", {
-                httpOnly: true,
-                sameSite: "lax",
-                secure: process.env.NODE_ENV === "production",
-            })
+            .clearCookie("Access_Token", ACCESS_COOKIE_OPTIONS)
+            .clearCookie("Refresh_Token", REFRESH_COOKIE_OPTIONS)
             .status(200)
             .json({ message: "Logged out successfully" });
     } catch (err) {
