@@ -14,6 +14,8 @@ import {
     type LucideIcon,
 } from "lucide-react";
 
+import { useLogout } from "../../auth/hooks/useLogout";
+
 interface NavLeaf {
     label: string;
     id: string;
@@ -105,6 +107,8 @@ export default function Sidebar() {
     const navigate = useNavigate();
     const location = useLocation();
     const currentPath = location.pathname;
+
+    const { logout, isLoggingOut } = useLogout();
 
     // Find which nav item is active
     const findActiveItem = () => {
@@ -273,11 +277,12 @@ export default function Sidebar() {
                     <span>Admin Profile</span>
                 </button>
                 <button
-                    onClick={() => navigate("/logout")}
+                    onClick={logout}
+                    disabled={isLoggingOut}
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-[#C9BCAC] transition-colors hover:bg-[#2E231C] hover:text-[#F4EDE2]"
                 >
                     <LogOut size={18} />
-                    <span>Logout</span>
+                    <span>{isLoggingOut ? "Logging out…" : "Logout"}</span>
                 </button>
             </div>
         </aside>

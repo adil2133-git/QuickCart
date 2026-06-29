@@ -1,24 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Search, Bell, ChevronDown, UserCircle2, Settings, LogOut } from "lucide-react";
 
-/**
- * QuickKart Admin — Top Bar
- * Stack: React + TypeScript + Tailwind CSS + lucide-react
- *
- * Reusable across every page (Dashboard, Approvals, Orders, Finance,
- * Analytics, Settings...). Only the `pageTitle` (and optionally
- * `rightSlot` for page-specific buttons) changes per page — the
- * search bar, date, notification bell, and profile dropdown stay
- * identical everywhere, since they're written once here.
- *
- * Color theme:
- *   bg              #FBF6EE  (cream)
- *   border          #EBE1D2
- *   text default    #3A2C20
- *   text muted      #8C7C6B
- *   accent (brown)  #8B6F47
- *   badge (critical) #D94F4F
- */
+import { useLogout } from "../../auth/hooks/useLogout";
 
 interface TopBarProps {
     /** Page-specific title, e.g. "Dashboard", "Approvals", "Finance" */
@@ -52,6 +35,8 @@ export default function TopBar({
 }: TopBarProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const { logout, isLoggingOut } = useLogout();
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
@@ -136,9 +121,13 @@ export default function TopBar({
                                 Platform Settings
                             </button>
                             <div className="my-1 h-px bg-[#EBE1D2]" />
-                            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#D94F4F] transition-colors hover:bg-[#FBEAEA]">
+                            <button
+                                onClick={logout}
+                                disabled={isLoggingOut}
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#D94F4F] transition-colors hover:bg-[#FBEAEA]"
+                            >
                                 <LogOut size={16} />
-                                Logout
+                                {isLoggingOut ? "Logging out…" : "Logout"}
                             </button>
                         </div>
                     )}

@@ -23,6 +23,7 @@ import {
 import api from "../../../api/axios";
 import { useAuthStore } from "../state/authState";
 import LocationPreviewMap from "../../admin/components/locationPreview";
+import { useLogout } from "../hooks/useLogout";
 
 type Role = "driver" | "store";
 
@@ -236,10 +237,7 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
     );
   };
 
-  const handleLogout = () => {
-    clearUser();
-    navigate("/login");
-  };
+  const { logout: handleLogout, isLoggingOut } = useLogout();
 
   // ── Loading ──
   if (loading) {

@@ -13,11 +13,12 @@ import {
 import NavBar from "../components/navbar";
 import { useCustomerProfile } from "../hooks/useCustomerProfile";
 import type { AddAddressPayload } from "../types/customerProfile";
+import { useLogout } from "../../auth/hooks/useLogout";
 
 type SidebarTab = "profile" | "orders" | "addresses" | "notifications";
 
 const CustomerProfilePage = () => {
-  const { profile, user, isLoading, error, addNewAddress, setDefault, deleteAddress, logout } =
+  const { profile, user, isLoading, error, addNewAddress, setDefault, deleteAddress } =
     useCustomerProfile();
 
   const [activeTab, setActiveTab] = useState<SidebarTab>("profile");
@@ -27,6 +28,8 @@ const CustomerProfilePage = () => {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const { logout, isLoggingOut } = useLogout();
 
   const memberSince = profile?.createdAt
     ? new Date(profile.createdAt).toLocaleDateString("en-US", {
@@ -97,7 +100,7 @@ const CustomerProfilePage = () => {
           <div className="border-t border-[#EFE3D0] my-3" />
 
           <button
-            onClick={logout}
+            onClick={isLoggingOut ? "Logging out…" : logout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium"
           >
             <LogOut size={18} />
