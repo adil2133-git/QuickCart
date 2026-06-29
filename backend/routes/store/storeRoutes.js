@@ -15,6 +15,7 @@ const {
     updateOperatingHours,
 } = require("../../controllers/store/storeProfileController");
 const { uploadStoreBranding } = require("../../middleware/uploadStoreBranding");
+const { getDashboardSummary } = require("../../controllers/store/storeDashboardController");
 
 const {
     createProduct,
@@ -41,6 +42,7 @@ const {
 
 // GET /api/store/me
 router.get("/me", protectRoutes, authorizeRoles("STORE"), getMyStoreProfile);
+router.get("/dashboard/summary", protectRoutes, authorizeRoles("STORE"), getDashboardSummary);
 router.patch("/branding", protectRoutes, authorizeRoles("STORE"), uploadStoreBranding, updateStoreBranding);
 router.patch("/toggleManualClose", protectRoutes, authorizeRoles("STORE"), toggleManualClose);
 router.patch("/info", protectRoutes, authorizeRoles("STORE"), updateStoreInfo);

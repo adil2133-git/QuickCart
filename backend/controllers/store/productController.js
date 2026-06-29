@@ -1,15 +1,12 @@
 const Product = require("../../models/store/product");
-const StoreProfile = require("../../models/store/storeProfile");
 const mongoose = require("mongoose");
+const { resolveStoreProfile } = require("../../services/storeProfileService");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// Resolves the logged-in STORE user's StoreProfile._id from the JWT.
-// storeId is never trusted from the client — same principle as getMyStoreProfile.
 const resolveStoreId = async (req) => {
-    const userId = req.user.userID;
-    const storeProfile = await StoreProfile.findOne({ userId });
-    return storeProfile ? storeProfile._id : null;
+    const storeProfile = await resolveStoreProfile(req.user.userID);
+    return storeProfile._id;
 };
 
 // ─── Create Product  (POST /api/store/addProduct) ────────────────────────────

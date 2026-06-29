@@ -3,6 +3,7 @@ const User = require("../../models/shared/user");
 const StoreProfile = require("../../models/store/storeProfile");
 const StoreReview = require("../../models/store/storeReview");
 const { getLiveStoreStatus, distanceInKm } = require("./storeStatus");
+const { resolveStoreProfile } = require("../../services/storeProfileService");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -66,9 +67,8 @@ const getMyStoreProfile = async (req, res) => {
 
 // ─── Resolve the logged-in STORE user's StoreProfile._id ────────────────────
 const resolveStoreId = async (req) => {
-    const userId = req.user.userID;
-    const storeProfile = await StoreProfile.findOne({ userId });
-    return storeProfile ? storeProfile._id : null;
+    const storeProfile = await resolveStoreProfile(req.user.userID);
+    return storeProfile._id;
 };
 
 // ─── Upload/replace logo + cover image  (PATCH /api/store/branding) ─────────

@@ -1,11 +1,10 @@
 const Order = require("../../models/shared/order");
-const StoreProfile = require("../../models/store/storeProfile");
 const DriverProfile = require("../../models/driver/driverProfile");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
+const { resolveStoreProfile } = require("../../services/storeProfileService");
 
 const resolveStoreId = async (req) => {
-    const store = await StoreProfile.findOne({ userId: req.user.userID }).select("_id");
-    if (!store) throw new Error("Store profile not found");
+    const store = await resolveStoreProfile(req.user.userID);
     return store._id;
 };
 
