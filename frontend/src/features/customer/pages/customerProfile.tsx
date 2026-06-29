@@ -33,9 +33,9 @@ const CustomerProfilePage = () => {
 
   const memberSince = profile?.createdAt
     ? new Date(profile.createdAt).toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-      })
+      month: "long",
+      year: "numeric",
+    })
     : "—";
 
   const handleAddAddress = async (e: React.FormEvent) => {
@@ -100,11 +100,12 @@ const CustomerProfilePage = () => {
           <div className="border-t border-[#EFE3D0] my-3" />
 
           <button
-            onClick={isLoggingOut ? "Logging out…" : logout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium"
+            onClick={logout}
+            disabled={isLoggingOut}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LogOut size={18} />
-            Sign Out
+            {isLoggingOut ? "Logging out…" : "Sign Out"}
           </button>
         </aside>
 
@@ -271,9 +272,8 @@ const SidebarItem = ({
 }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
-      active ? "bg-[#C9A368] text-white" : "text-[#5C4A2E] hover:bg-[#FDF6EC]"
-    }`}
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${active ? "bg-[#C9A368] text-white" : "text-[#5C4A2E] hover:bg-[#FDF6EC]"
+      }`}
   >
     {icon}
     {label}
