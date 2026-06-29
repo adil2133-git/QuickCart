@@ -11,7 +11,6 @@ import {
   ImageIcon,
   ArrowLeft,
 } from "lucide-react";
-import { StoreShell } from "./storeShell";
 import { useProductStore } from "../state/productState";
 import type { ProductFormValues } from "../productsApi";
 
@@ -103,10 +102,6 @@ function ImageUploader({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Live preview card — mirrors how it'll render on the customer storefront  */
-/* -------------------------------------------------------------------------- */
-
 function LivePreview({
   form,
   categoryName,
@@ -144,7 +139,6 @@ function LivePreview({
           <p className="text-xs font-semibold uppercase tracking-wide text-[#C2825A]">{categoryName || "Category"}</p>
           <div className="mt-1 flex items-start justify-between gap-2">
             <h3 className="text-lg font-semibold text-[#2B1B0E]">{form.productName || "Product name"}</h3>
-            {/* ✅ Changed from $ to ₹ */}
             <span className="shrink-0 text-lg font-bold text-[#2B1B0E]">
               {form.price ? `₹${Number(form.price).toFixed(2)}` : "₹0.00"}
             </span>
@@ -300,172 +294,167 @@ export default function AddEditProductPage() {
 
   if (loadingProduct) {
     return (
-      <StoreShell>
-        <div className="flex h-full items-center justify-center py-24">
-          <Loader2 size={22} className="animate-spin text-[#2B1B0E]/40" />
-        </div>
-      </StoreShell>
+      <div className="flex h-full items-center justify-center py-24">
+        <Loader2 size={22} className="animate-spin text-[#2B1B0E]/40" />
+      </div>
     );
   }
 
   return (
-    <StoreShell>
-      <div className="px-8 py-6">
-        <button
-          onClick={() => navigate("/store/products")}
-          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#2B1B0E]/55 hover:text-[#2B1B0E]"
-        >
-          <ArrowLeft size={15} /> Back to products
-        </button>
+    <div className="px-8 py-6">
+      <button
+        onClick={() => navigate("/store/products")}
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#2B1B0E]/55 hover:text-[#2B1B0E]"
+      >
+        <ArrowLeft size={15} /> Back to products
+      </button>
 
-        <h1 className="mb-6 text-lg font-semibold text-[#2B1B0E]">
-          {isEditMode ? "Edit product" : "Add new product"}
-        </h1>
+      <h1 className="mb-6 text-lg font-semibold text-[#2B1B0E]">
+        {isEditMode ? "Edit product" : "Add new product"}
+      </h1>
 
-        {loadError && (
-          <div className="mb-5 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700 ring-1 ring-red-600/15">
-            {loadError}
-          </div>
-        )}
+      {loadError && (
+        <div className="mb-5 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700 ring-1 ring-red-600/15">
+          {loadError}
+        </div>
+      )}
 
-        <div className="grid grid-cols-[1fr_380px] gap-6">
-          {/* Form card */}
-          <div className="rounded-2xl border border-[#2B1B0E]/[0.07] bg-white p-7 shadow-sm">
-            <h2 className="mb-6 text-base font-semibold text-[#2B1B0E]">Product details</h2>
+      <div className="grid grid-cols-[1fr_380px] gap-6">
+        {/* Form card */}
+        <div className="rounded-2xl border border-[#2B1B0E]/[0.07] bg-white p-7 shadow-sm">
+          <h2 className="mb-6 text-base font-semibold text-[#2B1B0E]">Product details</h2>
 
-            <div className="grid grid-cols-2 gap-5">
-              <Field label="Product name" error={errors.productName} className="col-span-2">
-                <input
-                  value={form.productName}
-                  onChange={(e) => update("productName", e.target.value)}
-                  placeholder="e.g. Fresh Avocado"
-                  className={inputClass(!!errors.productName)}
-                />
-              </Field>
+          <div className="grid grid-cols-2 gap-5">
+            <Field label="Product name" error={errors.productName} className="col-span-2">
+              <input
+                value={form.productName}
+                onChange={(e) => update("productName", e.target.value)}
+                placeholder="e.g. Fresh Avocado"
+                className={inputClass(!!errors.productName)}
+              />
+            </Field>
 
-              <Field label="Description" className="col-span-2">
-                <textarea
-                  value={form.description}
-                  onChange={(e) => update("description", e.target.value)}
-                  placeholder="Ripe Hass avocado, perfect for toast or guacamole…"
-                  rows={3}
-                  className={`${inputClass(false)} resize-none`}
-                />
-              </Field>
+            <Field label="Description" className="col-span-2">
+              <textarea
+                value={form.description}
+                onChange={(e) => update("description", e.target.value)}
+                placeholder="Ripe Hass avocado, perfect for toast or guacamole…"
+                rows={3}
+                className={`${inputClass(false)} resize-none`}
+              />
+            </Field>
 
-              <Field label="Category" error={errors.categoryId}>
-                <div className="relative">
-                  <select
-                    value={form.categoryId}
-                    onChange={(e) => update("categoryId", e.target.value)}
-                    className={`${inputClass(!!errors.categoryId)} appearance-none pr-9`}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.categoryName}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#2B1B0E]/40" />
-                </div>
-              </Field>
+            <Field label="Category" error={errors.categoryId}>
+              <div className="relative">
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => update("categoryId", e.target.value)}
+                  className={`${inputClass(!!errors.categoryId)} appearance-none pr-9`}
+                >
+                  <option value="">Select category</option>
+                  {categories.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.categoryName}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#2B1B0E]/40" />
+              </div>
+            </Field>
 
-              {/* ✅ Changed $ to ₹ in the price field prefix */}
-              <Field label="Price (₹)" error={errors.price}>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2B1B0E]/50">₹</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={form.price}
-                    onChange={(e) => update("price", e.target.value)}
-                    placeholder="0.00"
-                    className={`${inputClass(!!errors.price)} pl-7`}
-                  />
-                </div>
-              </Field>
-
-              <Field label="Stock count" error={errors.stockQuantity}>
+            <Field label="Price (₹)" error={errors.price}>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2B1B0E]/50">₹</span>
                 <input
                   type="number"
                   min={0}
-                  value={form.stockQuantity}
-                  onChange={(e) => update("stockQuantity", e.target.value)}
-                  placeholder="50"
-                  className={inputClass(!!errors.stockQuantity)}
+                  step="0.01"
+                  value={form.price}
+                  onChange={(e) => update("price", e.target.value)}
+                  placeholder="0.00"
+                  className={`${inputClass(!!errors.price)} pl-7`}
                 />
-              </Field>
+              </div>
+            </Field>
 
-              <Field label="Unit" error={errors.unit}>
-                <div className="relative">
-                  <select
-                    value={form.unit}
-                    onChange={(e) => update("unit", e.target.value)}
-                    className={`${inputClass(!!errors.unit)} appearance-none pr-9`}
-                  >
-                    {UNITS.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#2B1B0E]/40" />
-                </div>
-              </Field>
+            <Field label="Stock count" error={errors.stockQuantity}>
+              <input
+                type="number"
+                min={0}
+                value={form.stockQuantity}
+                onChange={(e) => update("stockQuantity", e.target.value)}
+                placeholder="50"
+                className={inputClass(!!errors.stockQuantity)}
+              />
+            </Field>
 
-              <Field label="Visibility" className="col-span-2">
-                <div className="flex items-center gap-3 rounded-xl border border-[#2B1B0E]/10 px-4 py-3">
-                  <button
-                    onClick={() =>
-                      update("availabilityStatus", form.availabilityStatus === "AVAILABLE" ? "HIDDEN" : "AVAILABLE")
-                    }
-                    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                      form.availabilityStatus === "AVAILABLE" ? "bg-[#C2825A]" : "bg-[#2B1B0E]/15"
-                    }`}
-                  >
-                    <motion.span
-                      className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow"
-                      animate={{ left: form.availabilityStatus === "AVAILABLE" ? 18 : 2 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                    />
-                  </button>
-                  <span className="text-sm font-medium text-[#2B1B0E]">Available for sale</span>
-                  <span className="ml-auto text-xs text-[#2B1B0E]/45">
-                    Turn off to hide this product from customers without deleting it
-                  </span>
-                </div>
-              </Field>
-            </div>
+            <Field label="Unit" error={errors.unit}>
+              <div className="relative">
+                <select
+                  value={form.unit}
+                  onChange={(e) => update("unit", e.target.value)}
+                  className={`${inputClass(!!errors.unit)} appearance-none pr-9`}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#2B1B0E]/40" />
+              </div>
+            </Field>
 
-            <div className="mt-7 border-t border-[#2B1B0E]/[0.06] pt-6">
-              <h2 className="mb-4 text-sm font-semibold text-[#2B1B0E]">Product images</h2>
-              <ImageUploader slots={imageSlots} onAdd={handleAddImages} onRemove={handleRemoveImage} />
-            </div>
-
-            <div className="mt-8 flex items-center justify-end gap-3 border-t border-[#2B1B0E]/[0.06] pt-6">
-              <button
-                onClick={() => navigate("/store/products")}
-                className="rounded-full border border-[#2B1B0E]/15 px-5 py-2.5 text-sm font-semibold text-[#2B1B0E] hover:bg-[#FBF1E9]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-full bg-[#C2825A] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-              >
-                {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                {saving ? "Saving…" : isEditMode ? "Save changes" : "Save product"}
-              </button>
-            </div>
+            <Field label="Visibility" className="col-span-2">
+              <div className="flex items-center gap-3 rounded-xl border border-[#2B1B0E]/10 px-4 py-3">
+                <button
+                  onClick={() =>
+                    update("availabilityStatus", form.availabilityStatus === "AVAILABLE" ? "HIDDEN" : "AVAILABLE")
+                  }
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                    form.availabilityStatus === "AVAILABLE" ? "bg-[#C2825A]" : "bg-[#2B1B0E]/15"
+                  }`}
+                >
+                  <motion.span
+                    className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow"
+                    animate={{ left: form.availabilityStatus === "AVAILABLE" ? 18 : 2 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                  />
+                </button>
+                <span className="text-sm font-medium text-[#2B1B0E]">Available for sale</span>
+                <span className="ml-auto text-xs text-[#2B1B0E]/45">
+                  Turn off to hide this product from customers without deleting it
+                </span>
+              </div>
+            </Field>
           </div>
 
-          {/* Live preview */}
-          <div>
-            <LivePreview form={form} categoryName={categoryName} imagePreview={firstPreview} />
+          <div className="mt-7 border-t border-[#2B1B0E]/[0.06] pt-6">
+            <h2 className="mb-4 text-sm font-semibold text-[#2B1B0E]">Product images</h2>
+            <ImageUploader slots={imageSlots} onAdd={handleAddImages} onRemove={handleRemoveImage} />
           </div>
+
+          <div className="mt-8 flex items-center justify-end gap-3 border-t border-[#2B1B0E]/[0.06] pt-6">
+            <button
+              onClick={() => navigate("/store/products")}
+              className="rounded-full border border-[#2B1B0E]/15 px-5 py-2.5 text-sm font-semibold text-[#2B1B0E] hover:bg-[#FBF1E9]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-full bg-[#C2825A] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+            >
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              {saving ? "Saving…" : isEditMode ? "Save changes" : "Save product"}
+            </button>
+          </div>
+        </div>
+
+        {/* Live preview */}
+        <div>
+          <LivePreview form={form} categoryName={categoryName} imagePreview={firstPreview} />
         </div>
       </div>
 
@@ -482,7 +471,7 @@ export default function AddEditProductPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </StoreShell>
+    </div>
   );
 }
 
