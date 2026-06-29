@@ -11,8 +11,6 @@ import {
   XCircle,
   Pencil,
 } from "lucide-react";
-import Sidebar from "../components/storeSidebar";
-import Topbar from "../components/storeTopbar";
 import { useStoreSettingsStore, type NotificationPrefs } from "../state/storeSettingsState";
 
 // ─── Section shell — same as Profile's Card ────────────────────────────────
@@ -175,10 +173,8 @@ export default function StoreSettingsPage() {
 
   return (
     <div className="flex h-screen bg-[#FBF1E9]">
-      <Sidebar />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar />
 
         <main className="flex-1 overflow-y-auto px-8 py-6">
           {loading ? (

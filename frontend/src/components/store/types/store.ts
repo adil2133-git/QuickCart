@@ -9,7 +9,7 @@ export interface KpiData {
 }
 
 export interface Order {
-  id: string;
+  _id: string;
   customer: string;
   initials: string;
   avatarColor: string; // tailwind classes, e.g. "bg-violet-100 text-violet-600"

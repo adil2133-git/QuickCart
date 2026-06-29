@@ -18,8 +18,6 @@ import {
   AlertCircle,
   Lock,
 } from "lucide-react";
-import Sidebar from "../components/storeSidebar";
-import Topbar from "../components/storeTopbar";
 import { useStoreProfileStore } from "../state/storeProfileState";
 
 const DAY_ORDER = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -130,10 +128,8 @@ export default function StoreProfilePage() {
 
   return (
     <div className="flex h-screen bg-[#FBF1E9]">
-      <Sidebar activeKey="dashboard" storeName={store?.storeName || "QuickKart"} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar title="Profile" />
 
         <main className="flex-1 overflow-y-auto px-8 py-6">
           {loading ? (

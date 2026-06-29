@@ -1,8 +1,52 @@
-import Dashboard from "../../../components/store/dashboard/Dashboard";
-import { getMockDashboardData } from "../../../components/store/data/mockDashboard";
+import { useNavigate } from "react-router-dom";
+import StatsRow from "../../../components/store/dashboard/StatsRow";
+import OrdersTableCard from "../../../components/store/dashboard/OrdersTableCard";
+import BestSellingCard from "../../../components/store/dashboard/BestSellingCard";
+import StoreStatusCard from "../../../components/store/dashboard/StoreStatusCard";
+import MerchantSupportCard from "../../../components/store/dashboard/MerchantSupportCard";
+import RestockBanner from "../../../components/store/dashboard/RestockBanner";
+import { useStoreDashboard } from "../hooks/useStoreDashboard";
+import type { Order } from "../../../components/store/types/store";
 
 export default function DashboardPage() {
-  const data = getMockDashboardData();
+  const navigate = useNavigate();
+  const { summary, isLoading, error } = useStoreDashboard();
 
-  return <Dashboard data={data} />;
+  if (isLoading && !summary) {
+    return <div className="p-6 text-sm text-[#A38F7D]">Loading dashboard…</div>;
+  }
+
+  if (error && !summary) {
+    return <div className="p-6 text-sm text-red-600">{error}</div>;
+  }
+
+  if (!summary) return null;
+
+  const handleOrderMenuClick = (order: Order) => {
+    navigate(`/store/orders/${order._id}`);
+  };
+
+  return (
+    <main className="flex-1 space-y-6 p-6">
+      <StatsRow stats={summary.stats} />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <OrdersTableCard
+            orders={summary.incomingOrders}
+            onViewAll={() => navigate("/store/orders")}
+            onOrderMenuClick={handleOrderMenuClick}
+          />
+        </div>
+
+        <div className="space-y-6">
+          <BestSellingCard items={summary.bestSelling} />
+          <StoreStatusCard status={summary.status} todaysHours={summary.todaysHours} />
+          <MerchantSupportCard integrationStatus="ONLINE" />
+        </div>
+      </div>
+
+      <RestockBanner onRestockClick={() => navigate("/store/products")} />
+    </main>
+  );
 }
