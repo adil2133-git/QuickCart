@@ -2,16 +2,23 @@ const mongoose = require("mongoose");
 const Cart = require("../../models/customer/cart");
 const Product = require("../../models/store/product");
 const { resolveCustomerProfile } = require("../../services/customerProfileService");
-const Order = require("../../models/shared/order"); 
+const Order = require("../../models/shared/order");
 const User = require("../../models/shared/user");
+const CustomerProfile = require("../../models/customer/customerProfile"); 
 
 const DELIVERY_CHARGE = 30;
-const PACKAGING_FEE = 15; 
+const PACKAGING_FEE = 15;
 
-// ─── Helper: resolve customerId from the JWT user ─────────────────────────────
-const resolveCustomerId = async (req) => {
-    const profile = await resolveCustomerProfile(req.user.userID);
-    return profile._id;
+// ─── Helper: resolve the FULL customer profile from the JWT user ──────────────
+// FIX: previously this returned only `profile._id` (renamed from resolveCustomerId),
+// but every caller below was treating the result as the full profile object
+// (profile._id, profile.savedAddresses, profile.defaultAddress, profile.codAllowed).
+// That meant profile._id was undefined, Cart.findOne({ customerId: undefined })
+// silently matched whatever cart Mongoose found first, and addresses/defaultAddressId/
+// codAllowed were always undefined in the response — which crashed the frontend's
+// `addresses.some(...)` call in checkoutState.ts.
+const resolveCustomerProfileDoc = async (req) => {
+    return await resolveCustomerProfile(req.user.userID);
 };
 
 // ─── Helper: flatten a savedAddress sub-doc into the string Order expects ─────
@@ -25,7 +32,7 @@ const formatAddress = (addr) => {
 // the resolved default address, and computed totals. No writes happen here.
 const getCheckoutSummary = async (req, res) => {
     try {
-        const profile = await resolveCustomerId(req);
+        const profile = await resolveCustomerProfileDoc(req); // ⬅️ FIX
 
         const cart = await Cart.findOne({ customerId: profile._id })
             .populate({
@@ -41,6 +48,7 @@ const getCheckoutSummary = async (req, res) => {
                 cart: { products: [], totalAmount: 0 },
                 addresses: profile.savedAddresses,
                 defaultAddressId: profile.defaultAddress,
+                codAllowed: profile.codAllowed,
                 totals: null,
             });
         }
@@ -89,7 +97,7 @@ const placeOrder = async (req, res) => {
             });
         }
 
-        const profile = await resolveCustomerId(req);
+        const profile = await resolveCustomerProfileDoc(req); // ⬅️ FIX
 
         if (!profile.codAllowed) {
             return res.status(403).json({
@@ -216,6 +224,18 @@ const placeOrder = async (req, res) => {
         });
 
         const order = createdOrder[0];
+
+        const { emitToStore } = require("../../socket");
+        emitToStore(storeId, "order:new", {
+            id: order._id.toString(),
+            orderNumber: order.orderNumber,
+            recipientName: order.recipientName,
+            totalAmount: order.totalAmount,
+            itemCount: order.products.reduce((sum, p) => sum + p.quantity, 0),
+            paymentMethod: order.paymentMethod,
+            orderStatus: order.orderStatus,
+            placedAt: order.createdAt,
+        });
 
         return res.status(201).json({
             success: true,
