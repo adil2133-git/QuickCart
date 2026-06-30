@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "../features/auth/state/authState";
 
 const api = axios.create({
-  baseURL: "http://localhost:3001/api",
+  baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
