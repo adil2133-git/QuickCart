@@ -157,6 +157,12 @@ const acceptDeliveryRequest = async (req, res) => {
         driver.availabilityStatus = "BUSY";
         await driver.save();
 
+        const { emitToStore } = require("../../socket");
+        emitToStore(order.storeId, "order:statusChanged", {
+            orderId: order._id,
+            orderStatus: "DRIVER_ASSIGNED",
+        });
+
         return res.status(200).json({
             success: true,
             activeDelivery: toActiveShape(order, "NAVIGATE_TO_STORE"),

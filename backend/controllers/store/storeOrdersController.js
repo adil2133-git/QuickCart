@@ -56,6 +56,8 @@ const setNoCacheHeaders = (res) => {
 // Called internally when a store accepts an order.
 // Creates one DriverDeliveryRequest row per online driver — first to accept wins.
 const broadcastDeliveryRequestToDrivers = async (orderId) => {
+    const { emitToDriver } = require("../../socket");
+
     const onlineDrivers = await DriverProfile.find({
         availabilityStatus: "ONLINE",
     }).select("_id");
@@ -72,6 +74,21 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
     }));
 
     await DriverDeliveryRequest.insertMany(requests, { ordered: false });
+
+    const order = await Order.findById(orderId).select(
+        "orderNumber recipientName deliveryAddress totalAmount paymentMethod"
+    );
+
+    onlineDrivers.forEach((driver) => {
+        emitToDriver(driver._id, "delivery:request", {
+            orderId,
+            orderNumber: order.orderNumber,
+            recipientName: order.recipientName,
+            deliveryAddress: order.deliveryAddress,
+            totalAmount: order.totalAmount,
+            paymentMethod: order.paymentMethod,
+        });
+    });
 
     console.log(
         `[broadcastDelivery] Sent delivery request to ${onlineDrivers.length} driver(s) for order ${orderId}`
@@ -164,8 +181,8 @@ const updateOrderStatus = async (req, res) => {
         order.orderStatus = status;
         await order.save();
 
-        // ── When store accepts the order, broadcast to all online drivers ─────
-        if (status === "ACCEPTED") {
+        // ── When the order is ready for pickup, broadcast to all online drivers ─
+        if (status === "READY_FOR_PICKUP") {
             // Fire-and-forget — don't hold up the store's response
             broadcastDeliveryRequestToDrivers(order._id).catch((err) =>
                 console.error("[broadcastDelivery] Failed:", err)
