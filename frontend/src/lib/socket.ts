@@ -7,7 +7,7 @@ let socket: Socket | null = null;
 // Access_Token cookie automatically, same as the axios instance.
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io(import.meta.env.VITE_API_URL ?? "http://localhost:5000", {
+    socket = io(import.meta.env.VITE_SOCKET_URL ?? "http://localhost:3001", {
       withCredentials: true,
       autoConnect: false,
     });
