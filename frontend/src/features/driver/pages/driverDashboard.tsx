@@ -2,6 +2,48 @@
 import { useDriverDashboard } from "../hooks/useDriverDashboard";
 import type { OrderRequest, ActivityItem, OverviewCard } from "../types/driverDashboard";
 
+// ─── Status Bar (Go Online / Offline) ──────────────────────────────────────────
+
+function StatusBar({
+  isOnline,
+  onToggle,
+}: {
+  isOnline: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <section className="bg-white p-5 rounded-xl shadow-[0_2px_12px_rgba(194,163,131,0.18)] border border-[#d2c4b9]/30 flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center gap-3">
+        <span
+          className={`h-3 w-3 rounded-full ${
+            isOnline ? "bg-emerald-500" : "bg-[#A38F7D]"
+          }`}
+        />
+        <div>
+          <p className="text-sm font-semibold text-[#1d1b16]">
+            You're currently {isOnline ? "Online" : "Offline"}
+          </p>
+          <p className="text-xs text-[#4e453d]">
+            {isOnline
+              ? "You can receive new delivery requests."
+              : "Go online to start receiving requests."}
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={onToggle}
+        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          isOnline
+            ? "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+            : "bg-[#735a3e] text-white hover:brightness-110"
+        }`}
+      >
+        {isOnline ? "Go Offline" : "Go Online"}
+      </button>
+    </section>
+  );
+}
+
 // ─── Overview Cards ───────────────────────────────────────────────────────────
 
 function OverviewCards({ cards }: { cards: OverviewCard[] }) {
@@ -168,6 +210,8 @@ export default function QuickKartDashboard() {
     activityItems,
     isLoading,
     error,
+    isOnline,
+    toggleOnline,
     acceptOrder,
     declineOrder,
   } = useDriverDashboard();
@@ -198,6 +242,9 @@ export default function QuickKartDashboard() {
         {isLoading && (
           <div className="text-sm text-[#4e453d] animate-pulse">Loading dashboard…</div>
         )}
+
+        {/* Online / Offline status + action */}
+        <StatusBar isOnline={isOnline} onToggle={toggleOnline} />
 
         <OverviewCards cards={overviewCards} />
 

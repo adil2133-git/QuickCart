@@ -1,17 +1,16 @@
-// src/features/driver/hooks/useDriverDashboard.ts
 import { useEffect, useCallback } from "react";
 import { useDriverDashboardStore } from "../state/driverDashboarState";
+import { useDriverDeliveryStore } from "../state/driverDeliveryState";
+import { useDriverDeliveryActions } from "./useDriverDelivery";
 import api from "../../../api/axios";
 
 export function useDriverDashboard() {
   const {
-    online,
     orders,
     overviewCards,
     activityItems,
     isLoading,
     error,
-    setOnline,
     removeOrder,
     setOrders,
     setOverviewCards,
@@ -19,6 +18,10 @@ export function useDriverDashboard() {
     setLoading,
     setError,
   } = useDriverDashboardStore();
+
+  // Online status comes from the SAME store DriverTopbar reads — single source of truth.
+  const isOnline = useDriverDeliveryStore((s) => s.isOnline);
+  const { toggleAvailability } = useDriverDeliveryActions();
 
   // ── Fetch all dashboard data on mount ──────────────────────────────────────
   // TODO: replace these endpoint paths with your real backend routes
@@ -47,17 +50,15 @@ export function useDriverDashboard() {
   }, [fetchDashboard]);
 
   // ── Toggle online/offline status ───────────────────────────────────────────
-  // TODO: wire to PATCH /driver/status when backend is ready
+  // Delegates to the shared delivery-store action (same one the topbar uses),
+  // so the topbar badge and dashboard button update together automatically.
   const toggleOnline = useCallback(async () => {
-    const next = !online;
-    setOnline(next);
     try {
-      await api.patch("/driver/status", { online: next });
+      await toggleAvailability(!isOnline);
     } catch {
-      // Rollback if the server call fails
-      setOnline(!next);
+      setError("Could not update availability. Try again.");
     }
-  }, [online, setOnline]);
+  }, [isOnline, toggleAvailability, setError]);
 
   // ── Accept order ───────────────────────────────────────────────────────────
   // TODO: wire to POST /driver/orders/:id/accept
@@ -82,12 +83,12 @@ export function useDriverDashboard() {
   }, [removeOrder, setError]);
 
   return {
-    online,
     orders,
     overviewCards,
     activityItems,
     isLoading,
     error,
+    isOnline,
     toggleOnline,
     acceptOrder,
     declineOrder,

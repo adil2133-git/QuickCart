@@ -1,7 +1,5 @@
-// src/features/driver/state/driverDashboardStore.ts
 import { create } from "zustand";
 import type {
-  DriverDashboardState,
   OrderRequest,
   OverviewCard,
   ActivityItem,
@@ -53,10 +51,20 @@ const FALLBACK_ACTIVITY: ActivityItem[] = [
   },
 ];
 
-// ─── Store actions ────────────────────────────────────────────────────────────
+// ─── State shape ────────────────────────────────────────────────────────────
+// NOTE: online/offline status is intentionally NOT stored here.
+// It lives in driverDeliveryState (isOnline) so the topbar and dashboard
+// always read/write the exact same value — no duplication, no sync logic.
+
+interface DriverDashboardState {
+  orders: OrderRequest[];
+  overviewCards: OverviewCard[];
+  activityItems: ActivityItem[];
+  isLoading: boolean;
+  error: string | null;
+}
 
 interface DriverDashboardActions {
-  setOnline: (value: boolean) => void;
   setOrders: (orders: OrderRequest[]) => void;
   removeOrder: (id: string) => void;
   setOverviewCards: (cards: OverviewCard[]) => void;
@@ -70,7 +78,6 @@ interface DriverDashboardActions {
 export const useDriverDashboardStore = create<DriverDashboardState & DriverDashboardActions>(
   (set) => ({
     // State
-    online: true,
     orders: FALLBACK_ORDERS,
     overviewCards: FALLBACK_CARDS,
     activityItems: FALLBACK_ACTIVITY,
@@ -78,7 +85,6 @@ export const useDriverDashboardStore = create<DriverDashboardState & DriverDashb
     error: null,
 
     // Actions
-    setOnline:        (value)  => set({ online: value }),
     setOrders:        (orders) => set({ orders }),
     removeOrder:      (id)     => set((s) => ({ orders: s.orders.filter((o) => o.id !== id) })),
     setOverviewCards: (cards)  => set({ overviewCards: cards }),
