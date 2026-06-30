@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import StatsRow from "../../../components/store/dashboard/StatsRow";
-import OrdersTableCard from "../../../components/store/dashboard/OrdersTableCard";
-import BestSellingCard from "../../../components/store/dashboard/BestSellingCard";
-import StoreStatusCard from "../../../components/store/dashboard/StoreStatusCard";
-import MerchantSupportCard from "../../../components/store/dashboard/MerchantSupportCard";
-import RestockBanner from "../../../components/store/dashboard/RestockBanner";
+import StatsRow from "../components/dashboard/StatsRow";
+import OrdersTableCard from "../components/dashboard/OrdersTableCard";
+import BestSellingCard from "../components/dashboard/BestSellingCard";
+import StoreStatusCard from "../components/dashboard/StoreStatusCard";
+import MerchantSupportCard from "../components/dashboard/MerchantSupportCard";
+import RestockBanner from "../components/dashboard/RestockBanner";
 import { useStoreDashboard } from "../hooks/useStoreDashboard";
-import type { Order } from "../../../components/store/types/store";
+import type { Order } from "../types/dashboard";
 
 export default function DashboardPage() {
   const navigate = useNavigate();

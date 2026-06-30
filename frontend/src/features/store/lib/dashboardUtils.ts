@@ -1,9 +1,4 @@
-import type { OrderStatus, StoreStatus, AvailabilityStatus } from "../../../features/store/types/dashboard";
-// ---------------------------------------------------------------------------
-// Order status -> display config
-// Statuses are grouped so "Pending Orders" on the dashboard has one
-// authoritative definition instead of being re-derived in multiple places.
-// ---------------------------------------------------------------------------
+import type { OrderStatus, StoreStatus, AvailabilityStatus } from "../types/dashboard";
 
 export const PENDING_ORDER_STATUSES: OrderStatus[] = ["PENDING", "ACCEPTED", "PACKING"];
 

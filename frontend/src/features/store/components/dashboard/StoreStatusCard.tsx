@@ -1,6 +1,6 @@
 import { Clock, Store as StoreIcon } from "lucide-react";
-import type { StoreStatus } from "../../../features/store/types/dashboard";
-import { STORE_STATUS_CONFIG } from "../lib/dashboardUtils";
+import type { StoreStatus } from "../../types/dashboard";
+import { STORE_STATUS_CONFIG } from "../../lib/dashboardUtils";
 
 interface StoreStatusCardProps {
   status: StoreStatus;

@@ -1,6 +1,6 @@
 import { ChevronRight, MoreVertical } from "lucide-react";
-import type { Order } from "../types/store";
-import { formatCurrency, getAvatarColor, getInitials, getOrderStatusBadge } from "../lib/dashboardUtils";
+import type { Order } from "../../types/dashboard";
+import { formatCurrency, getAvatarColor, getInitials, getOrderStatusBadge } from "../../lib/dashboardUtils";
 
 interface OrdersTableCardProps {
   orders: Order[];
