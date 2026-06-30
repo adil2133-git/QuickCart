@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import ProtectedRoute from './router/protectedRoute'
 import NotFound from './router/notFound'
+import { connectSocket, disconnectSocket } from "./lib/socket";
 import { useAuthStore, type UserRole } from './features/auth/state/authState'
 
 import QuickKartLogin from './features/auth/pages/login'
@@ -69,6 +70,16 @@ function App() {
   useEffect(() => {
     hydrate().finally(() => setReady(true))
   }, [hydrate])
+
+  const user = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    if (user) {
+      connectSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [user]);
 
   if (!ready) {
     return (
