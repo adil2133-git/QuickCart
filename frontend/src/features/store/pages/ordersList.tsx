@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, Calendar, Truck, Clock, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { useStoreOrdersStore } from "../state/storeOrdersState";
 import { useFetchStoreOrders, useUpdateOrderStatus } from "../hooks/useStoreOrders";
+import { useStoreOrderSocket } from "../hooks/useStoreOrderSocket";
 import type { OrderFilterTab, StoreOrder } from "../types/storeOrders";
 
 function getInitials(name: string): string {
@@ -23,29 +24,29 @@ function formatINR(amount: number): string {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-    PENDING:          "bg-amber-100 text-amber-700",
-    ACCEPTED:         "bg-emerald-100 text-emerald-700",
-    PACKING:          "bg-blue-100 text-blue-700",
+    PENDING: "bg-amber-100 text-amber-700",
+    ACCEPTED: "bg-emerald-100 text-emerald-700",
+    PACKING: "bg-blue-100 text-blue-700",
     READY_FOR_PICKUP: "bg-purple-100 text-purple-700",
-    DELIVERED:        "bg-slate-100 text-slate-600",
-    CANCELLED:        "bg-red-100 text-red-600",
+    DELIVERED: "bg-slate-100 text-slate-600",
+    CANCELLED: "bg-red-100 text-red-600",
 };
 
 // Shorter display labels so badges never wrap
 const STATUS_LABELS: Record<string, string> = {
-    PENDING:          "Pending",
-    ACCEPTED:         "Accepted",
-    PACKING:          "Packing",
+    PENDING: "Pending",
+    ACCEPTED: "Accepted",
+    PACKING: "Packing",
     READY_FOR_PICKUP: "Ready",
-    DELIVERED:        "Delivered",
-    CANCELLED:        "Cancelled",
+    DELIVERED: "Delivered",
+    CANCELLED: "Cancelled",
 };
 
 const TABS: { key: OrderFilterTab; label: string }[] = [
-    { key: "ALL",      label: "All Orders" },
-    { key: "PENDING",  label: "Pending" },
+    { key: "ALL", label: "All Orders" },
+    { key: "PENDING", label: "Pending" },
     { key: "ACCEPTED", label: "Accepted" },
-    { key: "READY",    label: "Ready" },
+    { key: "READY", label: "Ready" },
 ];
 
 function AvatarInitials({ name }: { name: string }) {
@@ -78,27 +79,29 @@ function StatusBadge({ status }: { status: string }) {
 function PaymentBadge({ method }: { method: string }) {
     const isOnline = method === "ONLINE";
     return (
-        <span className={`inline-block whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium ${
-            isOnline
-                ? "border-sky-200 bg-sky-50 text-sky-700"
-                : "border-slate-200 bg-slate-50 text-slate-600"
-        }`}>
+        <span className={`inline-block whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium ${isOnline
+            ? "border-sky-200 bg-sky-50 text-sky-700"
+            : "border-slate-200 bg-slate-50 text-slate-600"
+            }`}>
             {method}
         </span>
     );
 }
 
 export default function OrdersPage() {
-    const navigate     = useNavigate();
-    const fetchOrders  = useFetchStoreOrders();
+    const navigate = useNavigate();
+    const fetchOrders = useFetchStoreOrders();
     const updateStatus = useUpdateOrderStatus();
+    const storeOrderSocket = useStoreOrderSocket();
+
 
     const { orders, isLoadingOrders, ordersError, activeTab, setActiveTab, pagination } =
         useStoreOrdersStore();
 
-    const [search, setSearch]               = useState("");
+
+    const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [page, setPage]                   = useState(1);
+    const [page, setPage] = useState(1);
 
     // ── Debounce search 400 ms ────────────────────────────────────────────────
     useEffect(() => {
@@ -136,10 +139,10 @@ export default function OrdersPage() {
         fetchOrders({ tab: activeTab, search: debouncedSearch, page, limit: 10 });
     };
 
-    const totalPages    = pagination?.pages ?? 1;
-    const total         = pagination?.total ?? 0;
+    const totalPages = pagination?.pages ?? 1;
+    const total = pagination?.total ?? 0;
     const activeDrivers = 12;
-    const prepTimeAvg   = 18;
+    const prepTimeAvg = 18;
 
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto bg-[#FBF1E9] p-8 font-['Inter',sans-serif]">
@@ -160,11 +163,10 @@ export default function OrdersPage() {
                         <button
                             key={tab.key}
                             onClick={() => handleTabChange(tab.key)}
-                            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                                activeTab === tab.key
-                                    ? "bg-[#2B1B0E] text-white shadow-sm"
-                                    : "text-[#7A6352] hover:text-[#2B1B0E]"
-                            }`}
+                            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${activeTab === tab.key
+                                ? "bg-[#2B1B0E] text-white shadow-sm"
+                                : "text-[#7A6352] hover:text-[#2B1B0E]"
+                                }`}
                         >
                             {tab.label}
                         </button>
@@ -213,9 +215,8 @@ export default function OrdersPage() {
                         <div
                             key={order.id}
                             onClick={() => navigate(`/store/orders/${order.id}`)}
-                            className={`grid cursor-pointer grid-cols-[1fr_1.6fr_0.7fr_0.9fr_0.7fr_0.7fr_0.8fr_1.3fr] items-center gap-3 px-6 py-4 transition-colors hover:bg-[#FBF1E9] ${
-                                idx !== orders.length - 1 ? "border-b border-[#EADFD3]" : ""
-                            }`}
+                            className={`grid cursor-pointer grid-cols-[1fr_1.6fr_0.7fr_0.9fr_0.7fr_0.7fr_0.8fr_1.3fr] items-center gap-3 px-6 py-4 transition-colors hover:bg-[#FBF1E9] ${idx !== orders.length - 1 ? "border-b border-[#EADFD3]" : ""
+                                }`}
                         >
                             {/* Order ID */}
                             <span className="text-sm font-semibold text-[#2B1B0E] truncate">
@@ -302,11 +303,10 @@ export default function OrdersPage() {
                                 <button
                                     key={p}
                                     onClick={() => setPage(p)}
-                                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                                        p === page
-                                            ? "bg-[#2B1B0E] text-white"
-                                            : "border border-[#EADFD3] text-[#7A6352] hover:bg-[#FBF1E9]"
-                                    }`}
+                                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${p === page
+                                        ? "bg-[#2B1B0E] text-white"
+                                        : "border border-[#EADFD3] text-[#7A6352] hover:bg-[#FBF1E9]"
+                                        }`}
                                 >
                                     {p}
                                 </button>
