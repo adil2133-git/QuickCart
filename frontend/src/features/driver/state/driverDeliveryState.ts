@@ -25,7 +25,9 @@ interface DriverDeliveryState {
   setRequests: (r: DeliveryRequest[]) => void;
   setRequestsLoading: (v: boolean) => void;
   setRequestsError: (e: string | null) => void;
+  addRequest: (r: DeliveryRequest) => void;
   removeRequest: (requestId: string) => void;
+  removeRequestByOrderId: (orderId: string) => void;
 
   // Active Delivery
   activeDelivery: ActiveDelivery | null;
@@ -78,8 +80,17 @@ export const useDriverDeliveryStore = create<DriverDeliveryState>((set, get) => 
   setRequests: (requests) => set({ requests }),
   setRequestsLoading: (requestsLoading) => set({ requestsLoading }),
   setRequestsError: (requestsError) => set({ requestsError }),
+  addRequest: (request) =>
+    set((s) => ({
+      // Prepend, and deduplicate in case a REST fetch and socket event race
+      requests: s.requests.some((r) => r.requestId === request.requestId)
+        ? s.requests
+        : [request, ...s.requests],
+    })),
   removeRequest: (requestId) =>
     set((s) => ({ requests: s.requests.filter((r) => r.requestId !== requestId) })),
+  removeRequestByOrderId: (orderId) =>
+    set((s) => ({ requests: s.requests.filter((r) => r.orderId !== orderId) })),
 
   // ── Active Delivery ───────────────────────────────────────────────────────────
   activeDelivery: null,
