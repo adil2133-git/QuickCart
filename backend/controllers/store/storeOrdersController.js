@@ -1,5 +1,6 @@
 const Order = require("../../models/shared/order");
 const DriverProfile = require("../../models/driver/driverProfile");
+const { haversineKm } = require("../../utils/distance");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const { resolveStoreProfile } = require("../../services/storeProfileService");
 
@@ -9,16 +10,16 @@ const resolveStoreId = async (req) => {
 };
 
 const ALLOWED_TRANSITIONS = {
-    PENDING:          ["ACCEPTED", "CANCELLED"],
-    ACCEPTED:         ["PACKING"],
-    PACKING:          ["READY_FOR_PICKUP"],
+    PENDING: ["ACCEPTED", "CANCELLED"],
+    ACCEPTED: ["PACKING"],
+    PACKING: ["READY_FOR_PICKUP"],
     READY_FOR_PICKUP: [],
 };
 
 const TAB_STATUS_MAP = {
-    PENDING:  ["PENDING"],
+    PENDING: ["PENDING"],
     ACCEPTED: ["ACCEPTED"],
-    READY:    ["READY_FOR_PICKUP"],
+    READY: ["READY_FOR_PICKUP"],
     ALL: [
         "PENDING", "ACCEPTED", "PACKING", "READY_FOR_PICKUP",
         "DRIVER_ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY",
@@ -27,72 +28,109 @@ const TAB_STATUS_MAP = {
 };
 
 const toListShape = (order) => ({
-    id:              order._id.toString(),
-    orderNumber:     order.orderNumber,
-    placedAt:        order.createdAt,
-    recipientName:   order.recipientName,
-    recipientPhone:  order.recipientPhone,
+    id: order._id.toString(),
+    orderNumber: order.orderNumber,
+    placedAt: order.createdAt,
+    recipientName: order.recipientName,
+    recipientPhone: order.recipientPhone,
     deliveryAddress: order.deliveryAddress,
-    paymentMethod:   order.paymentMethod,
-    paymentStatus:   order.paymentStatus,
-    orderStatus:     order.orderStatus,
-    itemCount:       (order.products || []).reduce((sum, i) => sum + i.quantity, 0),
-    subtotal:        order.subtotal,
-    deliveryCharge:  order.deliveryCharge,
-    totalAmount:     order.totalAmount,
-    products:        order.products || [],
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+    orderStatus: order.orderStatus,
+    itemCount: (order.products || []).reduce((sum, i) => sum + i.quantity, 0),
+    subtotal: order.subtotal,
+    deliveryCharge: order.deliveryCharge,
+    totalAmount: order.totalAmount,
+    products: order.products || [],
 });
 
 const setNoCacheHeaders = (res) => {
     res.set({
-        "Cache-Control":     "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma":            "no-cache",
-        "Expires":           "0",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
         "Surrogate-Control": "no-store",
     });
 };
 
-// ─── Broadcast delivery request to all ONLINE drivers ────────────────────────
-// Called internally when a store accepts an order.
-// Creates one DriverDeliveryRequest row per online driver — first to accept wins.
+const DELIVERY_RADIUS_KM = 5;
+// Drivers whose lastLocationUpdate is older than this are treated as
+// effectively offline — they lost connection without going offline properly.
+const STALE_LOCATION_THRESHOLD_MS = 90_000; // 90 seconds
+
 const broadcastDeliveryRequestToDrivers = async (orderId) => {
     const { emitToDriver } = require("../../socket");
 
-    const onlineDrivers = await DriverProfile.find({
-        availabilityStatus: "ONLINE",
-    }).select("_id");
+    // Fetch the order + its store's coordinates so we can filter by distance
+    const order = await Order.findById(orderId)
+        .populate({ path: "storeId", select: "storeName address coordinates" })
+        .select("orderNumber recipientName deliveryAddress totalAmount paymentMethod products storeId");
 
-    if (!onlineDrivers.length) {
-        console.warn(`[broadcastDelivery] No online drivers available for order ${orderId}`);
+    if (!order) {
+        console.warn(`[broadcastDelivery] Order ${orderId} not found`);
         return;
     }
 
-    const requests = onlineDrivers.map((d) => ({
-        orderId,
-        driverId: d._id,
-        status:   "PENDING",
-    }));
+    const storeCoords = order.storeId?.coordinates;
+    const hasStoreLocation = storeCoords?.lat && storeCoords?.lng;
 
-    await DriverDeliveryRequest.insertMany(requests, { ordered: false });
+    // Find all ONLINE drivers with a fresh location update
+    const cutoff = new Date(Date.now() - STALE_LOCATION_THRESHOLD_MS);
+    const onlineDrivers = await DriverProfile.find({
+        availabilityStatus: "ONLINE",
+        ...(hasStoreLocation && {
+            "currentLocation.lat": { $ne: null },
+            "currentLocation.lng": { $ne: null },
+            lastLocationUpdate: { $gte: cutoff },
+        }),
+    }).select("_id currentLocation");
 
-    const order = await Order.findById(orderId).select(
-        "orderNumber recipientName deliveryAddress totalAmount paymentMethod"
+    // Filter by radius if the store has coordinates
+    const nearbyDrivers = hasStoreLocation
+        ? onlineDrivers.filter((d) => {
+              if (!d.currentLocation?.lat || !d.currentLocation?.lng) return false;
+              const km = haversineKm(storeCoords, d.currentLocation);
+              return km <= DELIVERY_RADIUS_KM;
+          })
+        : onlineDrivers; // fallback: no store location yet, send to all online drivers
+
+    if (!nearbyDrivers.length) {
+        console.warn(`[broadcastDelivery] No nearby online drivers for order ${orderId}`);
+        return;
+    }
+
+    // Create one DriverDeliveryRequest per nearby driver
+    const requests = await DriverDeliveryRequest.insertMany(
+        nearbyDrivers.map((d) => ({ orderId, driverId: d._id, status: "PENDING" })),
+        { ordered: false }
     );
 
-    onlineDrivers.forEach((driver) => {
+    // Build a map of driverId → requestId so we can send each driver their own requestId
+    const driverToRequestId = {};
+    requests.forEach((r) => {
+        driverToRequestId[r.driverId.toString()] = r._id.toString();
+    });
+
+    const payload = {
+        orderId: order._id.toString(),
+        orderNumber: order.orderNumber,
+        recipientName: order.recipientName,
+        deliveryAddress: order.deliveryAddress,
+        totalAmount: order.totalAmount,
+        paymentMethod: order.paymentMethod,
+        itemCount: (order.products || []).reduce((s, i) => s + i.quantity, 0),
+        storeName: order.storeId?.storeName ?? "Store",
+        storeAddress: order.storeId?.address ?? "",
+    };
+
+    nearbyDrivers.forEach((driver) => {
         emitToDriver(driver._id, "delivery:request", {
-            orderId,
-            orderNumber: order.orderNumber,
-            recipientName: order.recipientName,
-            deliveryAddress: order.deliveryAddress,
-            totalAmount: order.totalAmount,
-            paymentMethod: order.paymentMethod,
+            ...payload,
+            requestId: driverToRequestId[driver._id.toString()],
         });
     });
 
-    console.log(
-        `[broadcastDelivery] Sent delivery request to ${onlineDrivers.length} driver(s) for order ${orderId}`
-    );
+    console.log(`[broadcastDelivery] Sent to ${nearbyDrivers.length} nearby driver(s) for order ${orderId}`);
 };
 
 // ─── GET /api/store/orders ────────────────────────────────────────────────────
@@ -100,19 +138,19 @@ const getStoreOrders = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
 
-        const tab    = req.query.tab    || "ALL";
+        const tab = req.query.tab || "ALL";
         const search = req.query.search || "";
-        const page   = Math.max(1, parseInt(req.query.page)  || 1);
-        const limit  = Math.max(1, parseInt(req.query.limit) || 10);
-        const skip   = (page - 1) * limit;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 10);
+        const skip = (page - 1) * limit;
 
         const statusList = TAB_STATUS_MAP[tab] ?? TAB_STATUS_MAP.ALL;
         const filter = { storeId, orderStatus: { $in: statusList } };
 
         if (search.trim()) {
             filter.$or = [
-                { orderNumber:    { $regex: search.trim(), $options: "i" } },
-                { recipientName:  { $regex: search.trim(), $options: "i" } },
+                { orderNumber: { $regex: search.trim(), $options: "i" } },
+                { recipientName: { $regex: search.trim(), $options: "i" } },
                 { recipientPhone: { $regex: search.trim(), $options: "i" } },
             ];
         }
@@ -126,7 +164,7 @@ const getStoreOrders = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            orders:  orders.map(toListShape),
+            orders: orders.map(toListShape),
             pagination: { total, page, limit, pages: Math.ceil(total / limit) },
         });
     } catch (err) {
@@ -139,7 +177,7 @@ const getStoreOrders = async (req, res) => {
 const getStoreOrderDetail = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
-        const { id }  = req.params;
+        const { id } = req.params;
 
         const order = await Order.findOne({ _id: id, storeId }).lean();
         if (!order) {
@@ -157,8 +195,8 @@ const getStoreOrderDetail = async (req, res) => {
 // ─── PATCH /api/store/orders/:id/status ──────────────────────────────────────
 const updateOrderStatus = async (req, res) => {
     try {
-        const storeId    = await resolveStoreId(req);
-        const { id }     = req.params;
+        const storeId = await resolveStoreId(req);
+        const { id } = req.params;
         const { status } = req.body;
 
         if (!status) {
@@ -194,7 +232,7 @@ const updateOrderStatus = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: `Order status updated to ${status}.`,
-            order:   toListShape(order.toObject()),
+            order: toListShape(order.toObject()),
         });
     } catch (err) {
         console.error("UPDATE ORDER STATUS ERROR:", err);
