@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Calendar, Truck, Clock, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { useStoreOrdersStore } from "../state/storeOrdersState";
@@ -92,7 +92,7 @@ export default function OrdersPage() {
     const navigate = useNavigate();
     const fetchOrders = useFetchStoreOrders();
     const updateStatus = useUpdateOrderStatus();
-    const storeOrderSocket = useStoreOrderSocket();
+    useStoreOrderSocket();
 
 
     const { orders, isLoadingOrders, ordersError, activeTab, setActiveTab, pagination } =
