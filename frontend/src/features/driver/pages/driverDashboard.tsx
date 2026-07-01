@@ -1,6 +1,7 @@
 // src/features/driver/pages/driverDashboard.tsx
 import { useDriverDashboard } from "../hooks/useDriverDashboard";
 import type { OrderRequest, ActivityItem, OverviewCard } from "../types/driverDashboard";
+import { useDriverDashboardStore } from "../state/driverDashboarState";
 
 // ─── Status Bar (Go Online / Offline) ──────────────────────────────────────────
 
@@ -15,9 +16,8 @@ function StatusBar({
     <section className="bg-white p-5 rounded-xl shadow-[0_2px_12px_rgba(194,163,131,0.18)] border border-[#d2c4b9]/30 flex items-center justify-between flex-wrap gap-4">
       <div className="flex items-center gap-3">
         <span
-          className={`h-3 w-3 rounded-full ${
-            isOnline ? "bg-emerald-500" : "bg-[#A38F7D]"
-          }`}
+          className={`h-3 w-3 rounded-full ${isOnline ? "bg-emerald-500" : "bg-[#A38F7D]"
+            }`}
         />
         <div>
           <p className="text-sm font-semibold text-[#1d1b16]">
@@ -32,11 +32,10 @@ function StatusBar({
       </div>
       <button
         onClick={onToggle}
-        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
-          isOnline
+        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${isOnline
             ? "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
             : "bg-[#735a3e] text-white hover:brightness-110"
-        }`}
+          }`}
       >
         {isOnline ? "Go Offline" : "Go Online"}
       </button>
@@ -216,6 +215,9 @@ export default function QuickKartDashboard() {
     declineOrder,
   } = useDriverDashboard();
 
+  const locationStatus = useDriverDashboardStore((s) => s.locationStatus);
+  const currentArea = useDriverDashboardStore((s) => s.currentArea);
+
   return (
     <>
       <link
@@ -245,6 +247,47 @@ export default function QuickKartDashboard() {
 
         {/* Online / Offline status + action */}
         <StatusBar isOnline={isOnline} onToggle={toggleOnline} />
+
+        {/* GPS Status Panel */}
+        <div className="rounded-xl border border-[#EADFD3] bg-white p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#A38F7D] mb-2">
+            📍 Current Location
+          </p>
+          <div className="flex items-center gap-2">
+            {locationStatus === "active" && (
+              <>
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-sm font-medium text-emerald-700">GPS Active</span>
+                {currentArea && (
+                  <span className="ml-auto text-sm text-[#5C4A37]">{currentArea}</span>
+                )}
+              </>
+            )}
+            {locationStatus === "acquiring" && (
+              <>
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-sm text-amber-700">Acquiring GPS…</span>
+              </>
+            )}
+            {locationStatus === "denied" && (
+              <>
+                <span className="h-2 w-2 rounded-full bg-red-500" />
+                <span className="text-sm text-red-600">
+                  Location access denied — enable it in your browser settings to receive orders
+                </span>
+              </>
+            )}
+            {locationStatus === "unavailable" && (
+              <>
+                <span className="h-2 w-2 rounded-full bg-slate-400" />
+                <span className="text-sm text-slate-500">GPS unavailable on this device</span>
+              </>
+            )}
+            {locationStatus === "idle" && (
+              <span className="text-sm text-[#A38F7D]">Go online to start sharing location</span>
+            )}
+          </div>
+        </div>
 
         <OverviewCards cards={overviewCards} />
 

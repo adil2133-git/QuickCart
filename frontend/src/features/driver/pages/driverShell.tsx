@@ -3,9 +3,14 @@ import { Outlet } from "react-router-dom";
 import DriverSidebar from "../components/driverSidebar";
 import DriverTopbar from "../components/driverTopbar";
 import { useAuthStore } from "../../auth/state/authState";
+import { useDriverLocationTracking } from "../hooks/useDriverLocationTracking";
+import { useDriverDeliverySocket } from "../hooks/useDriverDeliverySocket";
 
 export default function DriverShell() {
   const user = useAuthStore((s) => s.user);
+
+  useDriverLocationTracking();
+  useDriverDeliverySocket();
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FBF1E9] font-[Inter,sans-serif]">
