@@ -8,9 +8,9 @@ import type {
 // ─── Fallback data (replace with real API responses later) ───────────────────
 
 const FALLBACK_CARDS: OverviewCard[] = [
-  { icon: "payments",               label: "Today's Earnings",   value: "₹0.00",  badge: null },
-  { icon: "local_shipping",         label: "Today's Deliveries", value: "0",       badge: null },
-  { icon: "account_balance_wallet", label: "Wallet Balance",     value: "₹0",      badge: null },
+  { icon: "payments", label: "Today's Earnings", value: "₹0.00", badge: null },
+  { icon: "local_shipping", label: "Today's Deliveries", value: "0", badge: null },
+  { icon: "account_balance_wallet", label: "Wallet Balance", value: "₹0", badge: null },
 ];
 
 const FALLBACK_ORDERS: OrderRequest[] = [
@@ -56,12 +56,16 @@ const FALLBACK_ACTIVITY: ActivityItem[] = [
 // It lives in driverDeliveryState (isOnline) so the topbar and dashboard
 // always read/write the exact same value — no duplication, no sync logic.
 
+export type LocationStatus = "idle" | "acquiring" | "active" | "denied" | "unavailable";
+
 interface DriverDashboardState {
   orders: OrderRequest[];
   overviewCards: OverviewCard[];
   activityItems: ActivityItem[];
   isLoading: boolean;
   error: string | null;
+  locationStatus: LocationStatus;
+  currentArea: string | null;
 }
 
 interface DriverDashboardActions {
@@ -71,6 +75,8 @@ interface DriverDashboardActions {
   setActivityItems: (items: ActivityItem[]) => void;
   setLoading: (value: boolean) => void;
   setError: (message: string | null) => void;
+  setLocationStatus: (status: LocationStatus) => void;
+  setCurrentArea: (area: string) => void;
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -83,13 +89,17 @@ export const useDriverDashboardStore = create<DriverDashboardState & DriverDashb
     activityItems: FALLBACK_ACTIVITY,
     isLoading: false,
     error: null,
+    locationStatus: "idle",
+    currentArea: null,
 
     // Actions
-    setOrders:        (orders) => set({ orders }),
-    removeOrder:      (id)     => set((s) => ({ orders: s.orders.filter((o) => o.id !== id) })),
-    setOverviewCards: (cards)  => set({ overviewCards: cards }),
-    setActivityItems: (items)  => set({ activityItems: items }),
-    setLoading:       (value)  => set({ isLoading: value }),
-    setError:         (msg)    => set({ error: msg }),
+    setOrders: (orders) => set({ orders }),
+    removeOrder: (id) => set((s) => ({ orders: s.orders.filter((o) => o.id !== id) })),
+    setOverviewCards: (cards) => set({ overviewCards: cards }),
+    setActivityItems: (items) => set({ activityItems: items }),
+    setLoading: (value) => set({ isLoading: value }),
+    setError: (msg) => set({ error: msg }),
+    setLocationStatus: (status) => set({ locationStatus: status }),
+    setCurrentArea: (area) => set({ currentArea: area }),
   })
 );
