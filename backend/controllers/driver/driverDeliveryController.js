@@ -106,12 +106,12 @@ const getDeliveryRequests = async (req, res) => {
     }
 };
 
-// ─── POST /api/driver/deliveries/requests/:requestId/accept ──────────────────
 const acceptDeliveryRequest = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
         const { requestId } = req.params;
 
+        // Verify this request belongs to this driver and is still pending
         const request = await DriverDeliveryRequest.findOne({
             _id: requestId,
             driverId: driver._id,
@@ -119,47 +119,76 @@ const acceptDeliveryRequest = async (req, res) => {
         });
 
         if (!request) {
-            return res.status(404).json({ success: false, message: "Request not found or already handled." });
+            return res.status(404).json({
+                success: false,
+                message: "This order is no longer available.",
+            });
         }
 
-        const order = await Order.findById(request.orderId)
-            .populate({ path: "storeId", select: "storeName address" });
+        // ── Atomic assignment — only succeeds if no driver is assigned yet
+        //    AND the order is still READY_FOR_PICKUP. This is the single
+        //    source of truth for the race condition: even if two drivers
+        //    hit Accept at the exact same millisecond, only one write wins.
+        const order = await Order.findOneAndUpdate(
+            {
+                _id: request.orderId,
+                orderStatus: "READY_FOR_PICKUP",
+                driverId: null,
+            },
+            {
+                $set: {
+                    driverId: driver._id,
+                    orderStatus: "DRIVER_ASSIGNED",
+                },
+            },
+            { new: true }
+        ).populate({ path: "storeId", select: "storeName address" });
 
         if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found." });
-        }
-
-        // Guard: another driver may have already grabbed this order
-        if (order.driverId) {
+            // Another driver won the race — expire this driver's request
             await DriverDeliveryRequest.findByIdAndUpdate(requestId, { status: "EXPIRED" });
-            return res.status(409).json({ success: false, message: "Order already assigned to another driver." });
+            return res.status(409).json({
+                success: false,
+                message: "This order was just picked up by another driver.",
+            });
         }
 
-        // Guard: order must still be in ACCEPTED state (store accepted it)
-        if (order.orderStatus !== "ACCEPTED") {
-            await DriverDeliveryRequest.findByIdAndUpdate(requestId, { status: "EXPIRED" });
-            return res.status(409).json({ success: false, message: "Order is no longer available." });
-        }
-
-        // Assign the driver and advance order status
-        order.driverId = driver._id;
-        order.orderStatus = "DRIVER_ASSIGNED";
-        await order.save();
-
-        // Mark this request accepted, reject all other pending requests for same order
+        // Mark this driver's request as ACCEPTED
         await DriverDeliveryRequest.findByIdAndUpdate(requestId, { status: "ACCEPTED" });
-        await DriverDeliveryRequest.updateMany(
-            { orderId: order._id, _id: { $ne: requestId }, status: "PENDING" },
-            { status: "EXPIRED" }
-        );
+
+        // Expire all other drivers' pending requests for this order
+        // and collect their IDs so we can notify them via socket
+        const otherRequests = await DriverDeliveryRequest.find({
+            orderId: order._id,
+            _id: { $ne: requestId },
+            status: "PENDING",
+        }).select("driverId");
+
+        if (otherRequests.length) {
+            await DriverDeliveryRequest.updateMany(
+                { orderId: order._id, _id: { $ne: requestId }, status: "PENDING" },
+                { status: "EXPIRED" }
+            );
+
+            // Tell other drivers their request is gone — card disappears instantly
+            const { emitToDriver } = require("../../socket");
+            otherRequests.forEach((r) => {
+                emitToDriver(r.driverId, "delivery:request:taken", {
+                    orderId: order._id.toString(),
+                    requestId: requestId,
+                    message: "This order was picked up by another driver.",
+                });
+            });
+        }
 
         // Mark driver as BUSY
         driver.availabilityStatus = "BUSY";
         await driver.save();
 
+        // Notify the store
         const { emitToStore } = require("../../socket");
-        emitToStore(order.storeId, "order:statusChanged", {
-            orderId: order._id,
+        emitToStore(order.storeId._id ?? order.storeId, "order:statusChanged", {
+            orderId: order._id.toString(),
             orderStatus: "DRIVER_ASSIGNED",
         });
 
