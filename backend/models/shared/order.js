@@ -44,6 +44,13 @@ const orderSchema = new mongoose.Schema(
             default: "PENDING",
         },
         deliveryAddress: { type: String, required: true },
+        // Captured from the customer's savedAddress at checkout time so
+        // delivery-leg distance can be calculated for drivers. Optional
+        // because older orders/addresses may not have coordinates set.
+        deliveryCoordinates: {
+            lat: { type: Number, default: null },
+            lng: { type: Number, default: null },
+        },
         recipientName: { type: String, required: true },
         recipientPhone: { type: String, required: true },
         orderStatus: {

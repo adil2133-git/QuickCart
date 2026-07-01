@@ -10,7 +10,12 @@ const resolveDriverProfile = async (req) => {
     return profile;
 };
 
-// Shape an order + request into the DeliveryRequest card the frontend renders
+// Shape an order + request into the DeliveryRequest card the frontend renders.
+// pickupDistanceKm / deliveryDistanceKm / estimatedEarnings are snapshotted
+// on the request at broadcast time (see storeOrdersController's
+// broadcastDeliveryRequestToDrivers), so a page refresh shows the same
+// numbers the driver saw in the toast — expiresInSeconds is recomputed from
+// expiresAt so the countdown ring picks up from the correct remaining time.
 const toRequestShape = (order, request) => ({
     requestId: request._id.toString(),
     orderId: order._id.toString(),
@@ -26,6 +31,12 @@ const toRequestShape = (order, request) => ({
     itemCount: (order.products || []).reduce((s, i) => s + i.quantity, 0),
     products: order.products || [],
     createdAt: request.createdAt,
+    pickupDistanceKm: request.pickupDistanceKm ?? 0,
+    deliveryDistanceKm: request.deliveryDistanceKm ?? 0,
+    estimatedEarnings: request.estimatedEarnings ?? 0,
+    expiresInSeconds: request.expiresAt
+        ? Math.max(0, Math.round((new Date(request.expiresAt).getTime() - Date.now()) / 1000))
+        : 0,
 });
 
 // Shape an order into the ActiveDelivery the frontend tracks

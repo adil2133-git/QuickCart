@@ -30,6 +30,12 @@ export interface DeliveryRequest {
   orderId: string;
   orderNumber: string;
   storeName: string;
+  storeAddress: string;
+  deliveryAddress: string;
+  recipientName: string;
+  totalAmount: number;
+  paymentMethod: string;
+  itemCount: number;
   pickupDistanceKm: number;
   deliveryDistanceKm: number;
   estimatedEarnings: number;

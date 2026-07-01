@@ -58,13 +58,26 @@ const DELIVERY_RADIUS_KM = 5;
 // effectively offline — they lost connection without going offline properly.
 const STALE_LOCATION_THRESHOLD_MS = 90_000; // 90 seconds
 
+// How long a driver has to Accept/Decline before the request auto-expires.
+// Mirrors the countdown ring shown on the frontend's request card.
+const REQUEST_EXPIRY_SECONDS = 45;
+
+// Simple earnings estimate: a flat base fare plus a per-km rate covering
+// both legs (driver → store, then store → customer). Tune these as needed.
+const BASE_FARE = 15;
+const RATE_PER_KM = 6;
+const estimateEarnings = (pickupKm, deliveryKm) =>
+    Math.round((BASE_FARE + RATE_PER_KM * (pickupKm + deliveryKm)) * 100) / 100;
+
 const broadcastDeliveryRequestToDrivers = async (orderId) => {
     const { emitToDriver } = require("../../socket");
 
     // Fetch the order + its store's coordinates so we can filter by distance
     const order = await Order.findById(orderId)
         .populate({ path: "storeId", select: "storeName address coordinates" })
-        .select("orderNumber recipientName deliveryAddress totalAmount paymentMethod products storeId");
+        .select(
+            "orderNumber recipientName deliveryAddress deliveryCoordinates totalAmount paymentMethod products storeId"
+        );
 
     if (!order) {
         console.warn(`[broadcastDelivery] Order ${orderId} not found`);
@@ -73,6 +86,15 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
 
     const storeCoords = order.storeId?.coordinates;
     const hasStoreLocation = storeCoords?.lat && storeCoords?.lng;
+
+    const deliveryCoords = order.deliveryCoordinates;
+    const hasDeliveryLocation = deliveryCoords?.lat && deliveryCoords?.lng;
+
+    // Store → customer leg is the same for every driver, so compute it once.
+    const deliveryDistanceKm =
+        hasStoreLocation && hasDeliveryLocation
+            ? Math.round(haversineKm(storeCoords, deliveryCoords) * 10) / 10
+            : 0;
 
     // Find all ONLINE drivers with a fresh location update
     const cutoff = new Date(Date.now() - STALE_LOCATION_THRESHOLD_MS);
@@ -85,33 +107,48 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
         }),
     }).select("_id currentLocation");
 
-    // Filter by radius if the store has coordinates
+    // Filter by radius if the store has coordinates, keeping each driver's
+    // pickup-leg distance (driver → store) so we don't have to recompute it.
     const nearbyDrivers = hasStoreLocation
-        ? onlineDrivers.filter((d) => {
-              if (!d.currentLocation?.lat || !d.currentLocation?.lng) return false;
-              const km = haversineKm(storeCoords, d.currentLocation);
-              return km <= DELIVERY_RADIUS_KM;
-          })
-        : onlineDrivers; // fallback: no store location yet, send to all online drivers
+        ? onlineDrivers
+              .map((d) => {
+                  if (!d.currentLocation?.lat || !d.currentLocation?.lng) return null;
+                  const pickupDistanceKm =
+                      Math.round(haversineKm(storeCoords, d.currentLocation) * 10) / 10;
+                  return pickupDistanceKm <= DELIVERY_RADIUS_KM ? { driver: d, pickupDistanceKm } : null;
+              })
+              .filter(Boolean)
+        : onlineDrivers.map((d) => ({ driver: d, pickupDistanceKm: 0 })); // fallback: no store location yet
 
     if (!nearbyDrivers.length) {
         console.warn(`[broadcastDelivery] No nearby online drivers for order ${orderId}`);
         return;
     }
 
-    // Create one DriverDeliveryRequest per nearby driver
+    const expiresAt = new Date(Date.now() + REQUEST_EXPIRY_SECONDS * 1000);
+
+    // Create one DriverDeliveryRequest per nearby driver, snapshotting the
+    // distances/earnings/expiry so they stay consistent on refresh later.
     const requests = await DriverDeliveryRequest.insertMany(
-        nearbyDrivers.map((d) => ({ orderId, driverId: d._id, status: "PENDING" })),
+        nearbyDrivers.map(({ driver, pickupDistanceKm }) => ({
+            orderId,
+            driverId: driver._id,
+            status: "PENDING",
+            pickupDistanceKm,
+            deliveryDistanceKm,
+            estimatedEarnings: estimateEarnings(pickupDistanceKm, deliveryDistanceKm),
+            expiresAt,
+        })),
         { ordered: false }
     );
 
-    // Build a map of driverId → requestId so we can send each driver their own requestId
-    const driverToRequestId = {};
+    // Build a map of driverId → request doc so we can send each driver their own requestId + numbers
+    const driverToRequest = {};
     requests.forEach((r) => {
-        driverToRequestId[r.driverId.toString()] = r._id.toString();
+        driverToRequest[r.driverId.toString()] = r;
     });
 
-    const payload = {
+    const basePayload = {
         orderId: order._id.toString(),
         orderNumber: order.orderNumber,
         recipientName: order.recipientName,
@@ -123,10 +160,17 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
         storeAddress: order.storeId?.address ?? "",
     };
 
-    nearbyDrivers.forEach((driver) => {
+    nearbyDrivers.forEach(({ driver }) => {
+        const request = driverToRequest[driver._id.toString()];
+        if (!request) return;
+
         emitToDriver(driver._id, "delivery:request", {
-            ...payload,
-            requestId: driverToRequestId[driver._id.toString()],
+            ...basePayload,
+            requestId: request._id.toString(),
+            pickupDistanceKm: request.pickupDistanceKm,
+            deliveryDistanceKm: request.deliveryDistanceKm,
+            estimatedEarnings: request.estimatedEarnings,
+            expiresInSeconds: REQUEST_EXPIRY_SECONDS,
         });
     });
 

@@ -14,6 +14,10 @@ interface DeliveryRequestPayload {
     totalAmount: number;
     paymentMethod: string;
     itemCount: number;
+    pickupDistanceKm: number;
+    deliveryDistanceKm: number;
+    estimatedEarnings: number;
+    expiresInSeconds: number;
 }
 
 interface RequestTakenPayload {
@@ -41,6 +45,11 @@ export function useDriverDeliverySocket() {
                 totalAmount: payload.totalAmount,
                 paymentMethod: payload.paymentMethod,
                 itemCount: payload.itemCount,
+                pickupDistanceKm: payload.pickupDistanceKm,
+                deliveryDistanceKm: payload.deliveryDistanceKm,
+                estimatedEarnings: payload.estimatedEarnings,
+                expiresInSeconds: payload.expiresInSeconds,
+                createdAt: new Date().toISOString(),
             });
             toast("🛵 New delivery request!", {
                 description: `Order #${payload.orderNumber} from ${payload.storeName}`,

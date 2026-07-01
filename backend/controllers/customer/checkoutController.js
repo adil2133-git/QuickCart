@@ -203,6 +203,9 @@ const placeOrder = async (req, res) => {
                         paymentMethod: "COD",
                         paymentStatus: "PENDING",
                         deliveryAddress: formatAddress(address),
+                        deliveryCoordinates: address.coordinates
+                            ? { lat: address.coordinates.lat, lng: address.coordinates.lng }
+                            : undefined,
                         recipientName: user.name,
                         recipientPhone: user.phone,
                     },
