@@ -15,6 +15,7 @@ const {
     getTodayStats,
     updateAvailability,
 } = require("../../controllers/driver/driverDeliveryController");
+const { updateLocation } = require("../../controllers/driver/driverLocationController");
 
 // All routes require a valid JWT
 router.use(protectRoutes);
@@ -36,5 +37,7 @@ router.get("/deliveries/stats/today", getTodayStats);
 
 // ── Online/offline toggle ─────────────────────────────────────────────────────
 router.patch("/availability", updateAvailability);
+
+router.patch("/location", updateLocation);
 
 module.exports = router;
