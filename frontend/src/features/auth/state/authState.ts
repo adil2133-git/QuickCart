@@ -48,16 +48,40 @@ export const useAuthStore = create<AuthState>()(
           const existing = get().user;
           try {
             const { default: api } = await import("../../../api/axios");
-            const { data } = await api.get<{ user: AuthUser }>("/auth/me", {
-              _skipRefresh: true,
-            } as never);
 
-            set({ user: data.user, isAuthenticated: true });
-            return true;
-          } catch {
-            if (existing) {
-              set({ user: null, isAuthenticated: false });
+            // Step 1: try /auth/me with the current access token
+            try {
+              const { data } = await api.get<{ user: AuthUser }>("/auth/me", {
+                _skipRefresh: true,
+              } as never);
+              set({ user: data.user, isAuthenticated: true });
+              return true;
+            } catch (firstErr: unknown) {
+              const status = (firstErr as { response?: { status?: number } })?.response?.status;
+
+              // Step 2: if access token expired (401), try silent refresh then retry
+              if (status === 401) {
+                try {
+                  await api.post("/auth/refresh");
+                  const { data } = await api.get<{ user: AuthUser }>("/auth/me", {
+                    _skipRefresh: true,
+                  } as never);
+                  set({ user: data.user, isAuthenticated: true });
+                  return true;
+                } catch {
+                  // Refresh token also expired/missing — genuine logged-out state
+                  if (existing) {
+                    set({ user: null, isAuthenticated: false });
+                  }
+                  return false;
+                }
+              }
+
+              // Non-401 error (network down, server error) — don't log out
+              // Keep existing session if we have one, just return false
+              return false;
             }
+          } catch {
             return false;
           }
         },

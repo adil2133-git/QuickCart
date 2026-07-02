@@ -5,6 +5,7 @@ const DriverProfile = require("../../models/driver/driverProfile");
 // Requires protectRoutes middleware (req.user.userID is set from the JWT)
 const getMyDriverProfile = async (req, res) => {
     try {
+        res.set("Cache-Control", "no-store");
         const userId = req.user.userID;
 
         const user = await User.findById(userId).select("-password");
@@ -42,6 +43,7 @@ const getMyDriverProfile = async (req, res) => {
                 registeredOn: user.createdAt,
                 role: "Delivery Partner",
                 approvalStatus: user.status, // "PENDING_APPROVAL" | "ACTIVE" | "SUSPENDED" | "REJECTED"
+                availabilityStatus: driverProfile.availabilityStatus, // "ONLINE" | "OFFLINE" | "BUSY"
                 vehicleType: driverProfile.vehicleType,
                 vehicleNumber: driverProfile.vehicleNumber,
                 licenseNumber: driverProfile.licenseNumber,

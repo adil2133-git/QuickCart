@@ -25,8 +25,12 @@ const card: Variants = {
 // ── Hero status card ──────────────────────────────────────────────────────────
 function HeroCard() {
   const isOnline = useDriverDeliveryStore((s) => s.isOnline);
-  const { toggleAvailability } = useDriverDeliveryActions();
+  const { toggleAvailability, fetchAvailability } = useDriverDeliveryActions();
   const shiftStartRef = useRef<Date | null>(null);
+
+  useEffect(() => {
+    fetchAvailability(); // hydrate real isOnline from the DB on mount/refresh
+  }, [fetchAvailability]);
 
   useEffect(() => {
     if (isOnline && !shiftStartRef.current) {

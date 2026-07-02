@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/shared/user");
+const DriverProfile = require("../../models/driver/driverProfile");
 const generateToken = require("../../utils/generateToken");
 const { ACCESS_COOKIE_OPTIONS, REFRESH_COOKIE_OPTIONS } = require("../../utils/cookieOptions");
 
@@ -69,6 +70,17 @@ const Login = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     try {
+        // If a driver logs out, force their availability to OFFLINE in the DB
+        // so the next login doesn't restore a stale ONLINE status.
+        // req.user is set by protectRoutes — check the auth route to confirm
+        // /auth/logout is protected before relying on this.
+        if (req.user?.role === "DRIVER") {
+            await DriverProfile.findOneAndUpdate(
+                { userId: req.user.userID },
+                { availabilityStatus: "OFFLINE" }
+            ).catch((err) => console.error("[logout] Failed to set driver OFFLINE:", err));
+        }
+
         res
             .clearCookie("Access_Token", ACCESS_COOKIE_OPTIONS)
             .clearCookie("Refresh_Token", REFRESH_COOKIE_OPTIONS)

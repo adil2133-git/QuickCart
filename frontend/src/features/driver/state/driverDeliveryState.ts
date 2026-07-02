@@ -6,6 +6,7 @@ import type {
   DriverTodayStats,
   DeliveryStage,
 } from "../types/driverDelivery";
+import { useAuthStore } from "../../auth/state/authState";
 
 // ─── Tab ─────────────────────────────────────────────────────────────────────
 
@@ -156,3 +157,17 @@ export const useDriverDeliveryStore = create<DriverDeliveryState>((set, get) => 
   isOnline: false,
   setIsOnline: (isOnline) => set({ isOnline }),
 }));
+
+// Reactively reset driver availability when user logs out.
+// This is the frontend safety net — the backend also sets OFFLINE on logout,
+// but this ensures the local UI state is clean immediately without waiting
+// for a fetchAvailability() call on next login.
+
+useAuthStore.subscribe(
+  (state) => state.isAuthenticated,
+  (isAuthenticated) => {
+    if (!isAuthenticated) {
+      useDriverDeliveryStore.getState().setIsOnline(false);
+    }
+  }
+);

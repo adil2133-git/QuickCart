@@ -61,7 +61,7 @@ router.post("/register/resend-otp", resendOTPController);
 // Login
 router.post("/login", Login);
 
-router.post("/logout", logoutUser);
+router.post("/logout", protectRoutes, logoutUser);
 
 router.post("/refresh", tokenRegenerate);
 

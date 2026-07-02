@@ -10,7 +10,7 @@ const buildTokenPayload = (email, userID, role) => ({
 const generateToken = (email, userID, role) => {
     const payload = buildTokenPayload(email, userID, role);
 
-    const AccessToken  = jwt.sign(payload, process.env.ACCESS_TOKEN,  { expiresIn: "30m" });
+    const AccessToken  = jwt.sign(payload, process.env.ACCESS_TOKEN,  { expiresIn: "1m" });
     const RefreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN, { expiresIn: "7d"  });
 
     return { AccessToken, RefreshToken };

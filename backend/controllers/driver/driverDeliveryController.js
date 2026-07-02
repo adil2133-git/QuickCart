@@ -357,7 +357,7 @@ const getCompletedDeliveries = async (req, res) => {
 
         const [orders, total] = await Promise.all([
             Order.find({ driverId: driver._id, orderStatus: "DELIVERED" })
-                .populate({ path: "storeId", select: "storeName" })
+                .populate({ path: "storeId", select: "storeName logoUrl" })
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
@@ -369,13 +369,14 @@ const getCompletedDeliveries = async (req, res) => {
             orderId: o._id.toString(),
             orderNumber: o.orderNumber,
             storeName: o.storeId?.storeName ?? "Store",
+            storeLogoUrl: o.storeId?.logoUrl ?? null,
+            customerName: o.recipientName,
             deliveryAddress: o.deliveryAddress,
-            recipientName: o.recipientName,
             totalAmount: o.totalAmount,
-            deliveryCharge: o.deliveryCharge,
             paymentMethod: o.paymentMethod,
             itemCount: (o.products || []).reduce((s, i) => s + i.quantity, 0),
-            completedAt: o.createdAt, // use a real completedAt field if you add one
+            completedAt: o.createdAt,
+            earnings: o.deliveryCharge ?? 0,
         }));
 
         return res.status(200).json({

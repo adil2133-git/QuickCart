@@ -189,6 +189,22 @@ export function useDriverDeliveryActions() {
     }
   }, []);
 
+  // ── Fetch current availability (source of truth on page load) ───────────────
+  const fetchAvailability = useCallback(async () => {
+    try {
+      const { data } = await api.get<{
+        success: boolean;
+        driver: { availabilityStatus: "ONLINE" | "OFFLINE" | "BUSY" };
+      }>("/driver/me");
+
+      // BUSY counts as "online" for UI purposes — driver is mid-delivery,
+      // not off-shift. Keeps location tracking alive too.
+      store.setIsOnline(data.driver.availabilityStatus !== "OFFLINE");
+    } catch {
+      // Non-critical — leave isOnline as-is if this fails
+    }
+  }, []);
+
   return {
     fetchRequests,
     acceptRequest,
@@ -199,6 +215,7 @@ export function useDriverDeliveryActions() {
     fetchCompleted,
     fetchTodayStats,
     toggleAvailability,
+    fetchAvailability,
   };
 }
 

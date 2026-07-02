@@ -16,10 +16,14 @@ const {
     updateAvailability,
 } = require("../../controllers/driver/driverDeliveryController");
 const { updateLocation } = require("../../controllers/driver/driverLocationController");
+const { getMyDriverProfile } = require("../../controllers/driver/profile"); 
 
 // All routes require a valid JWT
 router.use(protectRoutes);
 router.use(authorizeRoles("DRIVER"));
+
+// ── Driver profile (includes availabilityStatus) ──────────────────────────────
+router.get("/me", getMyDriverProfile);
 
 // ── Delivery requests (broadcast from store accept) ──────────────────────────
 router.get("/deliveries/requests", getDeliveryRequests);

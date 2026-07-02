@@ -21,7 +21,7 @@ export function useDriverDashboard() {
 
   // Online status comes from the SAME store DriverTopbar reads — single source of truth.
   const isOnline = useDriverDeliveryStore((s) => s.isOnline);
-  const { toggleAvailability } = useDriverDeliveryActions();
+  const { toggleAvailability, fetchAvailability } = useDriverDeliveryActions();
 
   // ── Fetch all dashboard data on mount ──────────────────────────────────────
   // TODO: replace these endpoint paths with your real backend routes
@@ -47,7 +47,8 @@ export function useDriverDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+    fetchAvailability(); // hydrate real isOnline from the DB on every load/refresh
+  }, [fetchDashboard, fetchAvailability]);
 
   // ── Toggle online/offline status ───────────────────────────────────────────
   // Delegates to the shared delivery-store action (same one the topbar uses),

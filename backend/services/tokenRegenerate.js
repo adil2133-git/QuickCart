@@ -14,11 +14,11 @@ const tokenRegenerate = (req, res) => {
         const AccessToken = jwt.sign(
             {
                 email: decoded.email,
-                id:    decoded.id,
-                role:  decoded.role,
+                id: decoded.id,
+                role: decoded.role,
             },
             process.env.ACCESS_TOKEN,
-            { expiresIn: "30m" }
+            { expiresIn: "1m" }
         );
 
         return res

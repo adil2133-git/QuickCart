@@ -30,7 +30,7 @@ function CompletedRow({ delivery }: { delivery: CompletedDelivery }) {
 
       <div className="flex items-center gap-1 text-sm font-bold text-[#2B7A3E]">
         <IndianRupee className="h-3.5 w-3.5" />
-        {delivery.earnings.toFixed(2)}
+        {(delivery.earnings ?? 0).toFixed(2)}
       </div>
     </div>
   );
