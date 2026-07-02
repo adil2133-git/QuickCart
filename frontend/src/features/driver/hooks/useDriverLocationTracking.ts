@@ -29,6 +29,7 @@ export function useDriverLocationTracking() {
     const setCurrentArea = useDriverDashboardStore((s) => s.setCurrentArea);
 
     const watchIdRef = useRef<number | null>(null);
+    const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastSentRef = useRef<{ lat: number; lng: number } | null>(null);
     const lastSentAtRef = useRef<number>(0);
 
@@ -38,6 +39,10 @@ export function useDriverLocationTracking() {
             if (watchIdRef.current !== null) {
                 navigator.geolocation.clearWatch(watchIdRef.current);
                 watchIdRef.current = null;
+            }
+            if (heartbeatRef.current !== null) {
+                clearInterval(heartbeatRef.current);
+                heartbeatRef.current = null;
             }
             lastSentRef.current = null;
             lastSentAtRef.current = 0;
@@ -112,10 +117,29 @@ export function useDriverLocationTracking() {
             }
         );
 
+        // Heartbeat: send the last known location every 30s even if watchPosition
+        // stops firing (minimized tab, battery optimization, etc.)
+        heartbeatRef.current = setInterval(async () => {
+            const last = lastSentRef.current;
+            if (!last) return;
+            const staleSecs = (Date.now() - lastSentAtRef.current) / 1000;
+            if (staleSecs < 20) return; // watchPosition is still active, skip
+            try {
+                await api.patch("/driver/location", last);
+                lastSentAtRef.current = Date.now();
+            } catch {
+                // silent — don't crash on heartbeat failure
+            }
+        }, 30_000);
+
         return () => {
             if (watchIdRef.current !== null) {
                 navigator.geolocation.clearWatch(watchIdRef.current);
                 watchIdRef.current = null;
+            }
+            if (heartbeatRef.current !== null) {
+                clearInterval(heartbeatRef.current);
+                heartbeatRef.current = null;
             }
         };
     }, [isOnline]);

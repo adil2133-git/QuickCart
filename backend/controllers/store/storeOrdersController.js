@@ -56,7 +56,7 @@ const setNoCacheHeaders = (res) => {
 const DELIVERY_RADIUS_KM = 5;
 // Drivers whose lastLocationUpdate is older than this are treated as
 // effectively offline — they lost connection without going offline properly.
-const STALE_LOCATION_THRESHOLD_MS = 90_000; // 90 seconds
+const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes — accounts for backgrounded tabs
 
 // How long a driver has to Accept/Decline before the request auto-expires.
 // Mirrors the countdown ring shown on the frontend's request card.

@@ -11,14 +11,10 @@ export function StoreShell({
   children: React.ReactNode;
   notificationCount?: number;
 }) {
-  const navigate = useNavigate();
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#FBF1E9]">
-      <Sidebar
-        storeName="QuickKart"
-        onLogoutClick={() => navigate("/logout")}
-      />
+      <Sidebar storeName="QuickKart" />
       <div className="flex h-full flex-1 flex-col overflow-hidden">
         <Topbar notificationCount={notificationCount} />
         <main className="flex-1 overflow-y-auto">{children}</main>

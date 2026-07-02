@@ -43,20 +43,33 @@ const toRequestShape = (order, request) => ({
 const toActiveShape = (order, currentStage) => ({
     orderId: order._id.toString(),
     orderNumber: order.orderNumber,
+    isPriority: false,
     currentStage: currentStage || orderStatusToStage(order.orderStatus),
-    storeName: order.storeId?.storeName ?? "Store",
-    storeAddress: order.storeId?.address ?? "",
-    deliveryAddress: order.deliveryAddress,
-    recipientName: order.recipientName,
-    recipientPhone: order.recipientPhone,
-    paymentMethod: order.paymentMethod,
-    totalAmount: order.totalAmount,
-    deliveryCharge: order.deliveryCharge,
+    orderStatus: order.orderStatus,
+    store: {
+        name: order.storeId?.storeName ?? "Store",
+        address: order.storeId?.address ?? "",
+        logoUrl: order.storeId?.logoUrl ?? null,
+        phone: order.storeId?.phone ?? null,
+    },
+    customer: {
+        name: order.recipientName,
+        address: order.deliveryAddress,
+        phone: order.recipientPhone ?? null,
+        deliveryInstruction: order.deliveryInstruction ?? null,
+    },
+    products: (order.products || []).map((p) => ({
+        productId: p.productId?.toString() ?? "",
+        productName: p.productName,
+        quantity: p.quantity,
+        price: p.price,
+    })),
     itemCount: (order.products || []).reduce((s, i) => s + i.quantity, 0),
-    products: order.products || [],
+    paymentMethod: order.paymentMethod,
+    amountToCollect: order.paymentMethod === "COD" ? order.totalAmount : 0,
+    progressSteps: [],
     cashCollected: false,
 });
-
 // Mirror the frontend's orderStatusToStage mapping
 const orderStatusToStage = (status) => {
     switch (status) {
@@ -97,7 +110,7 @@ const getDeliveryRequests = async (req, res) => {
 
         const orderIds = requests.map((r) => r.orderId);
         const orders = await Order.find({ _id: { $in: orderIds } })
-            .populate({ path: "storeId", select: "storeName address" })
+            .populate({ path: "storeId", select: "storeName address logoUrl phone" })
             .lean();
 
         const orderMap = {};

@@ -1,310 +1,471 @@
-// src/features/driver/pages/driverDashboard.tsx
-import { useDriverDashboard } from "../hooks/useDriverDashboard";
-import type { OrderRequest, ActivityItem, OverviewCard } from "../types/driverDashboard";
+import { useEffect, useRef } from "react";
+import { motion, type Variants } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  IndianRupee, PackageCheck, Star, Wallet,
+  MapPin, Navigation,
+  ChevronRight, Store, Phone,
+} from "lucide-react";
+import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 import { useDriverDashboardStore } from "../state/driverDashboarState";
+import { useDriverDeliveryActions } from "../hooks/useDriverDelivery";
+import { toast } from "sonner";
 
-// ─── Status Bar (Go Online / Offline) ──────────────────────────────────────────
+// Framer Motion stagger helpers
+const container: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07 } },
+};
+const card: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", damping: 20, stiffness: 200 } },
+};
 
-function StatusBar({
-  isOnline,
-  onToggle,
-}: {
-  isOnline: boolean;
-  onToggle: () => void;
-}) {
+// ── Hero status card ──────────────────────────────────────────────────────────
+function HeroCard() {
+  const isOnline = useDriverDeliveryStore((s) => s.isOnline);
+  const { toggleAvailability } = useDriverDeliveryActions();
+  const shiftStartRef = useRef<Date | null>(null);
+
+  useEffect(() => {
+    if (isOnline && !shiftStartRef.current) {
+      shiftStartRef.current = new Date();
+    }
+    if (!isOnline) {
+      shiftStartRef.current = null;
+    }
+  }, [isOnline]);
+
+  const shiftLabel = shiftStartRef.current
+    ? shiftStartRef.current.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  const handleToggle = async () => {
+    try {
+      await toggleAvailability(!isOnline);
+    } catch {
+      toast.error("Could not update availability. Try again.");
+    }
+  };
+
   return (
-    <section className="bg-white p-5 rounded-xl shadow-[0_2px_12px_rgba(194,163,131,0.18)] border border-[#d2c4b9]/30 flex items-center justify-between flex-wrap gap-4">
-      <div className="flex items-center gap-3">
-        <span
-          className={`h-3 w-3 rounded-full ${isOnline ? "bg-emerald-500" : "bg-[#A38F7D]"
-            }`}
-        />
+    <motion.div
+      variants={card}
+      className={[
+        "relative overflow-hidden rounded-3xl p-6 transition-all duration-500",
+        isOnline
+          ? "bg-gradient-to-br from-[#DDF8EF] to-[#F6FFF8] border border-emerald-200"
+          : "bg-white border border-[#E8DCCF]",
+      ].join(" ")}
+    >
+      {/* Decorative circle */}
+      <div className={`absolute -right-8 -top-8 h-36 w-36 rounded-full opacity-20 transition-colors ${
+        isOnline ? "bg-emerald-400" : "bg-[#E8DCCF]"
+      }`} />
+
+      <div className="relative flex items-start justify-between">
         <div>
-          <p className="text-sm font-semibold text-[#1d1b16]">
-            You're currently {isOnline ? "Online" : "Offline"}
-          </p>
-          <p className="text-xs text-[#4e453d]">
-            {isOnline
-              ? "You can receive new delivery requests."
-              : "Go online to start receiving requests."}
-          </p>
-        </div>
-      </div>
-      <button
-        onClick={onToggle}
-        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${isOnline
-            ? "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-            : "bg-[#735a3e] text-white hover:brightness-110"
-          }`}
-      >
-        {isOnline ? "Go Offline" : "Go Online"}
-      </button>
-    </section>
-  );
-}
-
-// ─── Overview Cards ───────────────────────────────────────────────────────────
-
-function OverviewCards({ cards }: { cards: OverviewCard[] }) {
-  return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {cards.map((card) => (
-        <div
-          key={card.label}
-          className="bg-white p-6 rounded-xl shadow-[0_2px_12px_rgba(194,163,131,0.18)] border border-[#d2c4b9]/30 flex flex-col gap-1 hover:bg-[#f9f3ea] transition-colors"
-        >
-          <div className="flex justify-between items-start">
-            <span className="material-symbols-outlined text-[#735a3e]">{card.icon}</span>
-            {card.badge && <span className="text-xs text-[#376847] font-medium">{card.badge}</span>}
+          <div className="mb-1 flex items-center gap-2">
+            <motion.span
+              animate={isOnline ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-[#8A7C72]"}`}
+            />
+            <span className={`text-xs font-bold uppercase tracking-widest ${
+              isOnline ? "text-emerald-700" : "text-[#8A7C72]"
+            }`}>
+              {isOnline ? "Online" : "Offline"}
+            </span>
           </div>
-          <p className="text-xs font-medium text-[#4e453d] uppercase tracking-tight">{card.label}</p>
-          <span className="text-2xl font-bold text-[#1d1b16] font-['Playfair_Display']">{card.value}</span>
+          <h2 className={`text-xl font-bold ${isOnline ? "text-emerald-900" : "text-[#2B2B2B]"}`}>
+            {isOnline ? "Receiving requests" : "You're offline"}
+          </h2>
+          {isOnline && shiftLabel && (
+            <p className="mt-0.5 text-xs text-emerald-600">
+              Shift started at {shiftLabel}
+            </p>
+          )}
+          {!isOnline && (
+            <p className="mt-0.5 text-xs text-[#8A7C72]">
+              Go online to start receiving delivery requests
+            </p>
+          )}
         </div>
+
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={handleToggle}
+          className={[
+            "mt-1 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all",
+            isOnline
+              ? "bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50 shadow-sm"
+              : "bg-[#2F1B12] text-white hover:bg-[#3D2A18] shadow-md",
+          ].join(" ")}
+        >
+          {isOnline ? "Go Offline" : "Go Online"}
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── KPI cards ─────────────────────────────────────────────────────────────────
+function KpiCards() {
+  const stats = useDriverDeliveryStore((s) => s.todayStats);
+  const statsLoading = useDriverDeliveryStore((s) => s.statsLoading);
+  const { fetchTodayStats } = useDriverDeliveryActions();
+
+  useEffect(() => { fetchTodayStats(); }, []);
+
+  const kpis = [
+    {
+      icon: IndianRupee,
+      label: "Earnings",
+      value: `₹${(stats?.todayEarnings ?? 0).toFixed(0)}`,
+      sub: stats?.earningsChangePercent != null
+        ? `${stats.earningsChangePercent > 0 ? "+" : ""}${stats.earningsChangePercent}% vs yesterday`
+        : "Today",
+      subColor: (stats?.earningsChangePercent ?? 0) >= 0 ? "text-emerald-600" : "text-red-500",
+    },
+    {
+      icon: PackageCheck,
+      label: "Deliveries",
+      value: String(stats?.completedCount ?? 0),
+      sub: "Today",
+      subColor: "text-[#8A7C72]",
+    },
+    {
+      icon: Star,
+      label: "Rating",
+      value: "—",
+      sub: "Coming soon",
+      subColor: "text-[#8A7C72]",
+    },
+    {
+      icon: Wallet,
+      label: "Wallet",
+      value: "₹0",
+      sub: "Available balance",
+      subColor: "text-[#8A7C72]",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-4 gap-3">
+      {kpis.map((kpi, i) => (
+        <motion.div
+          key={kpi.label}
+          variants={card}
+          custom={i}
+          className="rounded-2xl border border-[#E8DCCF] bg-white p-4"
+        >
+          {statsLoading && !stats ? (
+            <div className="animate-pulse space-y-2">
+              <div className="h-7 w-7 rounded-lg bg-[#E8DCCF]" />
+              <div className="h-4 w-16 rounded bg-[#E8DCCF]" />
+              <div className="h-7 w-12 rounded bg-[#E8DCCF]" />
+            </div>
+          ) : (
+            <>
+              <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#F0E8DF]">
+                <kpi.icon className="h-3.5 w-3.5 text-[#6F4E37]" />
+              </div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8A7C72]">
+                {kpi.label}
+              </p>
+              <p className="mt-0.5 text-2xl font-bold text-[#2B2B2B] leading-none">{kpi.value}</p>
+              <p className={`mt-1 text-[11px] font-medium ${kpi.subColor}`}>{kpi.sub}</p>
+            </>
+          )}
+        </motion.div>
       ))}
-    </section>
-  );
-}
-
-// ─── Active Order ─────────────────────────────────────────────────────────────
-
-function ActiveOrderSection() {
-  return (
-    <section className="bg-white rounded-xl shadow-[0_2px_12px_rgba(194,163,131,0.18)] border border-[#d2c4b9]/30 overflow-hidden">
-      <div className="bg-[#f3ede4]/50 px-6 py-4 flex items-center gap-4 border-b border-[#d2c4b9]/30">
-        <span className="material-symbols-outlined text-[#735a3e]">conveyor_belt</span>
-        <h3 className="text-base font-semibold text-[#1d1b16] font-['Playfair_Display']">Active Order</h3>
-      </div>
-      <div className="p-12 flex flex-col items-center justify-center text-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-[#f3ede4] flex items-center justify-center">
-          <span className="material-symbols-outlined text-[#735a3e] text-4xl opacity-50">local_shipping</span>
-        </div>
-        <div className="space-y-1">
-          <h4 className="text-lg font-semibold text-[#1d1b16]">No Active Order Running</h4>
-          <p className="text-sm text-[#4e453d] max-w-[280px] mx-auto">
-            New requests will appear below when they are assigned to you.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Request Card ─────────────────────────────────────────────────────────────
-
-function RequestCard({
-  order,
-  highlighted,
-  onAccept,
-  onDecline,
-}: {
-  order: OrderRequest;
-  highlighted: boolean;
-  onAccept: (id: string) => void;
-  onDecline: (id: string) => void;
-}) {
-  return (
-    <div className={`bg-white p-6 rounded-xl border shadow-[0_2px_12px_rgba(194,163,131,0.18)] relative overflow-hidden ${highlighted ? "border-[#735a3e]/20" : "border-[#d2c4b9]/30"}`}>
-      {highlighted && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-[#735a3e]/20">
-          <div className="h-full bg-[#735a3e] animate-[shrink_60s_linear_infinite]" style={{ width: "100%" }} />
-        </div>
-      )}
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <span className="text-xs font-mono text-[#735a3e]">{order.id}</span>
-          <h4 className="text-sm font-semibold text-[#1d1b16] font-['Playfair_Display']">{order.store}</h4>
-        </div>
-        <div className="text-right">
-          <span className="text-lg font-semibold text-[#735a3e] font-['Playfair_Display']">{order.earnings}</span>
-          <p className="text-xs text-[#4e453d]">{order.distance}</p>
-        </div>
-      </div>
-      <div className="flex gap-2 mb-6">
-        <span className="material-symbols-outlined text-[#4e453d] text-sm mt-1">location_on</span>
-        <p className="text-sm text-[#4e453d] line-clamp-2">{order.route}</p>
-      </div>
-      <div className="flex gap-4">
-        <button
-          onClick={() => onAccept(order.id)}
-          className="flex-1 bg-[#735a3e] text-white py-2 rounded-lg text-sm font-semibold hover:brightness-110 transition-all"
-        >
-          Accept
-        </button>
-        <button
-          onClick={() => onDecline(order.id)}
-          className="flex-1 border border-[#d2c4b9] text-[#4e453d] py-2 rounded-lg text-sm font-semibold hover:bg-[#f3ede4] transition-all"
-        >
-          Decline
-        </button>
-      </div>
     </div>
   );
 }
 
-function NewRequestsSection({
-  orders,
-  onAccept,
-  onDecline,
-}: {
-  orders: OrderRequest[];
-  onAccept: (id: string) => void;
-  onDecline: (id: string) => void;
-}) {
+// ── Active delivery ───────────────────────────────────────────────────────────
+function ActiveDeliveryCard() {
+  const navigate = useNavigate();
+  const delivery = useDriverDeliveryStore((s) => s.activeDelivery);
+  const activeLoading = useDriverDeliveryStore((s) => s.activeLoading);
+  const { fetchActiveDelivery } = useDriverDeliveryActions();
+
+  useEffect(() => { fetchActiveDelivery(); }, []);
+
+  if (activeLoading && !delivery) {
+    return (
+      <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-5">
+        <div className="animate-pulse space-y-3">
+          <div className="h-4 w-28 rounded bg-[#E8DCCF]" />
+          <div className="h-20 rounded-xl bg-[#E8DCCF]" />
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (!delivery) {
+    return (
+      <motion.div
+        variants={card}
+        className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#E8DCCF] bg-white p-8 text-center"
+      >
+        <motion.div
+          animate={{ y: [0, -6, 0] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#F0E8DF]"
+        >
+          <PackageCheck className="h-7 w-7 text-[#6F4E37]" />
+        </motion.div>
+        <p className="text-sm font-semibold text-[#2B2B2B]">No Active Delivery</p>
+        <p className="mt-1 text-xs text-[#8A7C72]">New requests will appear when assigned to you</p>
+      </motion.div>
+    );
+  }
+
   return (
-    <section className="space-y-4">
-      <h3 className="text-base font-semibold text-[#1d1b16] font-['Playfair_Display']">New Requests</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {orders.map((order, i) => (
-          <RequestCard
-            key={order.id}
-            order={order}
-            highlighted={i === 0}
-            onAccept={onAccept}
-            onDecline={onDecline}
-          />
-        ))}
+    <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white overflow-hidden">
+      <div className="border-b border-[#E8DCCF] bg-[#FDF8F1] px-5 py-3 flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-widest text-[#6F4E37]">Active Delivery</p>
+        <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          In progress
+        </span>
       </div>
-    </section>
-  );
-}
 
-// ─── Recent Activity ──────────────────────────────────────────────────────────
+      <div className="p-5">
+        <p className="mb-4 text-xs font-semibold text-[#8A7C72]">Order #{delivery.orderNumber}</p>
 
-function RecentActivitySection({ items }: { items: ActivityItem[] }) {
-  return (
-    <section className="bg-white p-6 rounded-xl shadow-[0_2px_12px_rgba(194,163,131,0.18)] border border-[#d2c4b9]/30">
-      <h3 className="text-base font-semibold text-[#1d1b16] mb-6 font-['Playfair_Display']">Recent Activity</h3>
-      <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-[#d2c4b9]/30">
-        {items.map((item, i) => (
-          <div key={i} className="flex gap-4 relative">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-white flex-shrink-0 ${item.iconColor === "green" ? "bg-[#376847]/10" : "bg-[#735a3e]/10"}`}>
-              <span className={`material-symbols-outlined text-sm ${item.iconColor === "green" ? "text-[#376847]" : "text-[#735a3e]"}`}>
-                {item.icon}
-              </span>
+        {/* Route */}
+        <div className="mb-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#6F4E37]">
+              <Store className="h-4 w-4 text-white" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[#1d1b16]">{item.title}</p>
-              <p className="text-sm text-[#4e453d]">{item.description}</p>
-              <span className="text-xs text-[#4e453d] opacity-60">{item.time}</span>
+            <div>
+              <p className="text-[10px] font-semibold uppercase text-[#8A7C72]">Pickup</p>
+              <p className="text-sm font-semibold text-[#2B2B2B]">{delivery.store.name}</p>
+              <p className="text-xs text-[#8A7C72]">{delivery.store.address}</p>
             </div>
-            <span className={`text-sm font-semibold ${item.amountColor === "green" ? "text-[#376847]" : "text-[#735a3e]"}`}>
-              {item.amount}
-            </span>
           </div>
-        ))}
+
+          <div className="ml-4 flex items-center gap-2 text-[#E8DCCF]">
+            <div className="h-px flex-1 border-b border-dashed border-[#E8DCCF]" />
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500">
+              <MapPin className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase text-[#8A7C72]">Drop</p>
+              <p className="text-sm font-semibold text-[#2B2B2B]">{delivery.customer.name}</p>
+              <p className="text-xs text-[#8A7C72]">{delivery.customer.address}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          {delivery.customer.phone && (
+            <a
+              href={`tel:${delivery.customer.phone}`}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#E8DCCF] py-2.5 text-xs font-semibold text-[#6F4E37] hover:bg-[#F0E8DF] transition-colors"
+            >
+              <Phone className="h-3.5 w-3.5" />
+              Call Customer
+            </a>
+          )}
+          <button
+            onClick={() => navigate("/driver/deliveries")}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#2F1B12] py-2.5 text-xs font-bold text-white hover:opacity-90 transition-opacity"
+          >
+            <Navigation className="h-3.5 w-3.5" />
+            Open Map
+          </button>
+        </div>
       </div>
-    </section>
+    </motion.div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-// NOTE: No Sidebar / Header here anymore — DriverShell (rendered by the router
-// layout route) already provides DriverSidebar + DriverTopbar via <Outlet/>.
-// This component is just the page content for "/driver/dashboard".
+// ── Bonus progress ────────────────────────────────────────────────────────────
+function BonusCard() {
+  const stats = useDriverDeliveryStore((s) => s.todayStats);
+  if (!stats) return null;
 
-export default function QuickKartDashboard() {
-  const {
-    orders,
-    overviewCards,
-    activityItems,
-    isLoading,
-    error,
-    isOnline,
-    toggleOnline,
-    acceptOrder,
-    declineOrder,
-  } = useDriverDashboard();
+  const pct = Math.min(100, (stats.currentCount / stats.dailyTarget) * 100);
+  const remaining = Math.max(0, stats.dailyTarget - stats.currentCount);
 
+  return (
+    <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-5">
+      <div className="mb-3 flex items-start justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#6F4E37]">Daily Bonus</p>
+          <p className="mt-0.5 text-sm font-semibold text-[#2B2B2B]">
+            {remaining > 0
+              ? `${remaining} more to unlock ₹${stats.targetBonus}`
+              : "🎉 Bonus unlocked!"}
+          </p>
+        </div>
+        <span className="text-xs font-bold text-[#8A7C72]">
+          {stats.currentCount} / {stats.dailyTarget}
+        </span>
+      </div>
+
+      <div className="mb-2 h-2 overflow-hidden rounded-full bg-[#F0E8DF]">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
+        />
+      </div>
+
+      <div className="flex justify-between text-[10px] text-[#8A7C72]">
+        <span>Target: {stats.dailyTarget} deliveries</span>
+        <span className="font-semibold text-emerald-600">Earn ₹{stats.targetBonus}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Location + mini sparkline ─────────────────────────────────────────────────
+function LocationAndChart() {
   const locationStatus = useDriverDashboardStore((s) => s.locationStatus);
   const currentArea = useDriverDashboardStore((s) => s.currentArea);
 
+  // Placeholder weekly data — replace with real API when available
+  const weekData = [
+    { day: "Mon", v: 0 }, { day: "Tue", v: 0 }, { day: "Wed", v: 0 },
+    { day: "Thu", v: 0 }, { day: "Fri", v: 0 }, { day: "Sat", v: 0 },
+    { day: "Sun", v: 0 },
+  ];
+
+  const statusDot: Record<string, string> = {
+    active: "bg-emerald-500",
+    acquiring: "bg-amber-400 animate-pulse",
+    denied: "bg-red-500",
+    unavailable: "bg-slate-400",
+    idle: "bg-slate-300",
+  };
+
+  const statusLabel: Record<string, string> = {
+    active: `GPS Active${currentArea ? ` · ${currentArea}` : ""}`,
+    acquiring: "Acquiring GPS…",
+    denied: "Location denied — enable in browser settings",
+    unavailable: "GPS unavailable",
+    idle: "Go online to share location",
+  };
+
   return (
-    <>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet"
-      />
-      <style>{`
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          font-size: 1.25rem;
-        }
-        @keyframes shrink { from { width: 100%; } to { width: 0%; } }
-      `}</style>
-
-      <div className="space-y-6 max-w-[1200px] mx-auto w-full font-['DM_Sans']">
-        {/* Error banner */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {/* Loading shimmer */}
-        {isLoading && (
-          <div className="text-sm text-[#4e453d] animate-pulse">Loading dashboard…</div>
-        )}
-
-        {/* Online / Offline status + action */}
-        <StatusBar isOnline={isOnline} onToggle={toggleOnline} />
-
-        {/* GPS Status Panel */}
-        <div className="rounded-xl border border-[#EADFD3] bg-white p-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#A38F7D] mb-2">
-            📍 Current Location
-          </p>
-          <div className="flex items-center gap-2">
-            {locationStatus === "active" && (
-              <>
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-medium text-emerald-700">GPS Active</span>
-                {currentArea && (
-                  <span className="ml-auto text-sm text-[#5C4A37]">{currentArea}</span>
-                )}
-              </>
-            )}
-            {locationStatus === "acquiring" && (
-              <>
-                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                <span className="text-sm text-amber-700">Acquiring GPS…</span>
-              </>
-            )}
-            {locationStatus === "denied" && (
-              <>
-                <span className="h-2 w-2 rounded-full bg-red-500" />
-                <span className="text-sm text-red-600">
-                  Location access denied — enable it in your browser settings to receive orders
-                </span>
-              </>
-            )}
-            {locationStatus === "unavailable" && (
-              <>
-                <span className="h-2 w-2 rounded-full bg-slate-400" />
-                <span className="text-sm text-slate-500">GPS unavailable on this device</span>
-              </>
-            )}
-            {locationStatus === "idle" && (
-              <span className="text-sm text-[#A38F7D]">Go online to start sharing location</span>
-            )}
+    <div className="space-y-3">
+      {/* Location */}
+      <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-4 flex items-center gap-3">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#F0E8DF]">
+          <Navigation className="h-4 w-4 text-[#6F4E37]" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8A7C72]">Location</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className={`h-2 w-2 flex-shrink-0 rounded-full ${statusDot[locationStatus]}`} />
+            <p className="text-xs font-medium text-[#2B2B2B] truncate">{statusLabel[locationStatus]}</p>
           </div>
         </div>
+      </motion.div>
 
-        <OverviewCards cards={overviewCards} />
+      {/* Weekly sparkline */}
+      <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-4">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[#8A7C72]">Weekly Earnings</p>
+        <div className="h-20">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={weekData}>
+              <defs>
+                <linearGradient id="earningsGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6F4E37" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#6F4E37" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Tooltip
+                contentStyle={{ fontSize: 10, borderRadius: 8, border: "1px solid #E8DCCF" }}
+                formatter={(v: unknown) => [`₹${v}`, "Earnings"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke="#6F4E37"
+                strokeWidth={2}
+                fill="url(#earningsGrad)"
+                dot={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-1 flex justify-between text-[10px] text-[#8A7C72]">
+          {weekData.map((d) => <span key={d.day}>{d.day}</span>)}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 space-y-6">
-            <ActiveOrderSection />
-            <NewRequestsSection
-              orders={orders}
-              onAccept={acceptOrder}
-              onDecline={declineOrder}
-            />
-          </div>
-          <div className="lg:col-span-5 space-y-6">
-            <RecentActivitySection items={activityItems} />
-          </div>
+// ── Quick nav ─────────────────────────────────────────────────────────────────
+function QuickNav() {
+  const navigate = useNavigate();
+  const requests = useDriverDeliveryStore((s) => s.requests);
+
+  return (
+    <motion.div variants={card}>
+      <button
+        onClick={() => navigate("/driver/deliveries")}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[#E8DCCF] bg-white p-4 text-left hover:bg-[#FDF8F1] transition-colors"
+      >
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F0E8DF]">
+          <PackageCheck className="h-4 w-4 text-[#6F4E37]" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-[#2B2B2B]">View Deliveries</p>
+          <p className="text-xs text-[#8A7C72]">
+            {requests.length > 0 ? `${requests.length} request${requests.length > 1 ? "s" : ""} waiting` : "Manage your orders"}
+          </p>
+        </div>
+        {requests.length > 0 && (
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+            {requests.length}
+          </span>
+        )}
+        <ChevronRight className="h-4 w-4 text-[#C9A97A]" />
+      </button>
+    </motion.div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+export default function DriverDashboard() {
+  return (
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-4"
+    >
+      <HeroCard />
+      <KpiCards />
+
+      {/* 2-column grid */}
+      <div className="grid grid-cols-[1fr_280px] gap-4">
+        {/* Left column */}
+        <div className="space-y-4">
+          <ActiveDeliveryCard />
+          <QuickNav />
+        </div>
+
+        {/* Right column */}
+        <div className="space-y-4">
+          <BonusCard />
+          <LocationAndChart />
         </div>
       </div>
-    </>
+    </motion.div>
   );
 }
