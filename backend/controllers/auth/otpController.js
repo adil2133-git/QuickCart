@@ -5,6 +5,12 @@ const DriverProfile = require("../../models/driver/driverProfile");
 const StoreProfile = require("../../models/store/storeProfile")
 const generateToken = require("../../utils/generateToken");
 const { ACCESS_COOKIE_OPTIONS, REFRESH_COOKIE_OPTIONS } = require("../../utils/cookieOptions");
+const {
+    sendStoreApplicationReceivedEmail,
+    sendDriverApplicationReceivedEmail,
+    sendAdminNewStoreApplicationEmail,
+    sendAdminNewDriverApplicationEmail,
+} = require("../../services/mailService");
 
 
 
@@ -93,6 +99,25 @@ const verifyOtpController = async (req, res) => {
         }
 
         await client.del(`register:${lowerEmail}`);
+
+        // Fire-and-forget confirmation + admin-notification emails — never
+        // block the registration response on email delivery.
+        if (role === "DRIVER") {
+            sendDriverApplicationReceivedEmail(newUser).catch(() => {});
+            sendAdminNewDriverApplicationEmail({
+                name: newUser.name,
+                email: newUser.email,
+                vehicleType,
+            }).catch(() => {});
+        }
+        if (role === "STORE") {
+            sendStoreApplicationReceivedEmail(newUser).catch(() => {});
+            sendAdminNewStoreApplicationEmail({
+                storeName,
+                ownerName,
+                email: newUser.email,
+            }).catch(() => {});
+        }
 
         const { AccessToken, RefreshToken } = generateToken(newUser.email, newUser._id, newUser.role);
 
