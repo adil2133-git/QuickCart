@@ -6,11 +6,8 @@ const { sendPasswordChangedEmail } = require("../../services/mailService");
 
 const FP_SESSION_EXPIRY = 600; // 10 minutes — window after OTP verify to reset
 
-/**
- * Step 1 — send OTP to email if account exists.
- * We don't reveal whether the email exists (security: no user enumeration).
- * But we DO need to store a flag so verify-otp knows it's a fp flow.
- */
+// Step 1 — send OTP if the account exists.
+// Always respond the same way either way, so we don't leak which emails are registered.
 const sendForgotPasswordOtp = async (req, res) => {
     try {
         const { email } = req.body;
@@ -21,18 +18,14 @@ const sendForgotPasswordOtp = async (req, res) => {
 
         const lowerEmail = email.toLowerCase().trim();
 
-        // Check user exists — but respond the same either way
         const user = await User.findOne({ email: lowerEmail });
 
         if (user) {
-            // Store fp intent in redis (separate namespace from register otp)
-            // otpService uses key `otp:${email}` — we pass the same email
-            // but we also need a fp-session key so verify step knows the user
+            // Marks this as a forgot-password flow, separate from the register OTP namespace
             await client.setEx(`fp:pending:${lowerEmail}`, FP_SESSION_EXPIRY, "1");
 
             const result = await sendOtp(lowerEmail);
             if (!result.success) {
-                // OTP already pending — that's fine, tell frontend
                 if (result.message?.includes("already sent")) {
                     return res.status(429).json({ message: "OTP already sent. Please wait before requesting again." });
                 }

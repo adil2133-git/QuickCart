@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const protectRoutes = require("../../middleware/protectRoute");
+const protectRoutes = require("../../middleware/protectRoutes");
 const authorizeRoles = require("../../middleware/authorizeRoles");
 
 const {
@@ -16,7 +16,7 @@ const {
     updateAvailability,
 } = require("../../controllers/driver/driverDeliveryController");
 const { updateLocation } = require("../../controllers/driver/driverLocationController");
-const { getMyDriverProfile } = require("../../controllers/driver/profile"); 
+const { getMyDriverProfile } = require("../../controllers/driver/driverProfileController"); 
 
 // All routes require a valid JWT
 router.use(protectRoutes);

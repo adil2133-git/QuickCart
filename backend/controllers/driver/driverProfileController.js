@@ -1,8 +1,7 @@
 const User = require("../../models/shared/user");
 const DriverProfile = require("../../models/driver/driverProfile");
 
-// GET /api/driver/me
-// Requires protectRoutes middleware (req.user.userID is set from the JWT)
+// GET /api/driver/me — requires protectRoute middleware (sets req.user.userID)
 const getMyDriverProfile = async (req, res) => {
     try {
         res.set("Cache-Control", "no-store");
@@ -24,9 +23,8 @@ const getMyDriverProfile = async (req, res) => {
             return res.status(404).json({ success: false, message: "Driver profile not found" });
         }
 
-        // Map raw documentUrls into labeled document objects the frontend can render.
-        // documentUrls is stored in the order: [drivingLicense, vehicleRC, profilePhoto] (only the ones that were provided)
-        // We don't currently track per-document review status, so "submitted" just means a URL exists.
+        // documentUrls is stored in order [drivingLicense, vehicleRC, profilePhoto];
+        // "submitted" just means a URL exists, since per-document review isn't tracked yet.
         const documents = [
             { label: "Driving License", key: "drivingLicense", submitted: Boolean(driverProfile.documentUrls?.[0]) },
             { label: "Vehicle Registration", key: "vehicleRC", submitted: Boolean(driverProfile.documentUrls?.[1]) },

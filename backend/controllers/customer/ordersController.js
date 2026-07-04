@@ -7,7 +7,6 @@ const resolveCustomerId = async (req) => {
     return profile._id;
 };
 
-
 const STAGE_FOR_STATUS = {
     PENDING: "PROCESSING",
     ACCEPTED: "PROCESSING",
@@ -20,8 +19,7 @@ const STAGE_FOR_STATUS = {
     CANCELLED: "CANCELLED",
 };
 
-// Percent shown on the progress bar — also a judgment call, not derived from
-// anything stored on the order. Tune these if you want different pacing.
+// Percent shown on the progress bar — a judgment call, not derived from stored data
 const PROGRESS_FOR_STATUS = {
     PENDING: 10,
     ACCEPTED: 20,
@@ -46,12 +44,8 @@ const ACTIVE_STATUSES = [
 const PAST_STATUSES = ["DELIVERED", "CANCELLED"];
 
 // ─── Helper: shape one Order doc into what the frontend card expects ─────────
-// Note: Order.products[] only snapshots productId/productName/quantity/price
-// at order time — no image. To show a thumbnail we look up the live product
-// image separately (productImageMap, built in getOrders/getOrderDetail below).
-// This means the thumbnail reflects the product's CURRENT image, not
-// necessarily what it looked like when ordered — acceptable since images
-// rarely change, but worth knowing if that ever matters.
+// The order only snapshots productName/quantity/price, not an image, so the
+// thumbnail is looked up live via productImageMap (built by the callers below).
 const toCardShape = (order, productImageMap = {}) => {
     const items = order.products || [];
     const firstItem = items[0];
@@ -98,8 +92,7 @@ const getOrders = async (req, res) => {
             .populate({ path: "storeId", select: "storeName logoUrl" })
             .lean();
 
-        // Gather the first product image of each order's first item, in one
-        // batched query rather than N+1 lookups per order.
+        // Batch the image lookups for each order's first item instead of N+1 queries
         const firstProductIds = orders
             .map((o) => o.products?.[0]?.productId)
             .filter(Boolean);
@@ -136,10 +129,7 @@ const getOrderDetail = async (req, res) => {
             return res.status(404).json({ success: false, message: "Order not found." });
         }
 
-        // Driver assignment isn't built yet, so driverId is always null right
-        // now — once delivery assignment exists, populate driverId.userId
-        // (DriverProfile -> User) here for name/phone, since DriverProfile
-        // itself doesn't store those fields.
+        // driver stays null until delivery assignment is built (see driverId note above)
         const productIds = (order.products || []).map((p) => p.productId);
         const products = await Product.find({ _id: { $in: productIds } })
             .select("images")
@@ -161,7 +151,7 @@ const getOrderDetail = async (req, res) => {
                 paymentStatus: order.paymentStatus,
                 subtotal: order.subtotal,
                 deliveryCharge: order.deliveryCharge,
-                driver: null, // populate once delivery assignment exists
+                driver: null,
                 store: order.storeId
                     ? { name: order.storeId.storeName, logoUrl: order.storeId.logoUrl, address: order.storeId.address }
                     : null,

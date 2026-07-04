@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const protectRoutes = require("../../middleware/protectRoute");
+const protectRoutes = require("../../middleware/protectRoutes");
 const authorizeRoles = require("../../middleware/authorizeRoles");
 
 const { uploadProductImages } = require("../../middleware/uploadProductImages");

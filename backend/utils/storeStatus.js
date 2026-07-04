@@ -1,10 +1,7 @@
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-/**
- * Parses a "HH:mm" (24h) string into minutes-since-midnight.
- * Returns null if the string is missing or malformed, so callers can treat
- * a bad/empty time as "no hours set" rather than crashing.
- */
+// Parses a "HH:mm" (24h) string into minutes-since-midnight.
+// Returns null for missing/malformed input so callers treat it as "no hours set".
 function parseTimeToMinutes(timeStr) {
     if (!timeStr || typeof timeStr !== "string") return null;
     const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
@@ -14,7 +11,6 @@ function parseTimeToMinutes(timeStr) {
     if (hours > 23 || minutes > 59) return null;
     return hours * 60 + minutes;
 }
-
 
 function getLiveStoreStatus(store, now = new Date()) {
     if (store.isManuallyClosed) {
@@ -36,9 +32,7 @@ function getLiveStoreStatus(store, now = new Date()) {
     const closeMinutes = parseTimeToMinutes(todayHours.closeTime);
 
     if (openMinutes === null || closeMinutes === null) {
-        // Hours exist for today but are malformed/incomplete — fail safe to
-        // CLOSED rather than guessing, so a bad data entry doesn't show the
-        // store as open when it might not be.
+        // Malformed/incomplete hours — fail safe to CLOSED rather than guessing
         return { status: "CLOSED", reason: "HOURS_NOT_SET" };
     }
 
@@ -53,14 +47,8 @@ function getLiveStoreStatus(store, now = new Date()) {
     return isOpen ? { status: "OPEN", reason: "WITHIN_HOURS" } : { status: "CLOSED", reason: "OUTSIDE_HOURS" };
 }
 
-/**
- * Haversine distance in kilometers between two { lat, lng } points.
- * Used instead of MongoDB's $near because StoreProfile.coordinates is stored
- * as a plain { lat, lng } object, not GeoJSON, so the 2dsphere index on it
- * does not function as a real geospatial index. This is an application-level
- * workaround — for stores at scale you'll want to migrate coordinates to
- * GeoJSON Point format and use $near/$geoWithin instead.
- */
+// Haversine distance in km — used instead of MongoDB's $near since coordinates
+// are stored as a plain { lat, lng } object, not GeoJSON.
 function distanceInKm(pointA, pointB) {
     if (
         !pointA ||

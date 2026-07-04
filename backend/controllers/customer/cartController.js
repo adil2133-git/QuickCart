@@ -45,8 +45,8 @@ const getCart = async (req, res) => {
 
 // ─── POST /api/customer/cart/add ─────────────────────────────────────────────
 // Body: { productId, quantity }
-// Multi-store logic: if the cart already has items from a DIFFERENT store,
-// return a 409 conflict so the frontend can prompt the user to clear & replace.
+// If the cart already has items from a DIFFERENT store, returns 409 so the
+// frontend can prompt the user to clear & replace.
 const addToCart = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -94,7 +94,7 @@ const addToCart = async (req, res) => {
                 totalAmount: product.price * quantity,
             });
         } else {
-            // ── Multi-store conflict check ────────────────────────────────────
+            // Multi-store conflict check
             if (cart.products.length > 0) {
                 // Get storeId of the first item already in the cart
                 const firstProduct = await Product.findById(cart.products[0].productId)
@@ -162,8 +162,7 @@ const addToCart = async (req, res) => {
 };
 
 // ─── PATCH /api/customer/cart/item/:productId ─────────────────────────────────
-// Body: { quantity }  — set absolute quantity (not delta).
-// Passing quantity: 0 removes the item.
+// Body: { quantity } — set absolute quantity (not delta). quantity: 0 removes the item.
 const updateCartItem = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);

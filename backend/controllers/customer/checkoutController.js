@@ -6,19 +6,13 @@ const Order = require("../../models/shared/order");
 const User = require("../../models/shared/user");
 const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
-const { sendOrderPlacedEmail, sendNewOrderStoreEmail } = require("../../services/mailService"); 
+const { sendOrderPlacedEmail, sendNewOrderStoreEmail } = require("../../services/mailService");
 
 const DELIVERY_CHARGE = 30;
 const PACKAGING_FEE = 15;
 
-// ─── Helper: resolve the FULL customer profile from the JWT user ──────────────
-// FIX: previously this returned only `profile._id` (renamed from resolveCustomerId),
-// but every caller below was treating the result as the full profile object
-// (profile._id, profile.savedAddresses, profile.defaultAddress, profile.codAllowed).
-// That meant profile._id was undefined, Cart.findOne({ customerId: undefined })
-// silently matched whatever cart Mongoose found first, and addresses/defaultAddressId/
-// codAllowed were always undefined in the response — which crashed the frontend's
-// `addresses.some(...)` call in checkoutState.ts.
+// resolveCustomerProfile returns the full profile doc (not just the id) —
+// callers below rely on savedAddresses/defaultAddress/codAllowed too.
 const resolveCustomerProfileDoc = async (req) => {
     return await resolveCustomerProfile(req.user.userID);
 };
@@ -34,7 +28,7 @@ const formatAddress = (addr) => {
 // the resolved default address, and computed totals. No writes happen here.
 const getCheckoutSummary = async (req, res) => {
     try {
-        const profile = await resolveCustomerProfileDoc(req); // ⬅️ FIX
+        const profile = await resolveCustomerProfileDoc(req);
 
         const cart = await Cart.findOne({ customerId: profile._id })
             .populate({
@@ -79,10 +73,9 @@ const getCheckoutSummary = async (req, res) => {
 
 // ─── POST /api/customer/checkout/place-order ─────────────────────────────────
 // Body: { addressId, paymentMethod, deliveryInstructions? }
-// COD only for now — paymentMethod must be "COD".
-// Validates stock at order time, snapshots names/prices, creates the Order,
-// decrements stock, clears the cart. Wrapped in a transaction so a failure
-// partway through can't leave stock decremented with no order created.
+// COD only for now. Validates stock at order time, snapshots names/prices,
+// creates the Order, decrements stock, clears the cart — wrapped in a
+// transaction so a partial failure can't decrement stock without an order.
 const placeOrder = async (req, res) => {
     const session = await mongoose.startSession();
 
@@ -99,7 +92,7 @@ const placeOrder = async (req, res) => {
             });
         }
 
-        const profile = await resolveCustomerProfileDoc(req); // ⬅️ FIX
+        const profile = await resolveCustomerProfileDoc(req);
 
         if (!profile.codAllowed) {
             return res.status(403).json({
@@ -123,8 +116,7 @@ const placeOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Your cart is empty." });
         }
 
-        // Re-fetch products fresh to validate current stock/availability/price —
-        // never trust the price/quantity stored on the cart at order time.
+        // Re-fetch products fresh — never trust the price/quantity cached on the cart
         const productIds = cart.products.map((p) => p.productId);
         const products = await Product.find({ _id: { $in: productIds } })
             .select("productName price availabilityStatus stockQuantity storeId")
@@ -143,7 +135,6 @@ const placeOrder = async (req, res) => {
                 });
             }
             if (product.availabilityStatus !== "AVAILABLE" && product.availabilityStatus !== undefined) {
-                // adjust this check to match your actual availabilityStatus enum values
                 return res.status(400).json({
                     success: false,
                     message: `${product.productName} is currently unavailable.`,
@@ -164,8 +155,7 @@ const placeOrder = async (req, res) => {
             });
         }
 
-        // All cart items must belong to a single store (cartController already
-        // enforces this on add, but we re-derive it here rather than trust it).
+        // All items must belong to a single store — re-derived here rather than trusted
         const storeId = products[0].storeId;
         const mismatched = products.some((p) => p.storeId.toString() !== storeId.toString());
         if (mismatched) {

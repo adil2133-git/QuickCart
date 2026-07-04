@@ -2,14 +2,14 @@ const mongoose = require("mongoose");
 const User = require("../../models/shared/user");
 const StoreProfile = require("../../models/store/storeProfile");
 const StoreReview = require("../../models/store/storeReview");
-const { getLiveStoreStatus, distanceInKm } = require("./storeStatus");
+const { getLiveStoreStatus, distanceInKm } = require("../../utils/storeStatus");
 const { resolveStoreProfile } = require("../../services/storeProfileService");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const VALID_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-// ─── (existing, unchanged) GET /api/store/me ─────────────────────────────────
+// ─── GET /api/store/me ────────────────────────────────────────────────────────
 const getMyStoreProfile = async (req, res) => {
     try {
         const userId = req.user.userID;

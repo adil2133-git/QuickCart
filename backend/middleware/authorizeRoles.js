@@ -1,4 +1,3 @@
-// middleware/authorizeRoles.js
 const authorizeRoles = (...allowedRoles) => {
     return (req, res, next) => {
         if (!req.user || !req.user.role) {

@@ -13,11 +13,8 @@ const resolveDriverProfile = async (req) => {
 };
 
 // Shape an order + request into the DeliveryRequest card the frontend renders.
-// pickupDistanceKm / deliveryDistanceKm / estimatedEarnings are snapshotted
-// on the request at broadcast time (see storeOrdersController's
-// broadcastDeliveryRequestToDrivers), so a page refresh shows the same
-// numbers the driver saw in the toast — expiresInSeconds is recomputed from
-// expiresAt so the countdown ring picks up from the correct remaining time.
+// Distances/earnings are snapshotted on the request at broadcast time so a page
+// refresh shows the same numbers; expiresInSeconds is recomputed from expiresAt.
 const toRequestShape = (order, request) => ({
     requestId: request._id.toString(),
     orderId: order._id.toString(),
@@ -72,6 +69,7 @@ const toActiveShape = (order, currentStage) => ({
     progressSteps: [],
     cashCollected: false,
 });
+
 // Mirror the frontend's orderStatusToStage mapping
 const orderStatusToStage = (status) => {
     switch (status) {
@@ -151,10 +149,8 @@ const acceptDeliveryRequest = async (req, res) => {
             });
         }
 
-        // ── Atomic assignment — only succeeds if no driver is assigned yet
-        //    AND the order is still READY_FOR_PICKUP. This is the single
-        //    source of truth for the race condition: even if two drivers
-        //    hit Accept at the exact same millisecond, only one write wins.
+        // Atomic assignment — only succeeds if no driver is assigned yet AND the
+        // order is still READY_FOR_PICKUP, so simultaneous accepts can't both win.
         const order = await Order.findOneAndUpdate(
             {
                 _id: request.orderId,
@@ -183,7 +179,6 @@ const acceptDeliveryRequest = async (req, res) => {
         await DriverDeliveryRequest.findByIdAndUpdate(requestId, { status: "ACCEPTED" });
 
         // Expire all other drivers' pending requests for this order
-        // and collect their IDs so we can notify them via socket
         const otherRequests = await DriverDeliveryRequest.find({
             orderId: order._id,
             _id: { $ne: requestId },
@@ -299,7 +294,6 @@ const advanceDeliveryStage = async (req, res) => {
         let completedAt = null;
         if (stage === "DELIVERED") {
             completedAt = new Date().toISOString();
-            // Increment driver stats
             driver.totalDeliveries += 1;
             driver.availabilityStatus = "ONLINE";
             await driver.save();
@@ -307,7 +301,7 @@ const advanceDeliveryStage = async (req, res) => {
 
         await order.save();
 
-        // ── Send delivered/thank-you email to the customer ─────────────────────
+        // Send delivered/thank-you email to the customer
         if (stage === "DELIVERED") {
             CustomerProfile.findById(order.customerId)
                 .populate("userId", "name email")

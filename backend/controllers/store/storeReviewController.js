@@ -3,12 +3,8 @@ const StoreReview = require("../../models/store/storeReview");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-/**
- * Builds initials from a display name, e.g. "Jane Doe" -> "JD".
- * Falls back to "?" if the name is missing/empty, rather than crashing —
- * a customer's User document should always have a name, but we don't want
- * a single bad record to break the whole reviews list.
- */
+// Builds initials from a display name, e.g. "Jane Doe" -> "JD".
+// Falls back to "?" so one bad record doesn't break the whole reviews list.
 function initialsFromName(name) {
     if (!name || typeof name !== "string") return "?";
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -18,12 +14,8 @@ function initialsFromName(name) {
 }
 
 // ─── Rating Summary  (GET /api/stores/:storeId/reviews/summary) ────────────
-// Returns the average rating, total count, and the 5/4/3/2/1-star breakdown
-// percentages used for the rating bars on the store page. Computed fresh via
-// aggregation rather than trusting StoreProfile.averageRating alone, since
-// that field could drift out of sync if it isn't recalculated on every new
-// review (not shown in what you've shared so far).
-
+// Computed fresh via aggregation rather than trusting StoreProfile.averageRating,
+// which could drift if it isn't recalculated on every new review.
 const getStoreRatingSummary = async (req, res) => {
     try {
         const { storeId } = req.params;
@@ -68,12 +60,8 @@ const getStoreRatingSummary = async (req, res) => {
 };
 
 // ─── Paginated Reviews  (GET /api/stores/:storeId/reviews) ─────────────────
-// CustomerProfile has no name field — only userId, which points to User.
-// Mongoose .populate() can't chase a second hop (StoreReview.customerId ->
-// CustomerProfile.userId -> User.name) in a single call, so this uses an
-// aggregation pipeline with two $lookup stages to do it in one DB round-trip
-// instead of querying once per review.
-
+// Uses an aggregation with two $lookup stages (review → CustomerProfile → User)
+// to get reviewer names in one round-trip instead of querying per review.
 const getStoreReviews = async (req, res) => {
     try {
         const { storeId } = req.params;

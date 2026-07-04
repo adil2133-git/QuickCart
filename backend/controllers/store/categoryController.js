@@ -4,7 +4,6 @@ const Category = require("../../models/store/category");
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // ─── Create Category  (POST /api/store/addCategory) ──────────────────────────
-
 const createCategory = async (req, res) => {
     try {
         const { categoryName, status } = req.body;
@@ -13,8 +12,7 @@ const createCategory = async (req, res) => {
             return res.status(400).json({ message: "categoryName is required." });
         }
 
-        // req.file is set by uploadCategoryImage (multer-storage-cloudinary).
-        // req.file.path is the Cloudinary secure_url.
+        // req.file is set by uploadCategoryImage (multer-storage-cloudinary); path is the Cloudinary URL
         const image = req.file ? req.file.path : req.body.image;
 
         const category = await Category.create({
@@ -35,8 +33,7 @@ const createCategory = async (req, res) => {
     }
 };
 
-
-
+// ─── Get Categories  (GET /api/store/getCategories) ──────────────────────────
 const getCategories = async (req, res) => {
     try {
         const { status } = req.query;
@@ -59,7 +56,6 @@ const getCategories = async (req, res) => {
 };
 
 // ─── Get Single Category  (GET /api/store/getSingleCategory?categoryId=...) ─
-
 const getCategoryById = async (req, res) => {
     try {
         const { categoryId } = req.query;
@@ -81,7 +77,6 @@ const getCategoryById = async (req, res) => {
 };
 
 // ─── Update Category  (PUT /api/store/updateCategory?categoryId=...) ────────
-
 const updateCategory = async (req, res) => {
     try {
         const { categoryId } = req.query;
@@ -127,7 +122,6 @@ const updateCategory = async (req, res) => {
 
 // ─── Delete Category  (DELETE /api/store/deleteCategory?categoryId=...) ─────
 // Note: does NOT check if products reference this category first.
-
 const deleteCategory = async (req, res) => {
     try {
         const { categoryId } = req.query;

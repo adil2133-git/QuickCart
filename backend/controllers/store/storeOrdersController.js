@@ -57,16 +57,15 @@ const setNoCacheHeaders = (res) => {
 };
 
 const DELIVERY_RADIUS_KM = 5;
-// Drivers whose lastLocationUpdate is older than this are treated as
-// effectively offline — they lost connection without going offline properly.
+// Drivers whose lastLocationUpdate is older than this are treated as offline —
+// they lost connection without going offline properly.
 const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes — accounts for backgrounded tabs
 
 // How long a driver has to Accept/Decline before the request auto-expires.
 // Mirrors the countdown ring shown on the frontend's request card.
 const REQUEST_EXPIRY_SECONDS = 45;
 
-// Simple earnings estimate: a flat base fare plus a per-km rate covering
-// both legs (driver → store, then store → customer). Tune these as needed.
+// Flat base fare plus a per-km rate covering both legs (driver→store, store→customer)
 const BASE_FARE = 15;
 const RATE_PER_KM = 6;
 const estimateEarnings = (pickupKm, deliveryKm) =>
@@ -111,7 +110,7 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
     }).select("_id currentLocation");
 
     // Filter by radius if the store has coordinates, keeping each driver's
-    // pickup-leg distance (driver → store) so we don't have to recompute it.
+    // pickup-leg distance so we don't have to recompute it later.
     const nearbyDrivers = hasStoreLocation
         ? onlineDrivers
               .map((d) => {
@@ -145,7 +144,7 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
         { ordered: false }
     );
 
-    // Build a map of driverId → request doc so we can send each driver their own requestId + numbers
+    // Map driverId → request doc so each driver gets their own requestId + numbers
     const driverToRequest = {};
     requests.forEach((r) => {
         driverToRequest[r.driverId.toString()] = r;
@@ -266,15 +265,14 @@ const updateOrderStatus = async (req, res) => {
         order.orderStatus = status;
         await order.save();
 
-        // ── When the order is ready for pickup, broadcast to all online drivers ─
+        // When ready for pickup, broadcast to all online drivers (fire-and-forget)
         if (status === "READY_FOR_PICKUP") {
-            // Fire-and-forget — don't hold up the store's response
             broadcastDeliveryRequestToDrivers(order._id).catch((err) =>
                 console.error("[broadcastDelivery] Failed:", err)
             );
         }
 
-        // ── When cancelled, notify customer, store, and driver (if assigned) ────
+        // When cancelled, notify customer, store, and driver (if assigned)
         if (status === "CANCELLED") {
             Promise.all([
                 CustomerProfile.findById(order.customerId).populate("userId", "name email").lean(),

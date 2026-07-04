@@ -3,8 +3,7 @@ const { client } = require("../../config/redis");
 const { sendOtp } = require("../../services/otpService");
 const User = require("../../models/shared/user");
 const DriverProfile = require("../../models/driver/driverProfile");
-const StoreProfile = require("../../models/store/storeProfile")
-
+const StoreProfile = require("../../models/store/storeProfile");
 
 const CustomerRegister = async (req, res) => {
     try {
@@ -40,7 +39,7 @@ const CustomerRegister = async (req, res) => {
                 phone,
                 email: lowerEmail,
                 password: hashedPassword,
-                role: "CUSTOMER"
+                role: "CUSTOMER",
             })
         );
 
@@ -57,8 +56,6 @@ const CustomerRegister = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", Error: err.message });
     }
 };
-
-
 
 const registerDriver = async (req, res) => {
     try {
@@ -102,7 +99,7 @@ const registerDriver = async (req, res) => {
             return res.status(409).json({ success: false, message: "Phone number is already registered." });
         }
 
-        // Collect Cloudinary URLs from req.files 
+        // Collect Cloudinary URLs from req.files
         const files = req.files || {};
 
         const drivingLicense = files.drivingLicense?.[0]?.path || null;
@@ -153,7 +150,6 @@ const registerDriver = async (req, res) => {
     }
 };
 
-
 const registerStore = async (req, res) => {
     try {
         const {
@@ -165,8 +161,8 @@ const registerStore = async (req, res) => {
             phone,
             password,
             confirmPassword,
-            lat,   // ← new
-            lng,   // ← new
+            lat,
+            lng,
         } = req.body;
 
         if (!storeName || !ownerName || !address || !pincode || !email || !phone || !password || !confirmPassword) {
@@ -181,7 +177,7 @@ const registerStore = async (req, res) => {
             return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
         }
 
-        // ── Validate coordinates ───────────────────────────────────────────
+        // Coordinates come from the map picker on the frontend, not typed by hand
         const parsedLat = parseFloat(lat);
         const parsedLng = parseFloat(lng);
 
@@ -205,8 +201,8 @@ const registerStore = async (req, res) => {
         const files = req.files || {};
 
         const tradeLicense = files.tradeLicense?.[0]?.path || null;
-        const ownerId      = files.ownerId?.[0]?.path || null;
-        const storeFront   = files.storeFront?.[0]?.path || null;
+        const ownerId = files.ownerId?.[0]?.path || null;
+        const storeFront = files.storeFront?.[0]?.path || null;
 
         const documentUrls = [tradeLicense, ownerId, storeFront].filter(Boolean);
 
@@ -216,7 +212,6 @@ const registerStore = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // ── Store coordinates in Redis payload alongside other fields ──────
         await client.setEx(
             `register:${lowerEmail}`,
             120,
@@ -231,8 +226,8 @@ const registerStore = async (req, res) => {
                 address,
                 pincode,
                 documentUrls,
-                lat: parsedLat,   // ← new
-                lng: parsedLng,   // ← new
+                lat: parsedLat,
+                lng: parsedLng,
             })
         );
 
@@ -259,7 +254,5 @@ const registerStore = async (req, res) => {
         return res.status(500).json({ success: false, message: "Server error during registration.", error: err.message });
     }
 };
-
-
 
 module.exports = { CustomerRegister, registerDriver, registerStore };

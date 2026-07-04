@@ -28,6 +28,7 @@ const Login = async (req, res) => {
             return res.status(403).json({ message: "Your account has been blocked" });
         }
 
+        // Drivers go through an approval process, so they need extra status checks other roles don't
         if (user.role === "DRIVER") {
             if (user.status === "REJECTED") {
                 return res.status(403).json({
@@ -54,14 +55,13 @@ const Login = async (req, res) => {
                 message: "Login successful",
                 token: AccessToken,
                 user: {
-                    id:     user._id,
-                    name:   user.name,
-                    email:  user.email,
-                    role:   user.role,
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
                     status: user.status || "ACTIVE",
                 },
             });
-
     } catch (err) {
         console.log("LOGIN ERROR:", err);
         return res.status(500).json({ message: "Internal server error", Error: err.message });
@@ -70,10 +70,7 @@ const Login = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     try {
-        // If a driver logs out, force their availability to OFFLINE in the DB
-        // so the next login doesn't restore a stale ONLINE status.
-        // req.user is set by protectRoutes — check the auth route to confirm
-        // /auth/logout is protected before relying on this.
+        // Force driver availability to OFFLINE so the next login doesn't restore a stale ONLINE status
         if (req.user?.role === "DRIVER") {
             await DriverProfile.findOneAndUpdate(
                 { userId: req.user.userID },

@@ -1,9 +1,8 @@
 const DriverProfile = require("../../models/driver/driverProfile");
 
 // ─── PATCH /api/driver/location ───────────────────────────────────────────────
-// Called by the driver app every ~15 seconds while ONLINE.
-// Only accepts pings from ONLINE drivers — OFFLINE/BUSY pings are silently
-// ignored (BUSY drivers still have location from when they went BUSY).
+// Called by the driver app every ~15 seconds while ONLINE. OFFLINE/BUSY pings
+// are silently ignored (BUSY drivers keep the location from when they went BUSY).
 const updateLocation = async (req, res) => {
     try {
         const { lat, lng } = req.body;
@@ -20,8 +19,7 @@ const updateLocation = async (req, res) => {
             return res.status(404).json({ success: false, message: "Driver profile not found." });
         }
 
-        // Only track location while actually online — ignore stale pings
-        // that arrive after the driver went offline/busy
+        // Ignore stale pings that arrive after the driver went offline/busy
         if (driver.availabilityStatus !== "ONLINE") {
             return res.status(200).json({ success: true, ignored: true });
         }

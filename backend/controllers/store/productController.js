@@ -10,7 +10,6 @@ const resolveStoreId = async (req) => {
 };
 
 // ─── Create Product  (POST /api/store/addProduct) ────────────────────────────
-
 const createProduct = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -35,9 +34,7 @@ const createProduct = async (req, res) => {
         }
 
         if (!req.files || req.files.length === 0) {
-            return res.status(400).json({
-                message: "At least one product image is required."
-            });
+            return res.status(400).json({ message: "At least one product image is required." });
         }
 
         const uploadedImageUrls = req.files.map((file) => file.path);
@@ -55,24 +52,17 @@ const createProduct = async (req, res) => {
             isBestseller: Boolean(isBestseller),
         });
 
-        return res.status(201).json({
-            message: "Product created successfully.",
-            product
-        });
+        return res.status(201).json({ message: "Product created successfully.", product });
     } catch (error) {
         if (error.name === "ValidationError") {
             return res.status(400).json({ message: error.message });
         }
 
-        return res.status(500).json({
-            message: "Server error.",
-            error: error.message
-        });
+        return res.status(500).json({ message: "Server error.", error: error.message });
     }
 };
 
 // ─── Get All Products for the logged-in store  (GET /api/store/getProductsByStore) ───
-
 const getProductsByStore = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -127,8 +117,7 @@ const getProductsByStore = async (req, res) => {
 };
 
 // ─── Get Single Product  (GET /api/store/getSingleProduct/:id) ──────────────
-// Still scoped to the logged-in store — a store can't fetch another store's product by guessing an ID.
-
+// Scoped to the logged-in store — a store can't fetch another store's product by guessing an ID.
 const getProductById = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -159,7 +148,6 @@ const getProductById = async (req, res) => {
 };
 
 // ─── Update Product  (PUT /api/store/updateProduct/:id) ─────────────────────
-
 const updateProduct = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -227,7 +215,6 @@ const updateProduct = async (req, res) => {
 };
 
 // ─── Toggle Availability  (PATCH /api/store/toggleAvailability/:id) ─────────
-
 const toggleAvailability = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -263,9 +250,7 @@ const toggleAvailability = async (req, res) => {
 };
 
 // ─── Toggle Bestseller  (PATCH /api/store/toggleBestseller/:id) ─────────────
-// Manual flag for now. Will likely be replaced/supplemented by an
-// auto-derived "top seller" calculation once the order module exists.
-
+// Manual flag for now — may be replaced by an auto-derived calculation later.
 const toggleBestseller = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -299,7 +284,6 @@ const toggleBestseller = async (req, res) => {
 };
 
 // ─── Update Stock Count  (PATCH /api/store/updateStock/:id) ─────────────────
-
 const updateStock = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -341,7 +325,6 @@ const updateStock = async (req, res) => {
 };
 
 // ─── Delete Product  (DELETE /api/store/deleteProduct/:id) ──────────────────
-
 const deleteProduct = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -373,11 +356,7 @@ const deleteProduct = async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── Public Product Catalogue  (GET /api/stores/:storeId/products) ─────────
-// Same filter/sort/paginate shape as getProductsByStore, but storeId comes
-// from the route param since the caller is a customer, not the store owner.
-// Always excludes HIDDEN products — a customer should never see those
-// regardless of what status filter they pass.
-
+// Always excludes HIDDEN products, regardless of any status filter passed in.
 const getPublicStoreProducts = async (req, res) => {
     try {
         const { storeId } = req.params;
@@ -431,7 +410,6 @@ const getPublicStoreProducts = async (req, res) => {
 };
 
 // ─── Public Bestsellers  (GET /api/stores/:storeId/bestsellers) ────────────
-
 const getStoreBestsellers = async (req, res) => {
     try {
         const { storeId } = req.params;

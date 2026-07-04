@@ -3,9 +3,8 @@ const StoreProfile = require("../../models/store/storeProfile");
 const { resolveCustomerProfile } = require("../../services/customerProfileService");
 const Product = require("../../models/store/product");
 const Category = require("../../models/store/category");
-const User = require("../../models/shared/user")
-const { getLiveStoreStatus, distanceInKm } = require("../store/storeStatus");
-
+const User = require("../../models/shared/user");
+const { getLiveStoreStatus, distanceInKm } = require("../../utils/storeStatus");
 
 // ─── GET /api/customer/profile ────────────────────────────────────────────────
 // Returns the customer's profile (saved addresses + default address).
@@ -13,8 +12,6 @@ const { getLiveStoreStatus, distanceInKm } = require("../store/storeStatus");
 const getProfile = async (req, res) => {
     try {
         const profile = await resolveCustomerProfile(req.user.userID);
-
-        return res.status(200).json({ success: true, profile });
 
         return res.status(200).json({ success: true, profile });
     } catch (err) {
@@ -126,8 +123,7 @@ const deleteAddress = async (req, res) => {
 
 // ─── GET /api/customer/stores/nearby ─────────────────────────────────────────
 // Query: ?lat=&lng=&radius= (radius in km, default 10)
-// Uses the 2dsphere index on StoreProfile.coordinates.
-// Only returns ACTIVE (approved, not manually closed) stores.
+// Uses the 2dsphere index on StoreProfile.coordinates. Only ACTIVE stores.
 const getNearbyStores = async (req, res) => {
     try {
         const lat = parseFloat(req.query.lat);
@@ -138,11 +134,11 @@ const getNearbyStores = async (req, res) => {
             return res.status(400).json({ success: false, message: "lat and lng are required" });
         }
 
-        // 1. Fetch all stores whose owning User account is ACTIVE (approved, not suspended)
+        // Only stores whose owning User account is ACTIVE (approved, not suspended)
         const approvedUsers = await User.find({ role: "STORE", status: "ACTIVE" }).select("_id").lean();
         const approvedUserIds = approvedUsers.map((u) => u._id);
 
-        // 2. Fetch their StoreProfiles — only ones with coordinates set
+        // Only fetch profiles that actually have coordinates set
         const stores = await StoreProfile.find({
             userId: { $in: approvedUserIds },
             "coordinates.lat": { $ne: 0 },
@@ -151,7 +147,7 @@ const getNearbyStores = async (req, res) => {
             .select("storeName ownerName address coordinates logoUrl averageRating totalOrders operatingHours isManuallyClosed storeStatus")
             .lean();
 
-        // 3. Filter by live status + distance
+        // Filter by live status + distance
         const nearby = stores
             .map((store) => {
                 const liveStatus = getLiveStoreStatus(store);
@@ -222,11 +218,9 @@ const getTrendingProducts = async (req, res) => {
 };
 
 // ─── GET /api/customer/categories ────────────────────────────────────────────
-// Public — no auth needed. Re-exported here so the customer app has a single
-// base URL (/api/customer/...) without importing the store controller.
+// Public — no auth needed. Re-exported so the customer app has one base URL.
 const getCategories = async (req, res) => {
     try {
-        const Category = require("../../models/store/category");
         const categories = await Category.find().sort({ name: 1 }).lean();
         return res.status(200).json({ success: true, categories });
     } catch (err) {

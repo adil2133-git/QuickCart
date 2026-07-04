@@ -1,8 +1,8 @@
 const { client } = require("../../config/redis");
 const { verifyOtp, resendOtp } = require("../../services/otpService");
 const User = require("../../models/shared/user");
-const DriverProfile = require("../../models/driver/driverProfile"); 
-const StoreProfile = require("../../models/store/storeProfile")
+const DriverProfile = require("../../models/driver/driverProfile");
+const StoreProfile = require("../../models/store/storeProfile");
 const generateToken = require("../../utils/generateToken");
 const { ACCESS_COOKIE_OPTIONS, REFRESH_COOKIE_OPTIONS } = require("../../utils/cookieOptions");
 const {
@@ -11,8 +11,6 @@ const {
     sendAdminNewStoreApplicationEmail,
     sendAdminNewDriverApplicationEmail,
 } = require("../../services/mailService");
-
-
 
 const verifyOtpController = async (req, res) => {
     try {
@@ -49,8 +47,8 @@ const verifyOtpController = async (req, res) => {
             ownerName,
             address,
             pincode,
-            lat,   
-            lng,   
+            lat,
+            lng,
         } = JSON.parse(userData);
 
         const existingUser = await User.findOne({ email: lowerEmail });
@@ -65,7 +63,7 @@ const verifyOtpController = async (req, res) => {
             email: lowerEmail,
             password,
             role,
-            ...(["DRIVER", "STORE"].includes(role) && { status: "PENDING_APPROVAL" })
+            ...(["DRIVER", "STORE"].includes(role) && { status: "PENDING_APPROVAL" }),
         });
 
         // If driver, also create DriverProfile
@@ -82,15 +80,13 @@ const verifyOtpController = async (req, res) => {
         // If store, also create StoreProfile
         if (role === "STORE") {
             await StoreProfile.create({
-                userId:    newUser._id,
+                userId: newUser._id,
                 storeName,
                 ownerName,
                 address,
                 pincode,
                 documentUrls,
-                // ── Write coordinates to the model ─────────────────────────
-                // StoreProfile.coordinates = { lat, lng }
-                // The 2dsphere index on this field powers nearby-store queries.
+                // The 2dsphere index on coordinates powers nearby-store queries
                 coordinates: {
                     lat: lat ?? 0,
                     lng: lng ?? 0,
@@ -128,13 +124,13 @@ const verifyOtpController = async (req, res) => {
             .json({
                 message: "User registered successfully",
                 user: {
-                    id:     newUser._id,
-                    name:   newUser.name,
-                    phone:  newUser.phone,
-                    email:  newUser.email,
-                    role:   newUser.role,
+                    id: newUser._id,
+                    name: newUser.name,
+                    phone: newUser.phone,
+                    email: newUser.email,
+                    role: newUser.role,
                     status: newUser.status || "ACTIVE",
-                }
+                },
             });
 
     } catch (err) {
@@ -142,7 +138,6 @@ const verifyOtpController = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", Error: err.message });
     }
 };
-
 
 const resendOTPController = async (req, res) => {
     try {
@@ -171,4 +166,4 @@ const resendOTPController = async (req, res) => {
     }
 };
 
-module.exports = { verifyOtpController, resendOTPController }
+module.exports = { verifyOtpController, resendOTPController };

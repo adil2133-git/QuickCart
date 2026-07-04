@@ -68,7 +68,7 @@ function formatStoreApplication(user, profile, { includeNotes = false } = {}) {
         dateLabel: user.createdAt,
         submittedOn: user.createdAt,
         createdAt: user.createdAt,
-        // ── new ──────────────────────────────────────────────────────────
+        // Coordinates are only meaningful once the store has set a real location
         coordinates:
             profile.coordinates &&
             (profile.coordinates.lat !== 0 || profile.coordinates.lng !== 0)

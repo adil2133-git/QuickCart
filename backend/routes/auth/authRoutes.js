@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { uploadDriverDocs } = require("../../middleware/upload");
+const { uploadDriverDocs } = require("../../middleware/uploadDriverDocs");
 const { uploadStoreDocs } = require("../../middleware/uploadStore")
 
 const {
@@ -27,7 +27,7 @@ const { Login, logoutUser } = require("../../controllers/auth/loginController");
 const tokenRegenerate = require("../../services/tokenRegenerate")
 
 const { getMe } = require("../../controllers/auth/authMe");
-const protectRoutes = require("../../middleware/protectRoute");
+const protectRoutes = require("../../middleware/protectRoutes");
 
 router.get("/me", protectRoutes, getMe)
 

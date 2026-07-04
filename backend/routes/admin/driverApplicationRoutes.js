@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const protectRoute = require("../../middleware/protectRoute"); 
+const protectRoute = require("../../middleware/protectRoutes"); 
 const authorizeRoles = require("../../middleware/authorizeRoles"); 
 const {
     getDriverApplications,

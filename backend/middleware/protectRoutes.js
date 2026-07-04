@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/shared/user"); 
+const User = require("../models/shared/user");
 require("dotenv").config();
 
 const protectRoutes = async (req, res, next) => {
@@ -34,7 +34,7 @@ const protectRoutes = async (req, res, next) => {
         req.user = {
             email: decoded.email,
             userID: decoded.id,
-            role: decoded.role
+            role: decoded.role,
         };
 
         next();
