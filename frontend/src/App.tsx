@@ -46,6 +46,7 @@ import OrdersPage from './features/store/pages/ordersList'
 import OrderDetailPage from './features/store/pages/orderDetail'
 import PackingChecklistPage from './features/store/pages/packingCheckList'
 import PackingCompletePage from './features/store/pages/packingComplete'
+import CustomerShell from './features/customer/pages/customerShell'
 
 const ROLE_HOME: Record<UserRole, string> = {
   CUSTOMER: '/customer/home',
@@ -107,15 +108,27 @@ function App() {
         <Route path="/store/pending" element={<PendingApproval role="store" />} />
 
         {/* ── Customer routes ───────────────────────────────────────── */}
-        <Route path="/customer/home" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CustomerHome /></ProtectedRoute>} />
-        <Route path="/customer/stores" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><StoresPage /></ProtectedRoute>} />
-        <Route path="/customer/store/:storeId" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><FreshMartStorePage /></ProtectedRoute>} />
+        {/* ── Customer routes (most wrapped in CustomerShell) ──────── */}
+        <Route
+          path="/customer"
+          element={
+            <ProtectedRoute allowedRoles={['CUSTOMER']}>
+              <CustomerShell />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="home" element={<CustomerHome />} />
+          <Route path="stores" element={<StoresPage />} />
+          <Route path="store/:storeId" element={<FreshMartStorePage />} />
+          <Route path="store/:storeId/product/:productId" element={<ProductDetailPage />} />
+          <Route path="cart" element={<CartPage />} />
+          <Route path="orders" element={<MyOrdersPage />} />
+          <Route path="profile" element={<CustomerProfilePage />} />
+        </Route>
+
+        {/* These two stay outside the shell — they manage their own header */}
         <Route path="/customer/discovery" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><ProductDiscoveryPage /></ProtectedRoute>} />
-        <Route path="/customer/store/:storeId/product/:productId" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><ProductDetailPage /></ProtectedRoute>} />
-        <Route path="/customer/cart" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CartPage /></ProtectedRoute>} />
         <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute>} />
-        <Route path="/customer/orders" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><MyOrdersPage /></ProtectedRoute>} />
-        <Route path="/customer/profile" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CustomerProfilePage /></ProtectedRoute>} />
 
         {/* ── Driver routes (all wrapped in DriverShell) ────────────── */}
         <Route

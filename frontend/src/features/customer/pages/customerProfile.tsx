@@ -10,7 +10,7 @@ import {
   Star,
   Plus,
 } from "lucide-react";
-import NavBar from "../components/navbar";
+import { toast } from "sonner";
 import { useCustomerProfile } from "../hooks/useCustomerProfile";
 import type { AddAddressPayload } from "../types/customerProfile";
 import { useLogout } from "../../auth/hooks/useLogout";
@@ -56,8 +56,9 @@ const CustomerProfilePage = () => {
       setLng("");
       setLabel("Home");
       setShowAddForm(false);
+      toast.success("Address saved");
     } catch {
-      // form stays open on failure; could surface a toast here
+      toast.error("Failed to save address. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -65,7 +66,6 @@ const CustomerProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-[#FDF6EC] font-sans">
-      <NavBar />
 
       <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6">
         {/* ── Sidebar ─────────────────────────────────────────── */}
@@ -222,14 +222,28 @@ const CustomerProfilePage = () => {
                     <div className="flex items-center gap-3">
                       {profile.defaultAddress !== addr._id && (
                         <button
-                          onClick={() => setDefault(addr._id)}
+                          onClick={async () => {
+  try {
+    await setDefault(addr._id);
+    toast.success("Default address updated");
+  } catch {
+    toast.error("Failed to update default address.");
+  }
+}}
                           className="text-sm text-[#8B6B3D] hover:underline"
                         >
                           Set Default
                         </button>
                       )}
                       <button
-                        onClick={() => deleteAddress(addr._id)}
+                        onClick={async () => {
+  try {
+    await deleteAddress(addr._id);
+    toast("Address removed", { icon: "🗑️", duration: 3000 });
+  } catch {
+    toast.error("Failed to remove address.");
+  }
+}}
                         className="text-red-500 hover:text-red-600"
                         aria-label="Delete address"
                       >

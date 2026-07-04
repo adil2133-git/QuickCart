@@ -21,7 +21,7 @@ import {
   AlertCircle,
   PackageOpen,
 } from "lucide-react";
-import NavBar from "../components/navbar";
+import { toast } from "sonner";
 import { useSingleStoreStore, type Product, type OperatingHour, type RatingBar } from "../state/singleStoreState";
 import { useCartStore } from "../state/cartState";
 
@@ -59,6 +59,7 @@ function AddButton({ withLabel = false, onAdd, productId }: { withLabel?: boolea
     e.stopPropagation();
     if (productId) {
       await addToCart(productId, 1);
+      toast.success("Added to cart", { duration: 2000 });
     }
     onAdd?.();
     setAdded(true);
@@ -323,7 +324,6 @@ function StorePageContent({ storeId }: { storeId: string }) {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <NavBar cartCount={cartCount} />
       <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
         rel="stylesheet"

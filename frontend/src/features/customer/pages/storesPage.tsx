@@ -8,7 +8,6 @@ import {
     Check,
     AlertCircle,
 } from "lucide-react";
-import NavBar from "../components/navbar";
 import { useLocationStore } from "../state/locationState";
 import { useStoresListStore, type SortKey } from "../state/storesListState";
 import { useCartStore } from "../state/cartState";
@@ -331,7 +330,6 @@ export default function StoresPage() {
     // ─────────────────────────────────────────────────────────────────────────
     return (
         <>
-            <NavBar cartCount={cartCount} />
             <link
                 href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
                 rel="stylesheet"

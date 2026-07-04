@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "../../../api/axios";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -123,13 +124,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
         return;
       }
       if (err.response?.status !== 401) {
-        set({
-          error: err.response?.data?.message ?? "Failed to add item.",
-          isUpdating: null,
-        });
-      } else {
-        set({ isUpdating: null });
+        toast.error(err.response?.data?.message ?? "Failed to add item.");
       }
+      set({ isUpdating: null });
     }
   },
 
@@ -142,13 +139,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isUpdating: null });
     } catch (err: any) {
       if (err.response?.status !== 401) {
-        set({
-          error: err.response?.data?.message ?? "Failed to update quantity.",
-          isUpdating: null,
-        });
-      } else {
-        set({ isUpdating: null });
+        toast.error(err.response?.data?.message ?? "Failed to update quantity.");
       }
+      set({ isUpdating: null });
     }
   },
 
@@ -161,13 +154,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isUpdating: null });
     } catch (err: any) {
       if (err.response?.status !== 401) {
-        set({
-          error: err.response?.data?.message ?? "Failed to remove item.",
-          isUpdating: null,
-        });
-      } else {
-        set({ isUpdating: null });
+        toast.error(err.response?.data?.message ?? "Failed to remove item.");
       }
+      set({ isUpdating: null });
     }
   },
 
@@ -180,13 +169,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isLoading: false });
     } catch (err: any) {
       if (err.response?.status !== 401) {
-        set({
-          error: err.response?.data?.message ?? "Failed to clear cart.",
-          isLoading: false,
-        });
-      } else {
-        set({ isLoading: false });
+        toast.error(err.response?.data?.message ?? "Failed to clear cart.");
       }
+      set({ isLoading: false });
     }
   },
 

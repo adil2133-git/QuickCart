@@ -7,7 +7,6 @@ import {
     MapPin, ShoppingCart, Star, ChevronLeft, ChevronRight,
     Plus, Check, ArrowRight, Clock, Leaf,
 } from "lucide-react";
-import NavBar from "../components/navbar";
 import LocationPickerModal from "../components/locationPickerModal";
 import api from "../../../api/axios";
 import { useLocationStore } from "../state/locationState";
@@ -350,8 +349,6 @@ export default function CustomerHome() {
                     <LocationPickerModal onSaved={onLocationSaved} />
                 )}
             </AnimatePresence>
-
-            <NavBar />
 
             <main className="mx-auto px-10 py-12 flex flex-col gap-14" style={{ maxWidth: 1200 }}>
 

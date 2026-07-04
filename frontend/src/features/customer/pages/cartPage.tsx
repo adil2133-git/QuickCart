@@ -15,6 +15,7 @@ import {
   X,
   RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useCartStore } from "../state/cartState";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -165,6 +166,10 @@ const CartItemRow: React.FC<{
   const handleDecrement = () => {
     if (item.quantity <= 1) {
       removeItem(product._id);
+      toast(`${product.productName} removed from cart`, {
+        icon: "🗑️",
+        duration: 3000,
+      });
     } else {
       updateQuantity(product._id, item.quantity - 1);
     }
@@ -177,9 +182,8 @@ const CartItemRow: React.FC<{
 
   return (
     <div
-      className={`bg-white rounded-2xl p-4 sm:p-5 border border-[#EDE6DA] flex gap-4 transition-opacity ${
-        isThisUpdating ? "opacity-60 pointer-events-none" : ""
-      }`}
+      className={`bg-white rounded-2xl p-4 sm:p-5 border border-[#EDE6DA] flex gap-4 transition-opacity ${isThisUpdating ? "opacity-60 pointer-events-none" : ""
+        }`}
     >
       {/* Product image */}
       <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5EDE3]">
@@ -351,12 +355,6 @@ const CartPage: React.FC = () => {
     fetchCart();
   }, [fetchCart]);
 
-  // Dismiss errors after 4 s
-  useEffect(() => {
-    if (!error) return;
-    const t = setTimeout(clearError, 4000);
-    return () => clearTimeout(t);
-  }, [error, clearError]);
 
   const products = cart?.products ?? [];
   const hasItems = products.length > 0;
@@ -370,23 +368,10 @@ const CartPage: React.FC = () => {
   );
 
   return (
-    <div
-      className="min-h-screen bg-[#F7F3ED]"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
+    <>
       {/* Conflict modal */}
       <ConflictModal />
 
-      {/* Error toast */}
-      {error && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FEE8E8] border border-[#FDB8B8] shadow-lg text-sm font-medium text-[#991B1B] max-w-sm w-full mx-4">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-          {error}
-          <button onClick={clearError} className="ml-auto">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
@@ -474,7 +459,7 @@ const CartPage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

@@ -27,7 +27,6 @@ import {
 } from "../state/productState";
 import { useCartStore } from "../state/cartState";
 import { useProductDetail } from "../hooks/useProductDetail";
-import NavBar from "../components/navbar";
 import type { Product, Review, StoreInfo } from "../types/product";
 
 // ─── Mock reviews ─────────────────────────────────────────────────────────────
@@ -475,8 +474,6 @@ const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F3ED]" style={{ fontFamily: "'Inter', sans-serif" }}>
-
-      <NavBar cartCount={cartCount} />
 
       {/* ── Breadcrumb ── */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">

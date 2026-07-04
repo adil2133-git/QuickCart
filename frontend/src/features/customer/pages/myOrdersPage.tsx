@@ -1,5 +1,4 @@
 import { Phone } from "lucide-react";
-import NavBar from "../components/navbar";
 import { useOrdersList, useOrdersTab } from "../hooks/useMyOrders";
 import type { CustomerOrder, OrderStatus } from "../types/myOrders";
 import { stageIndexForStatus } from "../types/myOrders";
@@ -162,7 +161,6 @@ export default function MyOrdersPage() {
 
   return (
     <div className="min-h-screen bg-[#FBF3E8]" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <NavBar />
 
       <main className="max-w-6xl mx-auto px-6 py-10">
         <h1
