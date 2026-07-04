@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>()(
               // Step 2: if access token expired (401), try silent refresh then retry
               if (status === 401) {
                 try {
-                  await api.post("/auth/refresh");
+                  await api.post("/auth/refresh", {}, { _skipAuthRedirect: true } as never);
                   const { data } = await api.get<{ user: AuthUser }>("/auth/me", {
                     _skipRefresh: true,
                   } as never);

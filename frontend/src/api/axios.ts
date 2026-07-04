@@ -45,11 +45,16 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
 
-    // The refresh call itself failed — refresh token is expired/invalid
+    // The refresh call itself failed — refresh token is expired/invalid.
+    // If this refresh came from hydrate()'s initial "do I have a session?"
+    // check, don't force-redirect — having no session on first load is
+    // normal, not an expired one, and hydrate() already handles it quietly.
     if (status === 401 && isRefreshCall) {
       isRefreshing = false;
       processQueue(error);
-      logoutUser();
+      if (!originalRequest?._skipAuthRedirect) {
+        logoutUser();
+      }
       return Promise.reject(error);
     }
 
