@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const User = require("../../models/shared/user");
 const DriverProfile = require("../../models/driver/driverProfile");
+const { sendDriverApprovedEmail, sendDriverRejectedEmail } = require("../../services/mailService");
 
 // ---------- helpers ----------
 
@@ -299,6 +300,13 @@ const submitDriverDecision = async (req, res) => {
 
         await user.save();
         await profile.save();
+
+        // Fire-and-forget — don't hold up the admin's response on email delivery.
+        if (decision === "approve") {
+            sendDriverApprovedEmail(user).catch(() => {});
+        } else if (decision === "reject") {
+            sendDriverRejectedEmail(user, reason.trim()).catch(() => {});
+        }
 
         return res.status(200).json({
             success: true,
