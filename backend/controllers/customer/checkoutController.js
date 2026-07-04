@@ -4,7 +4,9 @@ const Product = require("../../models/store/product");
 const { resolveCustomerProfile } = require("../../services/customerProfileService");
 const Order = require("../../models/shared/order");
 const User = require("../../models/shared/user");
-const CustomerProfile = require("../../models/customer/customerProfile"); 
+const CustomerProfile = require("../../models/customer/customerProfile");
+const StoreProfile = require("../../models/store/storeProfile");
+const { sendOrderPlacedEmail, sendNewOrderStoreEmail } = require("../../services/mailService"); 
 
 const DELIVERY_CHARGE = 30;
 const PACKAGING_FEE = 15;
@@ -111,7 +113,7 @@ const placeOrder = async (req, res) => {
             return res.status(404).json({ success: false, message: "Address not found." });
         }
 
-        const user = await User.findById(req.user.userID).select("name phone").lean();
+        const user = await User.findById(req.user.userID).select("name phone email").lean();
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found." });
         }
@@ -239,6 +241,28 @@ const placeOrder = async (req, res) => {
             orderStatus: order.orderStatus,
             placedAt: order.createdAt,
         });
+
+        // Fire-and-forget order emails — don't hold up the customer's response.
+        StoreProfile.findById(storeId)
+            .populate("userId", "name email")
+            .lean()
+            .then((storeProfile) => {
+                sendOrderPlacedEmail({
+                    toEmail: user.email,
+                    customerName: user.name,
+                    order,
+                    storeName: storeProfile?.storeName || "the store",
+                }).catch(() => {});
+
+                if (storeProfile?.userId?.email) {
+                    sendNewOrderStoreEmail({
+                        toEmail: storeProfile.userId.email,
+                        storeName: storeProfile.storeName,
+                        order,
+                    }).catch(() => {});
+                }
+            })
+            .catch((err) => console.error("[order emails] Failed to resolve store:", err));
 
         return res.status(201).json({
             success: true,
