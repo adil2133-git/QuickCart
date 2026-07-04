@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const User = require("../../models/shared/user");
 const StoreProfile = require("../../models/store/storeProfile");
+const { sendStoreApprovedEmail, sendStoreRejectedEmail } = require("../../services/mailService");
 
 // ---------- helpers ----------
 
@@ -318,6 +319,13 @@ const submitStoreDecision = async (req, res) => {
 
         await user.save();
         await profile.save();
+
+        // Fire-and-forget — don't hold up the admin's response on email delivery.
+        if (decision === "approve") {
+            sendStoreApprovedEmail(user).catch(() => {});
+        } else if (decision === "reject") {
+            sendStoreRejectedEmail(user, reason.trim()).catch(() => {});
+        }
 
         return res.status(200).json({
             success: true,
