@@ -1,6 +1,8 @@
 const Order = require("../../models/shared/order");
 const DriverProfile = require("../../models/driver/driverProfile");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
+const CustomerProfile = require("../../models/customer/customerProfile");
+const { sendOrderDeliveredEmail } = require("../../services/mailService");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -304,6 +306,23 @@ const advanceDeliveryStage = async (req, res) => {
         }
 
         await order.save();
+
+        // ── Send delivered/thank-you email to the customer ─────────────────────
+        if (stage === "DELIVERED") {
+            CustomerProfile.findById(order.customerId)
+                .populate("userId", "name email")
+                .lean()
+                .then((customerProfile) => {
+                    if (customerProfile?.userId?.email) {
+                        sendOrderDeliveredEmail({
+                            toEmail: customerProfile.userId.email,
+                            customerName: customerProfile.userId.name,
+                            order,
+                        }).catch(() => {});
+                    }
+                })
+                .catch((err) => console.error("[order delivered email] Failed:", err));
+        }
 
         return res.status(200).json({
             success: true,
