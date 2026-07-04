@@ -17,9 +17,8 @@ const driverDeliveryRequestSchema = new mongoose.Schema(
             enum: ["PENDING", "ACCEPTED", "EXPIRED", "REJECTED"],
             default: "PENDING",
         },
-        // Snapshot at broadcast time so the REST fetch (page refresh) and the
-        // socket push always agree, and so a driver who moves after the
-        // request was sent doesn't see their distance silently change.
+        // Snapshot at broadcast time so a page refresh and the socket push
+        // always agree on the numbers, even if the driver has since moved.
         pickupDistanceKm: { type: Number, default: 0 },
         deliveryDistanceKm: { type: Number, default: 0 },
         estimatedEarnings: { type: Number, default: 0 },
@@ -28,7 +27,4 @@ const driverDeliveryRequestSchema = new mongoose.Schema(
     { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );
 
-module.exports = mongoose.model(
-    "DriverDeliveryRequest",
-    driverDeliveryRequestSchema
-);
+module.exports = mongoose.model("DriverDeliveryRequest", driverDeliveryRequestSchema);
