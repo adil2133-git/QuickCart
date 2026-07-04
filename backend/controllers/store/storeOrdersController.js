@@ -1,8 +1,11 @@
 const Order = require("../../models/shared/order");
 const DriverProfile = require("../../models/driver/driverProfile");
+const CustomerProfile = require("../../models/customer/customerProfile");
+const StoreProfile = require("../../models/store/storeProfile");
 const { haversineKm } = require("../../utils/distance");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const { resolveStoreProfile } = require("../../services/storeProfileService");
+const { sendOrderCancelledEmail } = require("../../services/mailService");
 
 const resolveStoreId = async (req) => {
     const store = await resolveStoreProfile(req.user.userID);
@@ -269,6 +272,41 @@ const updateOrderStatus = async (req, res) => {
             broadcastDeliveryRequestToDrivers(order._id).catch((err) =>
                 console.error("[broadcastDelivery] Failed:", err)
             );
+        }
+
+        // ── When cancelled, notify customer, store, and driver (if assigned) ────
+        if (status === "CANCELLED") {
+            Promise.all([
+                CustomerProfile.findById(order.customerId).populate("userId", "name email").lean(),
+                StoreProfile.findById(order.storeId).populate("userId", "name email").lean(),
+                order.driverId
+                    ? DriverProfile.findById(order.driverId).populate("userId", "name email").lean()
+                    : null,
+            ])
+                .then(([customerProfile, storeProfile, driverProfile]) => {
+                    if (customerProfile?.userId?.email) {
+                        sendOrderCancelledEmail({
+                            toEmail: customerProfile.userId.email,
+                            name: customerProfile.userId.name,
+                            order,
+                        }).catch(() => {});
+                    }
+                    if (storeProfile?.userId?.email) {
+                        sendOrderCancelledEmail({
+                            toEmail: storeProfile.userId.email,
+                            name: storeProfile.storeName,
+                            order,
+                        }).catch(() => {});
+                    }
+                    if (driverProfile?.userId?.email) {
+                        sendOrderCancelledEmail({
+                            toEmail: driverProfile.userId.email,
+                            name: driverProfile.userId.name,
+                            order,
+                        }).catch(() => {});
+                    }
+                })
+                .catch((err) => console.error("[order cancelled emails] Failed:", err));
         }
 
         setNoCacheHeaders(res);
