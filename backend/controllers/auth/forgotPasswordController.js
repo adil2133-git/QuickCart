@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const { client } = require("../../config/redis");
 const { sendOtp, verifyOtp } = require("../../services/otpService");
 const User = require("../../models/shared/user");
+const { sendPasswordChangedEmail } = require("../../services/mailService");
 
 const FP_SESSION_EXPIRY = 600; // 10 minutes — window after OTP verify to reset
 
@@ -122,6 +123,8 @@ const resetPassword = async (req, res) => {
         await user.save();
 
         await client.del(`fp:reset:${lowerEmail}`);
+
+        sendPasswordChangedEmail(user).catch(() => {});
 
         return res.status(200).json({ message: "Password reset successfully" });
 
