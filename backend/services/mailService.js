@@ -1,16 +1,35 @@
 const transporter = require("../config/mail");
 const { buildEmailHTML } = require("../utils/emailTemplate");
+const User = require("../models/shared/user");
 require("dotenv").config();
 
 const FROM = process.env.EMAIL_USER;
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+
+// Pulls every admin's email fresh from the DB — so adding/removing admins
+// just works, no env var to keep in sync.
+const getAdminEmails = async () => {
+    try {
+        const admins = await User.find({ role: "ADMIN" }).select("email").lean();
+        const emails = admins.map((a) => a.email).filter(Boolean);
+        if (!emails.length) {
+            console.log("[mailService] No admin users found — admin email skipped.");
+        }
+        return emails;
+    } catch (err) {
+        console.log("[mailService] Failed to fetch admin emails:", err.message);
+        return [];
+    }
+};
 
 // ─── generic sender ────────────────────────────────────────────────────────
 // Every specific email below calls this. It never throws — email delivery
 // should never break the actual business flow (registration, order placement,
 // etc). Failures are logged so they show up in server logs / can be alerted on.
+// `to` can be a single address or an array (e.g. multiple admins) — nodemailer
+// accepts both a string and an array for its `to` field.
 const sendMail = async ({ to, subject, html }) => {
-    if (!to) {
+    const hasRecipient = Array.isArray(to) ? to.length > 0 : Boolean(to);
+    if (!hasRecipient) {
         console.log("[mailService] Skipped send — no recipient email for:", subject);
         return { success: false, message: "No recipient" };
     }
@@ -108,9 +127,10 @@ const sendDriverRejectedEmail = (user, reason) =>
 
 // ── Admin notifications ─────────────────────────────────────────────────────
 
-const sendAdminNewStoreApplicationEmail = ({ storeName, ownerName, email }) =>
-    sendMail({
-        to: ADMIN_EMAIL,
+const sendAdminNewStoreApplicationEmail = async ({ storeName, ownerName, email }) => {
+    const adminEmails = await getAdminEmails();
+    return sendMail({
+        to: adminEmails,
         subject: `New store application: ${storeName}`,
         html: buildEmailHTML({
             heading: "New Store Application",
@@ -122,10 +142,12 @@ const sendAdminNewStoreApplicationEmail = ({ storeName, ownerName, email }) =>
             ],
         }),
     });
+};
 
-const sendAdminNewDriverApplicationEmail = ({ name, email, vehicleType }) =>
-    sendMail({
-        to: ADMIN_EMAIL,
+const sendAdminNewDriverApplicationEmail = async ({ name, email, vehicleType }) => {
+    const adminEmails = await getAdminEmails();
+    return sendMail({
+        to: adminEmails,
         subject: `New driver application: ${name}`,
         html: buildEmailHTML({
             heading: "New Driver Application",
@@ -137,6 +159,7 @@ const sendAdminNewDriverApplicationEmail = ({ name, email, vehicleType }) =>
             ],
         }),
     });
+};
 
 // ── Customer orders ─────────────────────────────────────────────────────────
 
