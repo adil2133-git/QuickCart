@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { uploadDriverDocs } = require("../../middleware/uploadDriverDocs");
-const { uploadStoreDocs } = require("../../middleware/uploadStore")
+const { uploadStoreDocs } = require("../../middleware/uploadStoreDocs")
 
 const {
   CustomerRegister,

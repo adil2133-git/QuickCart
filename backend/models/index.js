@@ -15,7 +15,6 @@ const DriverReview = require("./driver/driverReview");
 const StoreReview = require("./store/storeReview");
 const StoreTransaction = require("./store/storeTransaction");
 const SettlementRecord = require("./admin/settlementRecord");
-const Notification = require("./shared/notification");
 const Complaint = require("./admin/complaint");
 const PlatformRevenue = require("./admin/platformRevenue");
 

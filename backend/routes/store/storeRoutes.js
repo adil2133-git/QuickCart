@@ -5,7 +5,7 @@ const protectRoutes = require("../../middleware/protectRoutes");
 const authorizeRoles = require("../../middleware/authorizeRoles");
 
 const { uploadProductImages } = require("../../middleware/uploadProductImages");
-const { uploadCategoryImage } = require("../../middleware/uploadCategoryImages");
+const { uploadCategoryImage } = require("../../middleware/uploadCategoryImage");
 
 const {
     getMyStoreProfile,
