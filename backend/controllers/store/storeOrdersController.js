@@ -7,11 +7,13 @@ const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest
 const { resolveStoreProfile } = require("../../services/storeProfileService");
 const { sendOrderCancelledEmail } = require("../../services/mailService");
 
+// Resolves the logged-in store user to their StoreProfile ID.
 const resolveStoreId = async (req) => {
     const store = await resolveStoreProfile(req.user.userID);
     return store._id;
 };
 
+// Valid order status transitions a store can trigger.
 const ALLOWED_TRANSITIONS = {
     PENDING: ["ACCEPTED", "CANCELLED"],
     ACCEPTED: ["PACKING"],
@@ -19,6 +21,7 @@ const ALLOWED_TRANSITIONS = {
     READY_FOR_PICKUP: [],
 };
 
+// Maps UI tab names to the order statuses they should display.
 const TAB_STATUS_MAP = {
     PENDING: ["PENDING"],
     ACCEPTED: ["ACCEPTED"],
@@ -30,6 +33,7 @@ const TAB_STATUS_MAP = {
     ],
 };
 
+// Shapes an Order document into the response format used by list/detail endpoints.
 const toListShape = (order) => ({
     id: order._id.toString(),
     orderNumber: order.orderNumber,
@@ -47,6 +51,7 @@ const toListShape = (order) => ({
     products: order.products || [],
 });
 
+// Prevents browsers/proxies from caching order data responses.
 const setNoCacheHeaders = (res) => {
     res.set({
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -57,24 +62,25 @@ const setNoCacheHeaders = (res) => {
 };
 
 const DELIVERY_RADIUS_KM = 5;
-// Drivers whose lastLocationUpdate is older than this are treated as offline —
-// they lost connection without going offline properly.
-const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes — accounts for backgrounded tabs
 
-// How long a driver has to Accept/Decline before the request auto-expires.
-// Mirrors the countdown ring shown on the frontend's request card.
+// Drivers whose location hasn't updated within this window are treated as offline.
+const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+
+// Time a driver has to Accept/Decline before a delivery request auto-expires.
 const REQUEST_EXPIRY_SECONDS = 45;
 
-// Flat base fare plus a per-km rate covering both legs (driver→store, store→customer)
+// Flat base fare plus a per-km rate covering both legs (driver→store, store→customer).
 const BASE_FARE = 15;
 const RATE_PER_KM = 6;
+
 const estimateEarnings = (pickupKm, deliveryKm) =>
     Math.round((BASE_FARE + RATE_PER_KM * (pickupKm + deliveryKm)) * 100) / 100;
 
+// Notifies all eligible nearby online drivers that an order is ready for pickup.
 const broadcastDeliveryRequestToDrivers = async (orderId) => {
     const { emitToDriver } = require("../../socket");
 
-    // Fetch the order + its store's coordinates so we can filter by distance
+    // Fetch the order with its store's coordinates so we can filter by distance.
     const order = await Order.findById(orderId)
         .populate({ path: "storeId", select: "storeName address coordinates" })
         .select(
@@ -92,13 +98,13 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
     const deliveryCoords = order.deliveryCoordinates;
     const hasDeliveryLocation = deliveryCoords?.lat && deliveryCoords?.lng;
 
-    // Store → customer leg is the same for every driver, so compute it once.
+    // Store → customer distance is the same for every driver, so compute it once.
     const deliveryDistanceKm =
         hasStoreLocation && hasDeliveryLocation
             ? Math.round(haversineKm(storeCoords, deliveryCoords) * 10) / 10
             : 0;
 
-    // Find all ONLINE drivers with a fresh location update
+    // Find all online drivers with a recent location update.
     const cutoff = new Date(Date.now() - STALE_LOCATION_THRESHOLD_MS);
     const onlineDrivers = await DriverProfile.find({
         availabilityStatus: "ONLINE",
@@ -109,8 +115,7 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
         }),
     }).select("_id currentLocation");
 
-    // Filter by radius if the store has coordinates, keeping each driver's
-    // pickup-leg distance so we don't have to recompute it later.
+    // Keep only drivers within radius, caching each one's pickup-leg distance.
     const nearbyDrivers = hasStoreLocation
         ? onlineDrivers
               .map((d) => {
@@ -120,7 +125,7 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
                   return pickupDistanceKm <= DELIVERY_RADIUS_KM ? { driver: d, pickupDistanceKm } : null;
               })
               .filter(Boolean)
-        : onlineDrivers.map((d) => ({ driver: d, pickupDistanceKm: 0 })); // fallback: no store location yet
+        : onlineDrivers.map((d) => ({ driver: d, pickupDistanceKm: 0 })); // fallback: store has no coordinates yet
 
     if (!nearbyDrivers.length) {
         console.warn(`[broadcastDelivery] No nearby online drivers for order ${orderId}`);
@@ -129,8 +134,7 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
 
     const expiresAt = new Date(Date.now() + REQUEST_EXPIRY_SECONDS * 1000);
 
-    // Create one DriverDeliveryRequest per nearby driver, snapshotting the
-    // distances/earnings/expiry so they stay consistent on refresh later.
+    // Create one delivery request per nearby driver, snapshotting distance/earnings/expiry.
     const requests = await DriverDeliveryRequest.insertMany(
         nearbyDrivers.map(({ driver, pickupDistanceKm }) => ({
             orderId,
@@ -144,7 +148,7 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
         { ordered: false }
     );
 
-    // Map driverId → request doc so each driver gets their own requestId + numbers
+    // Map driverId → request doc so each driver gets their own requestId and numbers.
     const driverToRequest = {};
     requests.forEach((r) => {
         driverToRequest[r.driverId.toString()] = r;
@@ -179,7 +183,7 @@ const broadcastDeliveryRequestToDrivers = async (orderId) => {
     console.log(`[broadcastDelivery] Sent to ${nearbyDrivers.length} nearby driver(s) for order ${orderId}`);
 };
 
-// ─── GET /api/store/orders ────────────────────────────────────────────────────
+// ─── GET /api/store/orders ──────────────────────────────────────────────────
 const getStoreOrders = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -193,6 +197,7 @@ const getStoreOrders = async (req, res) => {
         const statusList = TAB_STATUS_MAP[tab] ?? TAB_STATUS_MAP.ALL;
         const filter = { storeId, orderStatus: { $in: statusList } };
 
+        // Match search term against order number, recipient name, or phone.
         if (search.trim()) {
             filter.$or = [
                 { orderNumber: { $regex: search.trim(), $options: "i" } },
@@ -219,7 +224,7 @@ const getStoreOrders = async (req, res) => {
     }
 };
 
-// ─── GET /api/store/orders/:id ────────────────────────────────────────────────
+// ─── GET /api/store/orders/:id ──────────────────────────────────────────────
 const getStoreOrderDetail = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -238,7 +243,7 @@ const getStoreOrderDetail = async (req, res) => {
     }
 };
 
-// ─── PATCH /api/store/orders/:id/status ──────────────────────────────────────
+// ─── PATCH /api/store/orders/:id/status ─────────────────────────────────────
 const updateOrderStatus = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -265,14 +270,14 @@ const updateOrderStatus = async (req, res) => {
         order.orderStatus = status;
         await order.save();
 
-        // When ready for pickup, broadcast to all online drivers (fire-and-forget)
+        // Notify nearby drivers once the order is ready for pickup.
         if (status === "READY_FOR_PICKUP") {
             broadcastDeliveryRequestToDrivers(order._id).catch((err) =>
                 console.error("[broadcastDelivery] Failed:", err)
             );
         }
 
-        // When cancelled, notify customer, store, and driver (if assigned)
+        // Email the customer, store, and driver (if assigned) about the cancellation.
         if (status === "CANCELLED") {
             Promise.all([
                 CustomerProfile.findById(order.customerId).populate("userId", "name email").lean(),

@@ -4,17 +4,17 @@ const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest
 const CustomerProfile = require("../../models/customer/customerProfile");
 const { sendOrderDeliveredEmail } = require("../../services/mailService");
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Resolves the logged-in driver user to their DriverProfile.
 const resolveDriverProfile = async (req) => {
     const profile = await DriverProfile.findOne({ userId: req.user.userID });
     if (!profile) throw new Error("Driver profile not found");
     return profile;
 };
 
-// Shape an order + request into the DeliveryRequest card the frontend renders.
-// Distances/earnings are snapshotted on the request at broadcast time so a page
-// refresh shows the same numbers; expiresInSeconds is recomputed from expiresAt.
+// Shapes an order + request into the DeliveryRequest card the frontend renders.
+// Distances/earnings are snapshotted on the request, expiresInSeconds is recomputed live.
 const toRequestShape = (order, request) => ({
     requestId: request._id.toString(),
     orderId: order._id.toString(),
@@ -38,7 +38,7 @@ const toRequestShape = (order, request) => ({
         : 0,
 });
 
-// Shape an order into the ActiveDelivery the frontend tracks
+// Shapes an order into the ActiveDelivery object the frontend tracks.
 const toActiveShape = (order, currentStage) => ({
     orderId: order._id.toString(),
     orderNumber: order.orderNumber,
@@ -70,7 +70,7 @@ const toActiveShape = (order, currentStage) => ({
     cashCollected: false,
 });
 
-// Mirror the frontend's orderStatusToStage mapping
+// Mirrors the frontend's orderStatusToStage mapping.
 const orderStatusToStage = (status) => {
     switch (status) {
         case "DRIVER_ASSIGNED": return "NAVIGATE_TO_STORE";
@@ -81,7 +81,7 @@ const orderStatusToStage = (status) => {
     }
 };
 
-// Map driver stage → order status (only for stages that change order status)
+// Maps a driver stage to an order status, for stages that should change it.
 const stageToOrderStatus = (stage) => {
     switch (stage) {
         case "PICKED_UP": return "PICKED_UP";
@@ -91,7 +91,7 @@ const stageToOrderStatus = (stage) => {
     }
 };
 
-// ─── GET /api/driver/deliveries/requests ─────────────────────────────────────
+// ─── GET /api/driver/deliveries/requests ────────────────────────────────────
 // Returns all PENDING delivery requests for this driver that haven't expired.
 const getDeliveryRequests = async (req, res) => {
     try {
@@ -130,12 +130,13 @@ const getDeliveryRequests = async (req, res) => {
     }
 };
 
+// ─── POST /api/driver/deliveries/requests/:requestId/accept ─────────────────
 const acceptDeliveryRequest = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
         const { requestId } = req.params;
 
-        // Verify this request belongs to this driver and is still pending
+        // Verify this request belongs to this driver and is still pending.
         const request = await DriverDeliveryRequest.findOne({
             _id: requestId,
             driverId: driver._id,
@@ -167,7 +168,7 @@ const acceptDeliveryRequest = async (req, res) => {
         ).populate({ path: "storeId", select: "storeName address" });
 
         if (!order) {
-            // Another driver won the race — expire this driver's request
+            // Another driver won the race — expire this driver's request.
             await DriverDeliveryRequest.findByIdAndUpdate(requestId, { status: "EXPIRED" });
             return res.status(409).json({
                 success: false,
@@ -175,10 +176,10 @@ const acceptDeliveryRequest = async (req, res) => {
             });
         }
 
-        // Mark this driver's request as ACCEPTED
+        // Mark this driver's request as ACCEPTED.
         await DriverDeliveryRequest.findByIdAndUpdate(requestId, { status: "ACCEPTED" });
 
-        // Expire all other drivers' pending requests for this order
+        // Expire all other drivers' pending requests for this order.
         const otherRequests = await DriverDeliveryRequest.find({
             orderId: order._id,
             _id: { $ne: requestId },
@@ -191,7 +192,7 @@ const acceptDeliveryRequest = async (req, res) => {
                 { status: "EXPIRED" }
             );
 
-            // Tell other drivers their request is gone — card disappears instantly
+            // Tell other drivers their request is gone so the card disappears instantly.
             const { emitToDriver } = require("../../socket");
             otherRequests.forEach((r) => {
                 emitToDriver(r.driverId, "delivery:request:taken", {
@@ -202,11 +203,11 @@ const acceptDeliveryRequest = async (req, res) => {
             });
         }
 
-        // Mark driver as BUSY
+        // Mark driver as BUSY.
         driver.availabilityStatus = "BUSY";
         await driver.save();
 
-        // Notify the store
+        // Notify the store.
         const { emitToStore } = require("../../socket");
         emitToStore(order.storeId._id ?? order.storeId, "order:statusChanged", {
             orderId: order._id.toString(),
@@ -223,7 +224,7 @@ const acceptDeliveryRequest = async (req, res) => {
     }
 };
 
-// ─── POST /api/driver/deliveries/requests/:requestId/decline ─────────────────
+// ─── POST /api/driver/deliveries/requests/:requestId/decline ────────────────
 const declineDeliveryRequest = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
@@ -245,7 +246,7 @@ const declineDeliveryRequest = async (req, res) => {
     }
 };
 
-// ─── GET /api/driver/deliveries/active ───────────────────────────────────────
+// ─── GET /api/driver/deliveries/active ──────────────────────────────────────
 const getActiveDelivery = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
@@ -267,7 +268,7 @@ const getActiveDelivery = async (req, res) => {
     }
 };
 
-// ─── PATCH /api/driver/deliveries/:orderId/stage ──────────────────────────────
+// ─── PATCH /api/driver/deliveries/:orderId/stage ────────────────────────────
 // Driver advances through: NAVIGATE_TO_STORE → REACHED_STORE → PICKED_UP
 //                          → NAVIGATE_TO_CUSTOMER → REACHED_CUSTOMER → DELIVERED
 const advanceDeliveryStage = async (req, res) => {
@@ -285,7 +286,7 @@ const advanceDeliveryStage = async (req, res) => {
             return res.status(404).json({ success: false, message: "Order not found." });
         }
 
-        // Map the new driver stage to an order status (if applicable)
+        // Map the new driver stage to an order status, if applicable.
         const newOrderStatus = stageToOrderStatus(stage);
         if (newOrderStatus) {
             order.orderStatus = newOrderStatus;
@@ -301,7 +302,7 @@ const advanceDeliveryStage = async (req, res) => {
 
         await order.save();
 
-        // Send delivered/thank-you email to the customer
+        // Send a delivered/thank-you email to the customer.
         if (stage === "DELIVERED") {
             CustomerProfile.findById(order.customerId)
                 .populate("userId", "name email")
@@ -329,7 +330,7 @@ const advanceDeliveryStage = async (req, res) => {
     }
 };
 
-// ─── POST /api/driver/deliveries/:orderId/cash-collected ──────────────────────
+// ─── POST /api/driver/deliveries/:orderId/cash-collected ───────────────────
 const confirmCashCollected = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
@@ -344,12 +345,12 @@ const confirmCashCollected = async (req, res) => {
             return res.status(400).json({ success: false, message: "Order is not a COD order." });
         }
 
-        // Track cash on the driver's profile for settlement later
+        // Track cash on the driver's profile for settlement later.
         driver.cashCollected += order.totalAmount;
         driver.cashPendingSettlement += order.totalAmount;
         await driver.save();
 
-        // Mark payment as paid
+        // Mark payment as paid.
         order.paymentStatus = "PAID";
         await order.save();
 
@@ -360,7 +361,7 @@ const confirmCashCollected = async (req, res) => {
     }
 };
 
-// ─── GET /api/driver/deliveries/completed ────────────────────────────────────
+// ─── GET /api/driver/deliveries/completed ───────────────────────────────────
 const getCompletedDeliveries = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
@@ -405,7 +406,7 @@ const getCompletedDeliveries = async (req, res) => {
     }
 };
 
-// ─── GET /api/driver/deliveries/stats/today ───────────────────────────────────
+// ─── GET /api/driver/deliveries/stats/today ─────────────────────────────────
 const getTodayStats = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
@@ -413,7 +414,7 @@ const getTodayStats = async (req, res) => {
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
 
-        // Yesterday for earnings comparison
+        // Yesterday's window, used for the earnings comparison.
         const startOfYesterday = new Date(startOfDay);
         startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
@@ -437,7 +438,7 @@ const getTodayStats = async (req, res) => {
             ? Math.round(((todayEarnings - yesterdayEarnings) / yesterdayEarnings) * 100)
             : 0;
 
-        // Daily target — hardcode or pull from config
+        // Daily target and bonus — hardcoded for now, move to config later.
         const dailyTarget = 15;
         const targetBonus = 200;
 
@@ -462,7 +463,7 @@ const getTodayStats = async (req, res) => {
     }
 };
 
-// ─── PATCH /api/driver/availability ──────────────────────────────────────────
+// ─── PATCH /api/driver/availability ─────────────────────────────────────────
 const updateAvailability = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
@@ -472,7 +473,7 @@ const updateAvailability = async (req, res) => {
             return res.status(400).json({ success: false, message: "status must be ONLINE or OFFLINE." });
         }
 
-        // Don't let the driver go offline mid-delivery
+        // Don't let the driver go offline mid-delivery.
         if (status === "OFFLINE" && driver.availabilityStatus === "BUSY") {
             return res.status(409).json({
                 success: false,
