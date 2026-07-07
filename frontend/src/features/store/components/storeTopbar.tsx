@@ -1,5 +1,8 @@
-import { useLocation } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
+import { useNotificationStore } from "../../shared/state/notificationState";
+import { useNotifications } from "../../shared/hooks/useNotifications";
 
 // Derives a human-readable title from the current path so every page
 // gets the right heading without each page having to pass it manually.
@@ -18,32 +21,131 @@ function titleFromPath(pathname: string): string {
   return "Store Panel";
 }
 
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "Just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 interface TopbarProps {
   notificationCount?: number;
   onNotificationClick?: () => void;
 }
 
-export default function Topbar({ notificationCount = 0, onNotificationClick }: TopbarProps) {
+export default function Topbar({ onNotificationClick }: TopbarProps) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const title = titleFromPath(pathname);
+
+  const { notifications, unreadCount, isOpen, setOpen } = useNotificationStore();
+  const { handleMarkRead, handleMarkAllRead } = useNotifications();
+
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      const inside =
+        (btnRef.current && btnRef.current.contains(target)) ||
+        (panelRef.current && panelRef.current.contains(target));
+      if (!inside) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [setOpen]);
 
   return (
     <header className="flex h-[72px] flex-shrink-0 items-center justify-between border-b border-[#EADFD3] bg-[#FBF1E9] px-8">
       <h2 className="text-2xl font-bold text-[#2B1B0E]">{title}</h2>
 
-      <button
-        type="button"
-        onClick={onNotificationClick}
-        aria-label={
-          notificationCount > 0 ? `Notifications, ${notificationCount} unread` : "Notifications"
-        }
-        className="relative rounded-full p-2 text-[#2B1B0E] transition-colors hover:bg-black/5"
-      >
-        <Bell className="h-6 w-6" />
-        {notificationCount > 0 && (
-          <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[#FBF1E9]" />
+      <div className="relative">
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={() => {
+            setOpen(!isOpen);
+            onNotificationClick?.();
+          }}
+          aria-label={
+            unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
+          }
+          className="relative rounded-full p-2 text-[#2B1B0E] transition-colors hover:bg-black/5"
+        >
+          <Bell className="h-6 w-6" />
+          {unreadCount > 0 && (
+            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-[#FBF1E9]">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+
+        {isOpen && (
+          <div
+            ref={panelRef}
+            className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border border-[#EADFD3] bg-white shadow-lg"
+          >
+            <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#9C8C7C]">
+                Notifications
+              </p>
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-[11px] font-semibold text-[#8B6F47] hover:underline"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+
+            <ul role="list" className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <li className="flex flex-col items-center justify-center gap-2 py-10">
+                  <Bell size={28} className="text-[#D6C5B0]" />
+                  <span className="text-[13px] text-[#B3A593]">No notifications yet</span>
+                </li>
+              ) : (
+                notifications.map((n) => (
+                  <li key={n._id} className="border-t border-[#F3EDE2] first:border-t-0">
+                    <button
+                      onClick={() => {
+                        if (!n.isRead) handleMarkRead(n._id);
+                        setOpen(false);
+                        if (n.orderId) navigate(`/store/orders/${n.orderId}`);
+                      }}
+                      className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#F9F3EA]"
+                      style={{ background: !n.isRead ? "#FDF8F2" : undefined }}
+                    >
+                      <span
+                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: !n.isRead ? "#C24B3F" : "transparent" }}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="text-[13px] font-semibold text-[#2B1B0E]">
+                            {n.title}
+                          </span>
+                          <span className="shrink-0 text-[11px] text-[#B3A593]">
+                            {timeAgo(n.createdAt)}
+                          </span>
+                        </span>
+                        <span className="block text-[12px] leading-snug text-[#80756B]">
+                          {n.message}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
         )}
-      </button>
+      </div>
     </header>
   );
 }

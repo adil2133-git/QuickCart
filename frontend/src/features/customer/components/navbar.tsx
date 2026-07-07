@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     MapPin,
@@ -26,6 +26,8 @@ import api from "../../../api/axios";
 import LocationPickerModal from "./locationPickerModal";
 import { useAuthStore } from "../../auth/state/authState";
 import { useCartStore } from "../state/cartState";
+import { useNotificationStore } from "../../shared/state/notificationState";
+import { useNotifications } from "../../shared/hooks/useNotifications";
 
 
 interface SavedAddress {
@@ -41,13 +43,7 @@ interface SearchItem {
     meta: string;
 }
 
-interface NotificationItem {
-    id: number;
-    title: string;
-    body: string;
-    time: string;
-    unread: boolean;
-}
+// NotificationItem is now driven by the shared notification store
 
 interface NavLinkItem {
     label: string;
@@ -85,12 +81,6 @@ const SEARCH_INDEX: SearchItem[] = [
     { type: "store", label: "Green Garden Organics", meta: "1.2 km · 25–35 mins" },
     { type: "store", label: "Heritage Farm", meta: "0.8 km · 15–20 mins" },
     { type: "store", label: "Boutique Greens", meta: "Hydroponic · Exotics" },
-];
-
-const NOTIFICATIONS: NotificationItem[] = [
-    { id: 1, title: "Order delivered", body: "Your order from Heritage Farm has arrived.", time: "2m ago", unread: true },
-    { id: 2, title: "Price drop", body: "Estate Coffee Beans is now ₹449.", time: "1h ago", unread: true },
-    { id: 3, title: "Welcome back", body: "Here's ₹50 off your next order over ₹500.", time: "1d ago", unread: false },
 ];
 
 const NAV_LINKS: NavLinkItem[] = [
@@ -637,14 +627,25 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
 /*  NotificationBell                                                          */
 /* -------------------------------------------------------------------------- */
 
+function timeAgo(iso: string) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "Just now";
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+}
+
 function NotificationBell() {
-    const [open, setOpen] = useState(false);
-    const [items, setItems] = useState<NotificationItem[]>(NOTIFICATIONS);
+    const { notifications, unreadCount, isOpen, setOpen } = useNotificationStore();
+    const { handleMarkRead, handleMarkAllRead } = useNotifications();
+    const navigate = useNavigate();
     const btnRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     useClickOutside([btnRef, panelRef], () => setOpen(false));
 
-    const unread = items.filter((n) => n.unread).length;
+    const unread = unreadCount;
 
     return (
         <div className="relative flex-shrink-0">
@@ -652,7 +653,7 @@ function NotificationBell() {
                 ref={btnRef}
                 whileHover={{ scale: 1.12 }}
                 whileTap={{ scale: 0.92 }}
-                onClick={() => setOpen((o) => !o)}
+                onClick={() => setOpen(!isOpen)}
                 aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
                 className="relative cursor-pointer rounded-full p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 style={{ outlineColor: "#C2A383" }}
@@ -660,14 +661,16 @@ function NotificationBell() {
                 <Bell size={18} color="#735A3E" />
                 {unread > 0 && (
                     <span
-                        className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full"
+                        className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
                         style={{ backgroundColor: "#C24B3F", boxShadow: "0 0 0 2px #FFF9EF" }}
-                    />
+                    >
+                        {unread > 9 ? "9+" : unread}
+                    </span>
                 )}
             </motion.button>
 
             <AnimatePresence>
-                {open && (
+                {isOpen && (
                     <motion.div
                         ref={panelRef}
                         initial={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -686,7 +689,7 @@ function NotificationBell() {
                             </p>
                             {unread > 0 && (
                                 <button
-                                    onClick={() => setItems((prev) => prev.map((n) => ({ ...n, unread: false })))}
+                                    onClick={handleMarkAllRead}
                                     className="text-[11px] font-semibold hover:underline"
                                     style={{ fontFamily: FONT_UI, color: "#735A3E" }}
                                 >
@@ -695,41 +698,46 @@ function NotificationBell() {
                             )}
                         </div>
                         <ul role="list" className="max-h-80 overflow-y-auto">
-                            {items.map((n) => (
-                                <li key={n.id} className="border-t first:border-t-0" style={{ borderColor: "#F3EDE2" }}>
-                                    <button
-                                        onClick={() => setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x)))}
-                                        className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#F9F3EA]"
-                                    >
-                                        <span
-                                            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                                            style={{ backgroundColor: n.unread ? "#C24B3F" : "transparent" }}
-                                        />
-                                        <span className="min-w-0 flex-1">
-                                            <span className="flex items-baseline justify-between gap-2">
-                                                <span
-                                                    className="text-[13px] font-semibold"
-                                                    style={{ fontFamily: FONT_UI, color: "#4E453D" }}
-                                                >
-                                                    {n.title}
-                                                </span>
-                                                <span
-                                                    className="shrink-0 text-[11px]"
-                                                    style={{ fontFamily: FONT_UI, color: "#B3A593" }}
-                                                >
-                                                    {n.time}
-                                                </span>
-                                            </span>
-                                            <span
-                                                className="block text-[12px] leading-snug"
-                                                style={{ fontFamily: FONT_UI, color: "#80756B" }}
-                                            >
-                                                {n.body}
-                                            </span>
-                                        </span>
-                                    </button>
+                            {notifications.length === 0 ? (
+                                <li className="flex flex-col items-center justify-center gap-2 py-10">
+                                    <Bell size={28} color="#D6C5B0" />
+                                    <span className="text-[13px]" style={{ color: "#B3A593" }}>
+                                        No notifications yet
+                                    </span>
                                 </li>
-                            ))}
+                            ) : (
+                                notifications.map((n) => (
+                                    <li key={n._id} className="border-t first:border-t-0" style={{ borderColor: "#F3EDE2" }}>
+                                        <button
+                                            onClick={() => {
+                                                if (!n.isRead) handleMarkRead(n._id);
+                                                setOpen(false);
+                                                if (n.orderId) navigate(`/customer/orders`);
+                                            }}
+                                            className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#F9F3EA]"
+                                            style={{ background: !n.isRead ? "#FDF8F2" : undefined }}
+                                        >
+                                            <span
+                                                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                                                style={{ backgroundColor: !n.isRead ? "#C24B3F" : "transparent" }}
+                                            />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex items-baseline justify-between gap-2">
+                                                    <span className="text-[13px] font-semibold" style={{ fontFamily: FONT_UI, color: "#4E453D" }}>
+                                                        {n.title}
+                                                    </span>
+                                                    <span className="shrink-0 text-[11px]" style={{ fontFamily: FONT_UI, color: "#B3A593" }}>
+                                                        {timeAgo(n.createdAt)}
+                                                    </span>
+                                                </span>
+                                                <span className="block text-[12px] leading-snug" style={{ fontFamily: FONT_UI, color: "#80756B" }}>
+                                                    {n.message}
+                                                </span>
+                                            </span>
+                                        </button>
+                                    </li>
+                                ))
+                            )}
                         </ul>
                     </motion.div>
                 )}
