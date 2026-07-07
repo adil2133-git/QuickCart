@@ -6,6 +6,8 @@ const { haversineKm } = require("../../utils/distance");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const { resolveStoreProfile } = require("../../services/storeProfileService");
 const { sendOrderCancelledEmail } = require("../../services/mailService");
+const { emitToStore, emitToCustomer } = require("../../socket");
+const { notifyCustomer, notifyStore } = require("../../services/notificationService");
 
 // Resolves the logged-in store user to their StoreProfile ID.
 const resolveStoreId = async (req) => {
@@ -269,6 +271,34 @@ const updateOrderStatus = async (req, res) => {
 
         order.orderStatus = status;
         await order.save();
+
+        // Live update + notification for the customer
+        CustomerProfile.findById(order.customerId)
+            .populate("userId", "_id name")
+            .lean()
+            .then(async (cp) => {
+                if (!cp) return;
+                // Live socket update to customer's orders page
+                emitToCustomer(cp._id, "order:statusChanged", {
+                    orderId: order._id.toString(),
+                    orderStatus: status,
+                    orderNumber: order.orderNumber,
+                });
+                // Persistent notification
+                const uid = cp.userId?._id;
+                if (!uid) return;
+                if (status === "ACCEPTED") {
+                    const store = await StoreProfile.findById(order.storeId).select("storeName").lean();
+                    notifyCustomer.accepted(uid, order.orderNumber, store?.storeName ?? "The store", order._id).catch(() => {});
+                } else if (status === "PACKING") {
+                    notifyCustomer.packing(uid, order.orderNumber, order._id).catch(() => {});
+                } else if (status === "READY_FOR_PICKUP") {
+                    notifyCustomer.searchingDriver(uid, order.orderNumber, order._id).catch(() => {});
+                } else if (status === "CANCELLED") {
+                    notifyCustomer.cancelled(uid, order.orderNumber, order._id).catch(() => {});
+                }
+            })
+            .catch(() => {});
 
         // Notify nearby drivers once the order is ready for pickup.
         if (status === "READY_FOR_PICKUP") {

@@ -7,6 +7,7 @@ const User = require("../../models/shared/user");
 const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
 const { sendOrderPlacedEmail, sendNewOrderStoreEmail } = require("../../services/mailService");
+const { notifyCustomer } = require("../../services/notificationService");
 
 const DELIVERY_CHARGE = 30;
 const PACKAGING_FEE = 15;
@@ -231,6 +232,16 @@ const placeOrder = async (req, res) => {
             orderStatus: order.orderStatus,
             placedAt: order.createdAt,
         });
+
+        // Notify customer their order was received
+        CustomerProfile.findById(order.customerId)
+            .populate("userId", "_id")
+            .lean()
+            .then((cp) => {
+                if (cp?.userId?._id) {
+                    notifyCustomer.orderPlaced(cp.userId._id, order.orderNumber, order._id).catch(() => {});
+                }
+            }).catch(() => {});
 
         // Fire-and-forget order emails — don't hold up the customer's response.
         StoreProfile.findById(storeId)

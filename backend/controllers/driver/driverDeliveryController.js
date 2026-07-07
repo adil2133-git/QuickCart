@@ -3,6 +3,8 @@ const DriverProfile = require("../../models/driver/driverProfile");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const CustomerProfile = require("../../models/customer/customerProfile");
 const { sendOrderDeliveredEmail } = require("../../services/mailService");
+const { emitToStore, emitToCustomer } = require("../../socket");
+const { notifyCustomer, notifyStore } = require("../../services/notificationService");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -208,11 +210,35 @@ const acceptDeliveryRequest = async (req, res) => {
         await driver.save();
 
         // Notify the store.
-        const { emitToStore } = require("../../socket");
         emitToStore(order.storeId._id ?? order.storeId, "order:statusChanged", {
             orderId: order._id.toString(),
             orderStatus: "DRIVER_ASSIGNED",
         });
+
+        // Notify customer and store about driver assignment
+        CustomerProfile.findById(order.customerId)
+            .populate("userId", "_id")
+            .lean()
+            .then((cp) => {
+                if (!cp) return;
+                emitToCustomer(cp._id, "order:statusChanged", {
+                    orderId: order._id.toString(),
+                    orderStatus: "DRIVER_ASSIGNED",
+                    orderNumber: order.orderNumber,
+                });
+                if (cp.userId?._id) {
+                    notifyCustomer.driverAssigned(cp.userId._id, order.orderNumber, driver.fullName ?? "Your driver", order._id).catch(() => {});
+                }
+            }).catch(() => {});
+
+        StoreProfile.findById(order.storeId._id ?? order.storeId)
+            .populate("userId", "_id")
+            .lean()
+            .then((sp) => {
+                if (sp?.userId?._id) {
+                    notifyStore.driverAssigned(sp.userId._id, order.orderNumber, driver.fullName ?? "Driver", order._id).catch(() => {});
+                }
+            }).catch(() => {});
 
         return res.status(200).json({
             success: true,
@@ -301,6 +327,42 @@ const advanceDeliveryStage = async (req, res) => {
         }
 
         await order.save();
+
+        // Live update + notification to customer for each stage
+        if (newOrderStatus) {
+            CustomerProfile.findById(order.customerId)
+                .populate("userId", "_id")
+                .lean()
+                .then((cp) => {
+                    if (!cp) return;
+                    emitToCustomer(cp._id, "order:statusChanged", {
+                        orderId: order._id.toString(),
+                        orderStatus: newOrderStatus,
+                        orderNumber: order.orderNumber,
+                    });
+                    const uid = cp.userId?._id;
+                    if (!uid) return;
+                    if (stage === "PICKED_UP")            notifyCustomer.pickedUp(uid, order.orderNumber, order._id).catch(() => {});
+                    if (stage === "NAVIGATE_TO_CUSTOMER") notifyCustomer.outForDelivery(uid, order.orderNumber, order._id).catch(() => {});
+                    if (stage === "DELIVERED")            notifyCustomer.delivered(uid, order.orderNumber, order._id).catch(() => {});
+                }).catch(() => {});
+        }
+
+        // Notify store when driver reaches or picks up
+        if (stage === "REACHED_STORE" || stage === "PICKED_UP") {
+            StoreProfile.findById(order.storeId)
+                .populate("userId", "_id")
+                .lean()
+                .then((sp) => {
+                    emitToStore(order.storeId, "order:statusChanged", {
+                        orderId: order._id.toString(),
+                        orderStatus: newOrderStatus ?? order.orderStatus,
+                    });
+                    if (stage === "REACHED_STORE" && sp?.userId?._id) {
+                        notifyStore.driverArrived(sp.userId._id, order.orderNumber, driver.fullName ?? "Driver", order._id).catch(() => {});
+                    }
+                }).catch(() => {});
+        }
 
         // Send a delivered/thank-you email to the customer.
         if (stage === "DELIVERED") {
