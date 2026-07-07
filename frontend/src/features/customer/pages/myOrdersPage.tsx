@@ -153,12 +153,66 @@ function OrderCard({ order }: { order: CustomerOrder }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Orders content (reusable — standalone page below embeds it in full-page
+// chrome; CustomerProfilePage embeds it directly inside its own tab) ─────────
 
-export default function MyOrdersPage() {
+export function OrdersContent() {
   const { activeTab, setActiveTab } = useOrdersTab();
   const { orders, isLoading, error } = useOrdersList(activeTab);
 
+  return (
+    <>
+      <div className="flex items-center gap-8 border-b border-[#E8D8C8] mb-8">
+        <button
+          onClick={() => setActiveTab("active")}
+          className={`pb-3 text-lg font-semibold relative -mb-px ${
+            activeTab === "active" ? "text-[#1A1108]" : "text-[#B89A7A]"
+          }`}
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Active Orders
+          {activeTab === "active" && (
+            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#6B4226] rounded-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("past")}
+          className={`pb-3 text-lg font-semibold relative -mb-px ${
+            activeTab === "past" ? "text-[#1A1108]" : "text-[#B89A7A]"
+          }`}
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Past Orders
+          {activeTab === "past" && (
+            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#6B4226] rounded-full" />
+          )}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-center text-[#9C7E5F] py-16">Loading your orders…</p>
+      ) : error ? (
+        <p className="text-center text-[#9C7E5F] py-16">{error}</p>
+      ) : orders.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-[#9C7E5F]">
+            {activeTab === "active" ? "No active orders right now." : "No past orders yet."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function MyOrdersPage() {
   return (
     <div className="min-h-screen bg-[#FBF3E8]" style={{ fontFamily: "'Inter', sans-serif" }}>
 
@@ -171,50 +225,7 @@ export default function MyOrdersPage() {
         </h1>
         <p className="text-[#9C7E5F] mb-8">Track and manage your recent marketplace purchases</p>
 
-        <div className="flex items-center gap-8 border-b border-[#E8D8C8] mb-8">
-          <button
-            onClick={() => setActiveTab("active")}
-            className={`pb-3 text-lg font-semibold relative -mb-px ${
-              activeTab === "active" ? "text-[#1A1108]" : "text-[#B89A7A]"
-            }`}
-            style={{ fontFamily: "Georgia, serif" }}
-          >
-            Active Orders
-            {activeTab === "active" && (
-              <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#6B4226] rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("past")}
-            className={`pb-3 text-lg font-semibold relative -mb-px ${
-              activeTab === "past" ? "text-[#1A1108]" : "text-[#B89A7A]"
-            }`}
-            style={{ fontFamily: "Georgia, serif" }}
-          >
-            Past Orders
-            {activeTab === "past" && (
-              <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#6B4226] rounded-full" />
-            )}
-          </button>
-        </div>
-
-        {isLoading ? (
-          <p className="text-center text-[#9C7E5F] py-16">Loading your orders…</p>
-        ) : error ? (
-          <p className="text-center text-[#9C7E5F] py-16">{error}</p>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-[#9C7E5F]">
-              {activeTab === "active" ? "No active orders right now." : "No past orders yet."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {orders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </div>
-        )}
+        <OrdersContent />
       </main>
     </div>
   );

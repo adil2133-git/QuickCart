@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useCustomerProfile } from "../hooks/useCustomerProfile";
 import type { AddAddressPayload } from "../types/customerProfile";
 import { useLogout } from "../../auth/hooks/useLogout";
+import { OrdersContent } from "./myOrdersPage";
 
 type SidebarTab = "profile" | "orders" | "addresses" | "notifications";
 
@@ -257,8 +258,9 @@ const CustomerProfilePage = () => {
           )}
 
           {activeTab === "orders" && (
-            <section className="bg-white rounded-2xl shadow-sm p-8 text-gray-500 text-sm">
-              Order history coming soon.
+            <section className="bg-white rounded-2xl shadow-sm p-8">
+              <h2 className="text-xl font-semibold text-[#8B6B3D] mb-5">My Orders</h2>
+              <OrdersContent />
             </section>
           )}
 

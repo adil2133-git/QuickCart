@@ -27,7 +27,7 @@ import LocationPickerModal from "./locationPickerModal";
 import { useAuthStore } from "../../auth/state/authState";
 import { useCartStore } from "../state/cartState";
 import { useNotificationStore } from "../../shared/state/notificationState";
-import { useNotifications } from "../../shared/hooks/useNotifications";
+import { useNotificationActions } from "../../shared/hooks/useNotifications";
 
 
 interface SavedAddress {
@@ -639,7 +639,7 @@ function timeAgo(iso: string) {
 
 function NotificationBell() {
     const { notifications, unreadCount, isOpen, setOpen } = useNotificationStore();
-    const { handleMarkRead, handleMarkAllRead } = useNotifications();
+    const { handleMarkRead, handleMarkAllRead } = useNotificationActions();
     const navigate = useNavigate();
     const btnRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);

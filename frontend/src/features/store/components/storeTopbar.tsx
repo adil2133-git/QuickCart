@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { useNotificationStore } from "../../shared/state/notificationState";
-import { useNotifications } from "../../shared/hooks/useNotifications";
+import { useNotificationActions } from "../../shared/hooks/useNotifications";
 
 // Derives a human-readable title from the current path so every page
 // gets the right heading without each page having to pass it manually.
@@ -42,7 +42,7 @@ export default function Topbar({ onNotificationClick }: TopbarProps) {
   const title = titleFromPath(pathname);
 
   const { notifications, unreadCount, isOpen, setOpen } = useNotificationStore();
-  const { handleMarkRead, handleMarkAllRead } = useNotifications();
+  const { handleMarkRead, handleMarkAllRead } = useNotificationActions();
 
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);

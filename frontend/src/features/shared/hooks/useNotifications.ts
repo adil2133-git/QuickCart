@@ -7,19 +7,29 @@ import {
   type AppNotification,
 } from "../state/notificationState";
 
-export function useNotifications() {
-  const { setNotifications, prependNotification, markOneRead, markAllRead, deleteOne } =
-    useNotificationStore();
+// Fetches existing notifications on mount and subscribes to the
+// "notification:new" socket event. This must be called exactly ONCE per
+// role (e.g. in the shell/layout component), never in a component that can
+// be mounted alongside another caller of this hook — otherwise the socket
+// listener registers twice and every incoming notification fires two
+// toasts / double-prepends into the list.
+//
+// Components that just need to react to notifications (mark read, delete,
+// etc.) should use `useNotificationActions()` instead, which has no
+// subscriptions and is safe to call from anywhere, including multiple times.
+export function useNotificationsSync() {
+  const setNotifications = useNotificationStore((s) => s.setNotifications);
+  const prependNotification = useNotificationStore((s) => s.prependNotification);
 
   // Fetch existing notifications on mount
   useEffect(() => {
     api
-      .get<{ notifications: AppNotification[]; unreadCount: number }>("/notifications")
+      .get<{ success: boolean; notifications: AppNotification[]; unreadCount: number }>("/notifications")
       .then(({ data }) => {
         if (data.success) setNotifications(data.notifications, data.unreadCount);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => { });
+  }, [setNotifications]);
 
   // Listen for new notifications via socket
   useEffect(() => {
@@ -37,20 +47,26 @@ export function useNotifications() {
     socket.on("notification:new", handleNew);
     return () => { socket.off("notification:new", handleNew); };
   }, [prependNotification]);
+}
+
+// Pure action handlers — no subscriptions, safe to call from any component
+// (including ones also rendered alongside useNotificationsSync's caller).
+export function useNotificationActions() {
+  const { markOneRead, markAllRead, deleteOne } = useNotificationStore();
 
   const handleMarkRead = async (id: string) => {
     markOneRead(id);
-    api.patch(`/notifications/${id}/read`).catch(() => {});
+    api.patch(`/notifications/${id}/read`).catch(() => { });
   };
 
   const handleMarkAllRead = async () => {
     markAllRead();
-    api.patch("/notifications/read-all").catch(() => {});
+    api.patch("/notifications/read-all").catch(() => { });
   };
 
   const handleDelete = async (id: string) => {
     deleteOne(id);
-    api.delete(`/notifications/${id}`).catch(() => {});
+    api.delete(`/notifications/${id}`).catch(() => { });
   };
 
   return { handleMarkRead, handleMarkAllRead, handleDelete };

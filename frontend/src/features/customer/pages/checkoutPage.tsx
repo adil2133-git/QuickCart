@@ -10,6 +10,7 @@ import {
   usePlaceOrder,
 } from "../hooks/useCheckout";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { SavedAddress } from "../types/checkout";
 
 // ─── StepBadge ────────────────────────────────────────────────────────────────
@@ -183,8 +184,16 @@ function OrderSummary() {
   const totals = useOrderTotals();
   const cartItems = useCartItems();
   const { submit, isPlacingOrder } = usePlaceOrder();
+  const navigate = useNavigate();
 
   const isEmpty = cartItems.length === 0;
+
+  const handlePlaceOrder = async () => {
+    const order = await submit();
+    if (order) {
+      navigate("/customer/orders");
+    }
+  };
 
   return (
     <aside className="space-y-4 lg:sticky lg:top-6">
@@ -258,7 +267,7 @@ function OrderSummary() {
         </div>
 
         <button
-          onClick={submit}
+          onClick={handlePlaceOrder}
           disabled={isEmpty || isPlacingOrder}
           className="mt-5 w-full bg-[#6B4226] hover:bg-[#5A3520] active:bg-[#4A2A18] text-white rounded-xl py-3.5 text-sm font-semibold tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-[#6B4226]/40 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
