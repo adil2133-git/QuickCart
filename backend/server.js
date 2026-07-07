@@ -5,12 +5,15 @@ const app = require("./app")
 const connectDB = require("./config/db");
 const {connectRedis} = require("./config/redis")
 const { initSocket } = require("./socket");
+const { startNotificationCleanup } = require("./jobs/cleanupNotifications");
+
 
 connectDB()
 connectRedis()
 
 const httpServer = http.createServer(app);
 initSocket(httpServer);
+startNotificationCleanup();
 
 httpServer.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`)
