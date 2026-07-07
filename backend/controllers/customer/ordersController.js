@@ -1,6 +1,10 @@
 const Order = require("../../models/shared/order");
 const Product = require("../../models/store/product");
+const StoreProfile = require("../../models/store/storeProfile");
 const { resolveCustomerProfile } = require("../../services/customerProfileService");
+const { emitToStore, emitToCustomer } = require("../../socket");
+const { notifyStore } = require("../../services/notificationService");
+const { sendOrderCancelledEmail } = require("../../services/mailService");
 
 const resolveCustomerId = async (req) => {
     const profile = await resolveCustomerProfile(req.user.userID);
@@ -163,7 +167,75 @@ const getOrderDetail = async (req, res) => {
     }
 };
 
+// Statuses a customer may still self-cancel from — anything up through
+// "being packed", but not once the store has marked it ready for pickup
+// (a driver search/assignment may already be underway at that point).
+const CUSTOMER_CANCELLABLE_STATUSES = ["PENDING", "ACCEPTED", "PACKING"];
+
+// ─── PATCH /api/customer/orders/:id/cancel ───────────────────────────────────
+const cancelOrder = async (req, res) => {
+    try {
+        const customerId = await resolveCustomerId(req);
+        const { id } = req.params;
+
+        const order = await Order.findOne({ _id: id, customerId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        if (!CUSTOMER_CANCELLABLE_STATUSES.includes(order.orderStatus)) {
+            return res.status(400).json({
+                success: false,
+                message: "This order can no longer be cancelled — it's already on its way.",
+            });
+        }
+
+        order.orderStatus = "CANCELLED";
+        await order.save();
+
+        // Live update to the customer's own orders page (same event the
+        // store-driven status changes use, so useCustomerOrderSocket just works).
+        emitToCustomer(customerId, "order:statusChanged", {
+            orderId: order._id.toString(),
+            orderStatus: "CANCELLED",
+            orderNumber: order.orderNumber,
+        });
+
+        // Live update + notification for the store
+        emitToStore(order.storeId, "order:statusChanged", {
+            orderId: order._id.toString(),
+            orderStatus: "CANCELLED",
+        });
+
+        StoreProfile.findById(order.storeId)
+            .populate("userId", "_id name email")
+            .lean()
+            .then((store) => {
+                if (!store?.userId?._id) return;
+                notifyStore.cancelledByCustomer(store.userId._id, order.orderNumber, order._id).catch(() => {});
+                if (store.userId.email) {
+                    sendOrderCancelledEmail({
+                        toEmail: store.userId.email,
+                        name: store.storeName,
+                        order,
+                    }).catch(() => {});
+                }
+            })
+            .catch(() => {});
+
+        return res.status(200).json({
+            success: true,
+            message: "Order cancelled.",
+            order: toCardShape(order.toObject()),
+        });
+    } catch (err) {
+        console.error("CANCEL ORDER ERROR:", err);
+        return res.status(500).json({ success: false, message: "Internal server error." });
+    }
+};
+
 module.exports = {
     getOrders,
     getOrderDetail,
+    cancelOrder,
 };

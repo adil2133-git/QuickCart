@@ -46,6 +46,7 @@ const {
 const {
     getOrders,
     getOrderDetail,
+    cancelOrder,
 } = require("../../controllers/customer/ordersController");
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -76,6 +77,7 @@ router.post("/checkout/place-order", protectRoutes, authorizeRoles("CUSTOMER"), 
 
 router.get("/orders", protectRoutes, authorizeRoles("CUSTOMER"), getOrders);
 router.get("/orders/:id", protectRoutes, authorizeRoles("CUSTOMER"), getOrderDetail);
+router.patch("/orders/:id/cancel", protectRoutes, authorizeRoles("CUSTOMER"), cancelOrder);
 
 // ─── Single Store Page (public, storeId from URL) ─────────────────────────────
 router.get("/:storeId", getPublicStoreProfile);

@@ -103,6 +103,11 @@ const notifyStore = {
         title:   "Driver Arrived",
         message: `${driverName} has arrived at your store to pick up order #${orderNumber}.`,
     }),
+    cancelledByCustomer: (userId, orderNumber, orderId) => notify({
+        userId, role: "STORE", orderId, type: "ORDER",
+        title:   "Order Cancelled ❌",
+        message: `The customer cancelled order #${orderNumber}.`,
+    }),
 };
 
 module.exports = { notifyCustomer, notifyStore };
