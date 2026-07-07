@@ -13,6 +13,7 @@ const StoreRoutes = require("./routes/store/storeRoutes");
 const DriverApplicationRoutes = require("./routes/admin/driverApplicationRoutes");
 const StoreApplicationRoutes = require("./routes/admin/storeApplicationRoutes");
 const CustomerRoutes = require("./routes/customer/customerRoutes");
+const notificationRoutes = require("./routes/shared/notificationRoutes");
 
 app.use(
     cors({
@@ -25,6 +26,8 @@ app.use("/api/auth", AuthRoutes);
 app.use("/api/driver", DriverRoutes);
 app.use("/api/customer", CustomerRoutes);
 app.use("/api/store", StoreRoutes);
+
+app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/admin/driver", DriverApplicationRoutes);
 app.use("/api/admin/store", StoreApplicationRoutes);
