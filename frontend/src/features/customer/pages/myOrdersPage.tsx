@@ -1,5 +1,6 @@
-import { Phone } from "lucide-react";
-import { useOrdersList, useOrdersTab } from "../hooks/useMyOrders";
+import { useState } from "react";
+import { Phone, X } from "lucide-react";
+import { useCancelOrder, useOrdersList, useOrdersTab } from "../hooks/useMyOrders";
 import type { CustomerOrder, OrderStatus } from "../types/myOrders";
 import { stageIndexForStatus } from "../types/myOrders";
 
@@ -79,6 +80,20 @@ function OrderCard({ order }: { order: CustomerOrder }) {
   const extraCount = order.itemCount - order.previewItems.length;
   const isPast = order.status === "DELIVERED" || order.status === "CANCELLED";
   const showCallRider = order.status === "OUT_FOR_DELIVERY";
+  const canCancel = order.status === "PROCESSING";
+
+  const { cancelOrder } = useCancelOrder();
+  const [confirming, setConfirming] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleConfirmCancel = async () => {
+    setIsCancelling(true);
+    const ok = await cancelOrder(order.id);
+    setIsCancelling(false);
+    if (!ok) setConfirming(false);
+    // on success the order disappears from this list on its own (removeOrder),
+    // so there's nothing left to reset here
+  };
 
   const formattedDate = new Date(order.placedAt).toLocaleDateString("en-IN", {
     month: "short",
@@ -129,26 +144,62 @@ function OrderCard({ order }: { order: CustomerOrder }) {
         </div>
       )}
 
-      <div className="border-t border-[#EDE0D4] pt-4 mt-auto flex items-center justify-between">
-        <span className="text-xl font-bold text-[#1A1108]" style={{ fontFamily: "Georgia, serif" }}>
-          ₹{order.totalAmount.toFixed(2)}
-        </span>
+      {confirming ? (
+        <div className="border-t border-[#EDE0D4] pt-4 mt-auto">
+          <div className="flex items-center justify-between gap-3 bg-[#FBEAE6] border border-[#F0C9BE] rounded-xl px-4 py-3">
+            <p className="text-sm text-[#8A3B2A]">Cancel this order? This can't be undone.</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={isCancelling}
+                className="text-sm font-semibold text-[#6B4226] hover:underline disabled:opacity-50"
+              >
+                Keep it
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={isCancelling}
+                className="bg-[#C0392B] hover:bg-[#A5321F] text-white text-sm font-semibold rounded-lg px-3.5 py-2 transition-colors disabled:opacity-50"
+              >
+                {isCancelling ? "Cancelling…" : "Yes, cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="border-t border-[#EDE0D4] pt-4 mt-auto flex items-center justify-between">
+          <span className="text-xl font-bold text-[#1A1108]" style={{ fontFamily: "Georgia, serif" }}>
+            ₹{order.totalAmount.toFixed(2)}
+          </span>
 
-        {isPast ? (
-          <button className="text-sm font-semibold text-[#6B4226] hover:underline">
-            View Details
-          </button>
-        ) : showCallRider ? (
-          <button className="flex items-center gap-2 bg-[#6B4226] hover:bg-[#5A3520] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
-            <Phone size={14} />
-            Call Rider
-          </button>
-        ) : (
-          <button className="text-sm font-semibold text-[#6B4226] hover:underline">
-            Track Order
-          </button>
-        )}
-      </div>
+          <div className="flex items-center gap-4">
+            {canCancel && (
+              <button
+                onClick={() => setConfirming(true)}
+                className="flex items-center gap-1 text-sm font-semibold text-[#9C4A3A] hover:underline"
+              >
+                <X size={14} />
+                Cancel Order
+              </button>
+            )}
+
+            {isPast ? (
+              <button className="text-sm font-semibold text-[#6B4226] hover:underline">
+                View Details
+              </button>
+            ) : showCallRider ? (
+              <button className="flex items-center gap-2 bg-[#6B4226] hover:bg-[#5A3520] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
+                <Phone size={14} />
+                Call Rider
+              </button>
+            ) : (
+              <button className="text-sm font-semibold text-[#6B4226] hover:underline">
+                Track Order
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

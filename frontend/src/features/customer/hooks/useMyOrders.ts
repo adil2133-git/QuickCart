@@ -49,3 +49,25 @@ export function useOrdersList(tab: OrdersTab) {
 
   return { orders, isLoading, error };
 }
+
+// Cancels an order the customer placed. Only valid while the order is still
+// PENDING/ACCEPTED/PACKING on the backend — the API rejects it otherwise.
+export function useCancelOrder() {
+  const removeOrder = useOrdersStore((s) => s.removeOrder);
+
+  const cancelOrder = async (orderId: string) => {
+    try {
+      await api.patch(`/customer/orders/${orderId}/cancel`);
+      removeOrder(orderId);
+      toast.success("Order cancelled.");
+      return true;
+    } catch (err) {
+      const message =
+        (err as any)?.response?.data?.message ?? "Couldn't cancel your order. Please try again.";
+      toast.error(message, { id: "cancel-order-error" });
+      return false;
+    }
+  };
+
+  return { cancelOrder };
+}

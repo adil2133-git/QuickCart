@@ -35,6 +35,7 @@ interface OrdersState {
   setOrders: (orders: CustomerOrder[]) => void;
   setError: (message: string) => void;
   liveUpdateStatus: (orderId: string, rawStatus: RawOrderStatus) => void;
+  removeOrder: (orderId: string) => void;
 }
 
 export const useOrdersStore = create<OrdersState>((set) => ({
@@ -54,4 +55,6 @@ export const useOrdersStore = create<OrdersState>((set) => ({
         o.id === orderId ? { ...o, rawStatus, ...deriveFromRaw(rawStatus) } : o
       ),
     })),
+  removeOrder: (orderId) =>
+    set((s) => ({ orders: s.orders.filter((o) => o.id !== orderId) })),
 }));
