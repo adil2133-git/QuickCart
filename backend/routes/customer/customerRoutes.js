@@ -49,6 +49,8 @@ const {
     cancelOrder,
 } = require("../../controllers/customer/ordersController");
 
+const { getRecentlyOrdered } = require("../../controllers/customer/homeController");
+
 // ════════════════════════════════════════════════════════════════════════════
 //  All routes mounted at /api/customer
 // ════════════════════════════════════════════════════════════════════════════
@@ -62,6 +64,7 @@ router.delete("/address/:id", protectRoutes, authorizeRoles("CUSTOMER"), deleteA
 // ─── Discovery (protected) ────────────────────────────────────────────────────
 router.get("/stores/nearby", protectRoutes, authorizeRoles("CUSTOMER"), getNearbyStores);
 router.get("/products/popular", protectRoutes, authorizeRoles("CUSTOMER"), getPopularProducts);
+router.get("/home/recent-orders", protectRoutes, authorizeRoles("CUSTOMER"), getRecentlyOrdered);
 router.get("/products/trending", protectRoutes, authorizeRoles("CUSTOMER"), getTrendingProducts);
 router.get("/categories", getCategories); // public
 
