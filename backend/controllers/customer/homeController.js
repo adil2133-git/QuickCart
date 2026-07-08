@@ -40,9 +40,14 @@ const getRecentlyOrdered = async (req, res) => {
             availabilityStatus: "AVAILABLE",
         })
             .populate("storeId", "storeName")
-            .populate("categoryId", "name")
+            .populate("categoryId", "categoryName image")
             .select("productName price images unit stockQuantity storeId categoryId")
             .lean();
+
+        // Preserve the "most recently ordered first" order (Mongo doesn't
+        // guarantee $in ordering matches productIds ordering).
+        const order = new Map(productIds.map((id, i) => [id.toString(), i]));
+        products.sort((a, b) => (order.get(a._id.toString()) ?? 0) - (order.get(b._id.toString()) ?? 0));
 
         return res.status(200).json({ success: true, products });
     } catch (err) {
