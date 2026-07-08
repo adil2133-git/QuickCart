@@ -97,9 +97,9 @@ interface IdleMessage {
 }
 
 const IDLE_MESSAGES: IdleMessage[] = [
-    { icon: Clock, text: "Avg delivery: 20–30 min", iconBg: "#1F4D3D", textColor: "#1F4D3D", pillBg: "#E7EFEA" },
-    { icon: Gift, text: "Free delivery over ₹300", iconBg: "#1F4D3D", textColor: "#1F4D3D", pillBg: "#E7EFEA" },
-    { icon: BadgeCheck, text: "Fresh & quality assured", iconBg: "#1F4D3D", textColor: "#1F4D3D", pillBg: "#E7EFEA" },
+    { icon: Clock, text: "Avg delivery: 20–30 min", iconBg: "#145C43", textColor: "#145C43", pillBg: "#E8EFEC" },
+    { icon: Gift, text: "Free delivery over ₹300", iconBg: "#145C43", textColor: "#145C43", pillBg: "#E8EFEC" },
+    { icon: BadgeCheck, text: "Fresh & quality assured", iconBg: "#145C43", textColor: "#145C43", pillBg: "#E8EFEC" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -133,12 +133,12 @@ function NavTextLink({ label, to }: NavLinkItem) {
             to={to}
             aria-current={isActive ? "page" : undefined}
             className="relative cursor-pointer px-1 py-1 text-[13px] font-medium tracking-wide transition-colors"
-            style={{ fontFamily: FONT_UI, color: isActive ? "#1F4D3D" : "#16241D", letterSpacing: "0.01em" }}
+            style={{ fontFamily: FONT_UI, color: isActive ? "#145C43" : "#16241D", letterSpacing: "0.01em" }}
         >
             {label}
             <motion.span
                 className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full"
-                style={{ backgroundColor: "#1F4D3D" }}
+                style={{ backgroundColor: "#145C43" }}
                 initial={false}
                 animate={{ opacity: isActive ? 1 : 0, scaleX: isActive ? 1 : 0.6 }}
                 transition={{ duration: 0.18 }}
@@ -264,10 +264,10 @@ function LocationPicker() {
                     style={{
                         borderColor: "#DCE3DC",
                         backgroundColor: open ? "rgba(220,227,220,0.35)" : "rgba(220,227,220,0.2)",
-                        outlineColor: "#1F4D3D",
+                        outlineColor: "#145C43",
                     }}
                 >
-                    <MapPin size={14} color="#1F4D3D" className="shrink-0" />
+                    <MapPin size={14} color="#145C43" className="shrink-0" />
                     <span className="flex min-w-0 flex-col leading-tight">
                         <span
                             className="text-[10px] font-semibold uppercase tracking-widest"
@@ -310,7 +310,7 @@ function LocationPicker() {
 
                             {loading ? (
                                 <div className="flex items-center justify-center py-6">
-                                    <Loader2 size={18} className="animate-spin" style={{ color: "#1F4D3D" }} />
+                                    <Loader2 size={18} className="animate-spin" style={{ color: "#145C43" }} />
                                 </div>
                             ) : addresses.length === 0 ? (
                                 <p className="px-4 pb-4 text-xs" style={{ fontFamily: FONT_UI, color: "#6E7C74" }}>
@@ -328,13 +328,13 @@ function LocationPicker() {
                                                 <button
                                                     onClick={() => handleSwitch(addr._id)}
                                                     disabled={!!switching}
-                                                    className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#EEF3EC] focus-visible:bg-[#EEF3EC] focus-visible:outline-none disabled:opacity-60"
+                                                    className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#ECF2F0] focus-visible:bg-[#ECF2F0] focus-visible:outline-none disabled:opacity-60"
                                                 >
                                                     <span
                                                         className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
                                                         style={{
-                                                            backgroundColor: isActive ? "#1F4D3D" : "#E3E7E1",
-                                                            color: isActive ? "#fff" : "#1F4D3D",
+                                                            backgroundColor: isActive ? "#145C43" : "#E3E7E1",
+                                                            color: isActive ? "#fff" : "#145C43",
                                                         }}
                                                     >
                                                         {isSwitching
@@ -350,7 +350,7 @@ function LocationPicker() {
                                                             >
                                                                 {addr.label}
                                                             </span>
-                                                            {isActive && <Check size={13} color="#1F4D3D" />}
+                                                            {isActive && <Check size={13} color="#145C43" />}
                                                         </span>
                                                         <span
                                                             className="block truncate text-xs"
@@ -369,8 +369,8 @@ function LocationPicker() {
                             <div className="border-t px-2 py-2" style={{ borderColor: "#E3E7E1" }}>
                                 <button
                                     onClick={() => { setOpen(false); setShowAddModal(true); }}
-                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold transition-colors hover:bg-[#EEF3EC] focus-visible:bg-[#EEF3EC] focus-visible:outline-none"
-                                    style={{ fontFamily: FONT_UI, color: "#1F4D3D" }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold transition-colors hover:bg-[#ECF2F0] focus-visible:bg-[#ECF2F0] focus-visible:outline-none"
+                                    style={{ fontFamily: FONT_UI, color: "#145C43" }}
                                 >
                                     <Plus size={15} /> Add new address
                                 </button>
@@ -419,7 +419,7 @@ function SearchBar() {
     return (
         <div ref={wrapRef} className="relative w-full min-w-[160px] max-w-[440px] flex-1">
             <motion.div
-                animate={open ? { boxShadow: "0 0 0 2px #1F4D3D55" } : { boxShadow: "0 0 0 0px transparent" }}
+                animate={open ? { boxShadow: "0 0 0 2px #145C4355" } : { boxShadow: "0 0 0 0px transparent" }}
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-2 rounded-full border px-4 py-2.5"
                 style={{ backgroundColor: "#F5F7F3", borderColor: "#DCE3DC" }}
@@ -467,10 +467,10 @@ function SearchBar() {
                                     <button
                                         key={term}
                                         onClick={() => { setQuery(term); setOpen(false); }}
-                                        className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-[13px] transition-colors hover:bg-[#EEF3EC]"
+                                        className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-[13px] transition-colors hover:bg-[#ECF2F0]"
                                         style={{
                                             fontFamily: FONT_UI,
-                                            backgroundColor: highlight === i ? "#EEF3EC" : "transparent",
+                                            backgroundColor: highlight === i ? "#ECF2F0" : "transparent",
                                             color: "#16241D",
                                         }}
                                     >
@@ -490,8 +490,8 @@ function SearchBar() {
                                         <button
                                             key={item.label}
                                             onClick={() => { setQuery(item.label); setOpen(false); }}
-                                            className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#EEF3EC]"
-                                            style={{ backgroundColor: highlight === i ? "#EEF3EC" : "transparent" }}
+                                            className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#ECF2F0]"
+                                            style={{ backgroundColor: highlight === i ? "#ECF2F0" : "transparent" }}
                                         >
                                             <span className="min-w-0">
                                                 <span
@@ -512,8 +512,8 @@ function SearchBar() {
                                                 style={{
                                                     fontFamily: FONT_UI,
                                                     letterSpacing: "0.06em",
-                                                    backgroundColor: item.type === "store" ? "#E7EFEA" : "#F5F7F3",
-                                                    color: item.type === "store" ? "#1F4D3D" : "#6E7C74",
+                                                    backgroundColor: item.type === "store" ? "#E8EFEC" : "#F5F7F3",
+                                                    color: item.type === "store" ? "#145C43" : "#6E7C74",
                                                 }}
                                             >
                                                 {item.type}
@@ -556,9 +556,9 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
 
     const idle = IDLE_MESSAGES[idleIndex];
     const Icon = isLive ? Truck : idle.icon;
-    const pillBg = isLive ? "#E7EFEA" : idle.pillBg;
-    const iconBg = isLive ? "#1F4D3D" : idle.iconBg;
-    const textColor = isLive ? "#1F4D3D" : idle.textColor;
+    const pillBg = isLive ? "#E8EFEC" : idle.pillBg;
+    const iconBg = isLive ? "#145C43" : idle.iconBg;
+    const textColor = isLive ? "#145C43" : idle.textColor;
     const label = isLive ? `Arriving in ${etaMinutes} min` : idle.text;
 
     return (
@@ -656,9 +656,9 @@ function NotificationBell() {
                 onClick={() => setOpen(!isOpen)}
                 aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
                 className="relative cursor-pointer rounded-full p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ outlineColor: "#1F4D3D" }}
+                style={{ outlineColor: "#145C43" }}
             >
-                <Bell size={18} color="#1F4D3D" />
+                <Bell size={18} color="#145C43" />
                 {unread > 0 && (
                     <span
                         className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
@@ -691,7 +691,7 @@ function NotificationBell() {
                                 <button
                                     onClick={handleMarkAllRead}
                                     className="text-[11px] font-semibold hover:underline"
-                                    style={{ fontFamily: FONT_UI, color: "#1F4D3D" }}
+                                    style={{ fontFamily: FONT_UI, color: "#145C43" }}
                                 >
                                     Mark all read
                                 </button>
@@ -714,8 +714,8 @@ function NotificationBell() {
                                                 setOpen(false);
                                                 if (n.orderId) navigate(`/customer/orders`);
                                             }}
-                                            className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#EEF3EC]"
-                                            style={{ background: !n.isRead ? "#E7EFEA" : undefined }}
+                                            className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#ECF2F0]"
+                                            style={{ background: !n.isRead ? "#E8EFEC" : undefined }}
                                         >
                                             <span
                                                 className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
@@ -793,7 +793,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                 <Link
                     to="/customer/profile"
                     onClick={onClose}
-                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#EEF3EC]"
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#ECF2F0]"
                     style={{ fontFamily: FONT_UI, color: "#16241D" }}
                 >
                     <User size={16} /> Profile
@@ -805,7 +805,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                             key={link.to}
                             to={link.to}
                             onClick={onClose}
-                            className="rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#EEF3EC]"
+                            className="rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#ECF2F0]"
                             style={{ fontFamily: FONT_UI, color: "#16241D" }}
                         >
                             {link.label}
@@ -871,7 +871,7 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                         whileHover={{ rotate: -6 }}
                         transition={{ duration: 0.2 }}
                         className="flex h-8 w-8 items-center justify-center rounded-xl sm:h-9 sm:w-9"
-                        style={{ backgroundColor: "#1F4D3D" }}
+                        style={{ backgroundColor: "#145C43" }}
                     >
                         <Leaf size={16} color="#FFFFFF" strokeWidth={2.25} className="sm:hidden" />
                         <Leaf size={18} color="#FFFFFF" strokeWidth={2.25} className="hidden sm:block" />
@@ -919,7 +919,7 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                         aria-label="Open search"
                         className="flex items-center justify-center rounded-full p-1 md:hidden"
                     >
-                        <Search size={19} color="#1F4D3D" />
+                        <Search size={19} color="#145C43" />
                     </button>
 
                     <NotificationBell />
@@ -937,7 +937,7 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                                     : "transparent",
                             }}
                         >
-                            <ShoppingCart size={20} color="#1F4D3D" />
+                            <ShoppingCart size={20} color="#145C43" />
                         </Link>
                         <AnimatePresence>
                             {cartCount > 0 && (
@@ -947,7 +947,7 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                                     animate={{ scale: 1 }}
                                     exit={{ scale: 0 }}
                                     className="pointer-events-none absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full"
-                                    style={{ backgroundColor: "#1F4D3D" }}
+                                    style={{ backgroundColor: "#145C43" }}
                                 >
                                     <span
                                         className="font-bold text-white"
@@ -973,7 +973,7 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                                     : "transparent",
                             }}
                         >
-                            <User size={18} color="#1F4D3D" />
+                            <User size={18} color="#145C43" />
                         </Link>
                     </motion.div>
 
@@ -983,9 +983,9 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                         aria-label="Open menu"
                         className="flex flex-col items-center justify-center gap-[3px] rounded-full p-1.5 lg:hidden"
                     >
-                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#1F4D3D" }} />
-                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#1F4D3D" }} />
-                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#1F4D3D" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#145C43" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#145C43" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#145C43" }} />
                     </button>
                 </div>
             </div>

@@ -21,8 +21,8 @@ import type { SavedAddress } from "../types/checkout";
 //
 //   --ink        #16241D   primary text
 //   --ink-muted  #6E7C74   secondary text
-//   --brand      #1F4D3D   headings, icons, borders-on-focus
-//   --brand-soft #E7EFEA   badges, subtle fills
+//   --brand      #145C43   headings, icons, borders-on-focus
+//   --brand-soft #E8EFEC   badges, subtle fills
 //   --paper      #F7F8F5   page background
 //   --line       #E3E7E1   hairline borders
 //   --citrus     #A9CC3B   primary CTA, success accents (used sparingly)
@@ -31,7 +31,7 @@ import type { SavedAddress } from "../types/checkout";
 
 function StepBadge({ n }: { n: number }) {
   return (
-    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#1F4D3D] text-white text-sm font-semibold shrink-0">
+    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#145C43] text-white text-sm font-semibold shrink-0">
       {n}
     </span>
   );
@@ -54,7 +54,7 @@ function AddressRow({ addr }: { addr: SavedAddress }) {
         <span className="text-[10px] font-semibold tracking-widest uppercase text-[#6E7C74]">
           Deliver to
         </span>
-        <span className="inline-block text-[10px] font-semibold tracking-widest uppercase text-[#1F4D3D] bg-[#E7EFEA] px-2 py-0.5 rounded-full">
+        <span className="inline-block text-[10px] font-semibold tracking-widest uppercase text-[#145C43] bg-[#E8EFEC] px-2 py-0.5 rounded-full">
           {addr.label || "Address"}
         </span>
       </div>
@@ -76,7 +76,7 @@ function AddressDropdown() {
     return (
       <div className="border border-dashed border-[#DCE3DC] rounded-xl px-4 py-5 text-center">
         <p className="text-sm text-[#6E7C74]">No saved addresses yet.</p>
-        <button className="mt-2 text-sm font-medium text-[#1F4D3D] hover:underline">
+        <button className="mt-2 text-sm font-medium text-[#145C43] hover:underline">
           + Add a delivery address
         </button>
       </div>
@@ -87,13 +87,13 @@ function AddressDropdown() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-3 border border-[#DCE3DC] rounded-xl px-4 py-3.5 bg-white hover:border-[#1F4D3D] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]/30"
+        className="w-full flex items-center justify-between gap-3 border border-[#DCE3DC] rounded-xl px-4 py-3.5 bg-white hover:border-[#145C43] transition-colors focus:outline-none focus:ring-2 focus:ring-[#145C43]/30"
       >
         {/* flex-1 is the fix: without it this div shrinks to fit-content instead
             of filling the space before the chevron, which is what was causing
             the label/address to render with unpredictable, floating positions. */}
         <div className="flex-1 flex items-center gap-3 min-w-0">
-          <MapPin size={16} className="text-[#1F4D3D] shrink-0" />
+          <MapPin size={16} className="text-[#145C43] shrink-0" />
           {selected ? (
             <AddressRow addr={selected} />
           ) : (
@@ -115,18 +115,18 @@ function AddressDropdown() {
                 setSelectedAddressId(addr._id);
                 setOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#EEF3EC] transition-colors ${
-                addr._id === selectedAddressId ? "bg-[#EEF3EC]" : ""
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#ECF2F0] transition-colors ${
+                addr._id === selectedAddressId ? "bg-[#ECF2F0]" : ""
               }`}
             >
               <AddressRow addr={addr} />
               {addr._id === selectedAddressId && (
-                <Check size={16} className="text-[#1F4D3D] shrink-0" />
+                <Check size={16} className="text-[#145C43] shrink-0" />
               )}
             </button>
           ))}
           <div className="border-t border-[#E3E7E1]">
-            <button className="w-full px-4 py-3 text-sm font-medium text-[#1F4D3D] hover:bg-[#EEF3EC] transition-colors text-left">
+            <button className="w-full px-4 py-3 text-sm font-medium text-[#145C43] hover:bg-[#ECF2F0] transition-colors text-left">
               + Add new address
             </button>
           </div>
@@ -153,7 +153,7 @@ function DeliveryInstructions() {
         onChange={(e) => setDeliveryInstructions(e.target.value)}
         rows={3}
         placeholder="e.g. Leave at the gate, Call upon arrival, Ring the bell twice…"
-        className="w-full border border-[#DCE3DC] rounded-xl px-4 py-3 text-sm text-[#16241D] placeholder-[#9BAAA1] resize-none focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]/30 focus:border-[#1F4D3D] transition-colors bg-[#F5F7F3]"
+        className="w-full border border-[#DCE3DC] rounded-xl px-4 py-3 text-sm text-[#16241D] placeholder-[#9BAAA1] resize-none focus:outline-none focus:ring-2 focus:ring-[#145C43]/30 focus:border-[#145C43] transition-colors bg-[#F5F7F3]"
       />
     </section>
   );
@@ -175,7 +175,7 @@ function PaymentMethod() {
       <div className="space-y-3">
         <label
           className={`flex items-center gap-4 border rounded-xl px-4 py-4 cursor-pointer transition-colors ${
-            paymentMethod === "COD" ? "border-[#1F4D3D] bg-[#EEF3EC]" : "border-[#DCE3DC] bg-white hover:bg-[#F5F7F3]"
+            paymentMethod === "COD" ? "border-[#145C43] bg-[#ECF2F0]" : "border-[#DCE3DC] bg-white hover:bg-[#F5F7F3]"
           }`}
         >
           <input
@@ -184,7 +184,7 @@ function PaymentMethod() {
             value="cod"
             checked={paymentMethod === "COD"}
             onChange={() => setPaymentMethod("COD")}
-            className="accent-[#1F4D3D] w-4 h-4"
+            className="accent-[#145C43] w-4 h-4"
           />
           <div className="flex-1">
             <p className="text-sm font-semibold text-[#16241D]">Cash on Delivery (COD)</p>
@@ -197,7 +197,7 @@ function PaymentMethod() {
             option shouldn't compete at equal visual weight with the one the
             user can actually pick. */}
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-dashed border-[#DCE3DC] opacity-60 cursor-not-allowed">
-          <input type="radio" name="payment" value="online" disabled className="accent-[#1F4D3D] w-3.5 h-3.5" />
+          <input type="radio" name="payment" value="online" disabled className="accent-[#145C43] w-3.5 h-3.5" />
           <p className="text-xs font-medium text-[#6E7C74] flex-1">Online Payment</p>
           <span className="text-[10px] font-semibold tracking-wide uppercase text-[#6E7C74] bg-[#F5F7F3] px-2 py-0.5 rounded-full">
             Coming soon
@@ -244,7 +244,7 @@ function OrderSummary() {
           <div className="space-y-4 mb-5">
             {cartItems.map((item) => (
               <div key={item.productId._id} className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-[#E7EFEA] flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                <div className="w-12 h-12 rounded-lg bg-[#E8EFEC] flex items-center justify-center text-2xl shrink-0 overflow-hidden">
                   {item.productId.images?.[0] ? (
                     <img
                       src={item.productId.images[0]}
@@ -272,15 +272,15 @@ function OrderSummary() {
         )}
 
         <div className="border-t border-[#E3E7E1] pt-4 space-y-2">
-          <div className="flex justify-between text-sm text-[#33453B]">
+          <div className="flex justify-between text-sm text-[#153A2C]">
             <span>Product Total</span>
             <span>₹{totals.productTotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm text-[#33453B]">
+          <div className="flex justify-between text-sm text-[#153A2C]">
             <span>Delivery Charge</span>
             <span className="font-semibold">₹{totals.deliveryCharge.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm text-[#33453B]">
+          <div className="flex justify-between text-sm text-[#153A2C]">
             <span>Packaging Fee</span>
             <span>₹{totals.packagingFee.toFixed(2)}</span>
           </div>
@@ -294,7 +294,7 @@ function OrderSummary() {
 
         <div className="border-t border-[#E3E7E1] mt-4 pt-4 flex justify-between items-center">
           <span className="font-semibold text-[#16241D]">Grand Total</span>
-          <span className="text-lg font-bold text-[#1F4D3D]">₹{totals.grandTotal.toFixed(2)}</span>
+          <span className="text-lg font-bold text-[#145C43]">₹{totals.grandTotal.toFixed(2)}</span>
         </div>
 
         <button
@@ -315,7 +315,7 @@ function OrderSummary() {
       {/* Coupon — local-only placeholder until real coupon validation exists server-side */}
       <div className="bg-white rounded-2xl border border-[#E3E7E1] p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Tag size={14} className="text-[#1F4D3D]" />
+          <Tag size={14} className="text-[#145C43]" />
           <span className="text-sm font-semibold text-[#16241D]">Offers &amp; Coupons</span>
         </div>
         <div className="flex gap-2">
@@ -325,12 +325,12 @@ function OrderSummary() {
             onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
             placeholder="Enter code"
             disabled={couponApplied}
-            className="flex-1 border border-[#DCE3DC] rounded-lg px-3 py-2 text-sm text-[#16241D] placeholder-[#9BAAA1] focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]/30 focus:border-[#1F4D3D] disabled:bg-[#F5F7F3] disabled:text-[#6E7C74] transition-colors"
+            className="flex-1 border border-[#DCE3DC] rounded-lg px-3 py-2 text-sm text-[#16241D] placeholder-[#9BAAA1] focus:outline-none focus:ring-2 focus:ring-[#145C43]/30 focus:border-[#145C43] disabled:bg-[#F5F7F3] disabled:text-[#6E7C74] transition-colors"
           />
           <button
             onClick={applyCoupon}
             disabled={couponApplied || !couponCode.trim()}
-            className="px-4 py-2 text-sm font-semibold text-[#1F4D3D] border border-[#1F4D3D] rounded-lg hover:bg-[#1F4D3D] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-[#145C43] border border-[#145C43] rounded-lg hover:bg-[#145C43] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {couponApplied ? "Applied" : "Apply"}
           </button>
@@ -356,12 +356,12 @@ export default function CheckoutPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <button
             onClick={() => navigate("/customer/home")}
-            className="text-xl font-bold text-[#16241D] tracking-tight italic hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]/30 rounded"
+            className="text-xl font-bold text-[#16241D] tracking-tight italic hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#145C43]/30 rounded"
             style={{ fontFamily: "Georgia, serif" }}
           >
             QuickKart
           </button>
-          <div className="flex items-center gap-1.5 text-xs font-medium text-[#1F4D3D] uppercase tracking-widest">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-[#145C43] uppercase tracking-widest">
             <Lock size={12} />
             Secure Checkout
           </div>
@@ -380,7 +380,7 @@ export default function CheckoutPage() {
             <p className="text-sm text-[#6E7C74]">{summaryError}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-3 text-sm font-medium text-[#1F4D3D] hover:underline"
+              className="mt-3 text-sm font-medium text-[#145C43] hover:underline"
             >
               Try again
             </button>

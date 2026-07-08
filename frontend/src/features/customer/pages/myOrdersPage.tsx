@@ -19,7 +19,7 @@ function StatusPill({ status }: { status: OrderStatus }) {
 
   const classes = isCancelled
     ? "bg-[#F5E6E0] text-[#9C4A3A]"
-    : "bg-[#E7EFEA] text-[#1F4D3D]";
+    : "bg-[#E8EFEC] text-[#145C43]";
 
   return (
     <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${classes}`}>
@@ -33,8 +33,8 @@ function StatusPill({ status }: { status: OrderStatus }) {
 function ProgressTracker({ order }: { order: CustomerOrder }) {
   const reachedIndex = stageIndexForStatus(order.status);
   const isComplete = order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED";
-  const barColor = order.status === "CANCELLED" ? "bg-[#DCE3DC]" : "bg-[#1F4D3D]";
-  const labelColor = order.status === "CANCELLED" ? "text-[#9BAAA1]" : "text-[#1F4D3D]";
+  const barColor = order.status === "CANCELLED" ? "bg-[#DCE3DC]" : "bg-[#145C43]";
+  const labelColor = order.status === "CANCELLED" ? "text-[#9BAAA1]" : "text-[#145C43]";
 
   const stages = [
     { key: "PROCESSING", label: "Processing" },
@@ -152,7 +152,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
               <button
                 onClick={() => setConfirming(false)}
                 disabled={isCancelling}
-                className="text-sm font-semibold text-[#1F4D3D] hover:underline disabled:opacity-50"
+                className="text-sm font-semibold text-[#145C43] hover:underline disabled:opacity-50"
               >
                 Keep it
               </button>
@@ -184,16 +184,16 @@ function OrderCard({ order }: { order: CustomerOrder }) {
             )}
 
             {isPast ? (
-              <button className="text-sm font-semibold text-[#1F4D3D] hover:underline">
+              <button className="text-sm font-semibold text-[#145C43] hover:underline">
                 View Details
               </button>
             ) : showCallRider ? (
-              <button className="flex items-center gap-2 bg-[#1F4D3D] hover:bg-[#163D30] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
+              <button className="flex items-center gap-2 bg-[#145C43] hover:bg-[#114E39] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
                 <Phone size={14} />
                 Call Rider
               </button>
             ) : (
-              <button className="text-sm font-semibold text-[#1F4D3D] hover:underline">
+              <button className="text-sm font-semibold text-[#145C43] hover:underline">
                 Track Order
               </button>
             )}
@@ -223,7 +223,7 @@ export function OrdersContent() {
         >
           Active Orders
           {activeTab === "active" && (
-            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#1F4D3D] rounded-full" />
+            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#145C43] rounded-full" />
           )}
         </button>
         <button
@@ -235,7 +235,7 @@ export function OrdersContent() {
         >
           Past Orders
           {activeTab === "past" && (
-            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#1F4D3D] rounded-full" />
+            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#145C43] rounded-full" />
           )}
         </button>
       </div>
