@@ -61,14 +61,14 @@ function Skeleton({ className = "" }: { className?: string }) {
     return (
         <div
             className={`rounded-lg animate-pulse ${className}`}
-            style={{ backgroundColor: "#EFE6D8" }}
+            style={{ backgroundColor: "#F5F7F3" }}
         />
     );
 }
 
 function ProductCardSkeleton() {
     return (
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#D2C4B9" }}>
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#E3E7E1" }}>
             <Skeleton className="h-48 w-full rounded-none" />
             <div className="p-4 space-y-2">
                 <Skeleton className="h-3 w-24" />
@@ -85,7 +85,7 @@ function ProductCardSkeleton() {
 
 function StoreSkeleton() {
     return (
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#D2C4B9" }}>
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#E3E7E1" }}>
             <Skeleton className="h-56 w-full rounded-none" />
             <div className="p-6 space-y-3">
                 <Skeleton className="h-5 w-40" />
@@ -104,13 +104,13 @@ function SectionHeader({ title, action }: { title: string; action: string }) {
             viewport={{ once: true, margin: "-40px" }}
             className="flex items-end justify-between mb-6"
         >
-            <span className="text-xl font-semibold" style={{ fontFamily: "'Inter', sans-serif", color: "#735A3E" }}>
+            <span className="text-xl font-semibold" style={{ fontFamily: "'Inter', sans-serif", color: "#1F4D3D" }}>
                 {title}
             </span>
             <motion.span
                 whileHover={{ x: 3 }} transition={{ duration: 0.2 }}
                 className="text-xs font-semibold cursor-pointer flex items-center gap-1"
-                style={{ fontFamily: "'Inter', sans-serif", color: "#735A3E" }}
+                style={{ fontFamily: "'Inter', sans-serif", color: "#1F4D3D" }}
             >
                 {action} <ArrowRight size={11} />
             </motion.span>
@@ -123,10 +123,10 @@ function SectionHeader({ title, action }: { title: string; action: string }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
     return (
         <motion.div
-            whileHover={{ y: -4, boxShadow: "0px 12px 32px rgba(194,163,131,0.22)" }}
+            whileHover={{ y: -4, boxShadow: "0px 12px 32px rgba(31,77,61,0.22)" }}
             transition={{ duration: 0.22, ease: "easeOut" }}
             className={`rounded-xl overflow-hidden bg-white border ${className}`}
-            style={{ borderColor: "#D2C4B9", boxShadow: "0px 1px 4px rgba(0,0,0,0.06)" }}
+            style={{ borderColor: "#E3E7E1", boxShadow: "0px 1px 4px rgba(0,0,0,0.06)" }}
         >
             {children}
         </motion.div>
@@ -153,7 +153,7 @@ function AddToCartButton({ onAdd, icon = false, productId }: { onAdd?: () => voi
             <motion.button
                 whileTap={{ scale: 0.88 }} onClick={handleClick}
                 className="w-10 h-10 rounded-lg flex items-center justify-center border-none cursor-pointer flex-shrink-0 transition-colors duration-300"
-                style={{ backgroundColor: added ? "#376847" : "#735A3E", boxShadow: "0px 2px 12px rgba(194,163,131,0.22)" }}
+                style={{ backgroundColor: added ? "#1F4D3D" : "#1F4D3D", boxShadow: "0px 2px 12px rgba(31,77,61,0.22)" }}
             >
                 <AnimatePresence mode="wait" initial={false}>
                     {added
@@ -169,7 +169,7 @@ function AddToCartButton({ onAdd, icon = false, productId }: { onAdd?: () => voi
         <motion.button
             whileTap={{ scale: 0.94 }} onClick={handleClick}
             className="flex items-center gap-2 rounded-lg border-none cursor-pointer text-white transition-colors duration-300"
-            style={{ backgroundColor: added ? "#376847" : "#735A3E", padding: "8px 16px", fontFamily: "'Inter', sans-serif", fontSize: 14 }}
+            style={{ backgroundColor: added ? "#1F4D3D" : "#1F4D3D", padding: "8px 16px", fontFamily: "'Inter', sans-serif", fontSize: 14 }}
         >
             <AnimatePresence mode="wait" initial={false}>
                 {added
@@ -186,8 +186,8 @@ function AddToCartButton({ onAdd, icon = false, productId }: { onAdd?: () => voi
 function StarRating({ rating }: { rating: number }) {
     return (
         <div className="flex items-center gap-1.5">
-            <Star size={13} fill="#C2A383" color="#C2A383" />
-            <span className="text-sm font-bold" style={{ fontFamily: "'Inter', sans-serif", color: "#1D1B16" }}>
+            <Star size={13} fill="#1F4D3D" color="#1F4D3D" />
+            <span className="text-sm font-bold" style={{ fontFamily: "'Inter', sans-serif", color: "#16241D" }}>
                 {rating.toFixed(1)}
             </span>
         </div>
@@ -198,7 +198,7 @@ function StarRating({ rating }: { rating: number }) {
 
 function StoreStatusBadge({ status, index }: { status: StoreProfileSummary["status"]; index: number }) {
     const config = {
-        OPEN:   { bg: "rgba(55,104,71,0.18)",   dot: "#376847", text: "#376847", label: "Open" },
+        OPEN:   { bg: "rgba(31,77,61,0.18)",   dot: "#1F4D3D", text: "#1F4D3D", label: "Open" },
         BUSY:   { bg: "rgba(180,120,0,0.18)",    dot: "#B47800", text: "#B47800", label: "Busy" },
         CLOSED: { bg: "rgba(180,60,60,0.18)",    dot: "#B43C3C", text: "#B43C3C", label: "Closed" },
     }[status];
@@ -235,7 +235,7 @@ function categoryEmoji(name: string): string {
 
 // ─── Store card background (deterministic from name) ─────────────────────────
 
-const STORE_CARD_COLORS = ["#2C2018", "#1A2E1C", "#1C1A2E", "#2E1C1A", "#18282E"];
+const STORE_CARD_COLORS = ["#0F2921", "#163D30", "#1F4D3D", "#0B231D", "#12352A"];
 function storeCardColor(name: string): string {
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -255,8 +255,8 @@ function productEmoji(cat?: string): string {
 }
 
 const PRODUCT_BG: Record<string, string> = {
-    dairy: "#F0EBE3", fruits: "#D8E8D4", bakery: "#8B7355", snacks: "#C8A060",
-    vegetables: "#D8E8D4", beverages: "#2C2018", default: "#EFE6D8",
+    dairy: "#F5F7F3", fruits: "#E7EFEA", bakery: "#F5F7F3", snacks: "#E7EFEA",
+    vegetables: "#E7EFEA", beverages: "#F5F7F3", default: "#F5F7F3",
 };
 function productBg(cat?: string): string {
     if (!cat) return PRODUCT_BG.default;
@@ -336,7 +336,7 @@ export default function CustomerHome() {
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen" style={{ backgroundColor: "#FFF9EF", fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen" style={{ backgroundColor: "#F7F8F5", fontFamily: "'Inter', sans-serif" }}>
             <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -358,13 +358,13 @@ export default function CustomerHome() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
                     className="relative rounded-2xl overflow-hidden cursor-pointer group"
-                    style={{ height: 480, boxShadow: "0px 8px 40px rgba(194,163,131,0.30)" }}
+                    style={{ height: 480, boxShadow: "0px 8px 40px rgba(31,77,61,0.30)" }}
                 >
                     <div
                         className="absolute inset-0 transition-transform duration-700 group-hover:scale-[1.02]"
-                        style={{ background: "linear-gradient(110deg, #6B4A20 0%, #9C7040 30%, #C8963C 55%, #D4A850 75%, #8B6020 100%)" }}
+                        style={{ background: "linear-gradient(110deg, #0F2921 0%, #163D30 30%, #1F4D3D 55%, #2C6B54 75%, #0B231D 100%)" }}
                     />
-                    <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(255,249,239,0.97) 0%, rgba(255,249,239,0.75) 38%, rgba(255,249,239,0.2) 60%, rgba(255,249,239,0) 100%)" }} />
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(247,248,245,0.97) 0%, rgba(247,248,245,0.75) 38%, rgba(247,248,245,0.2) 60%, rgba(247,248,245,0) 100%)" }} />
                     <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
                         className="absolute right-24 top-16 text-8xl opacity-30 pointer-events-none select-none">🌾</motion.div>
                     <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
@@ -374,22 +374,22 @@ export default function CustomerHome() {
                         <div className="flex flex-col gap-4" style={{ maxWidth: 420 }}>
                             <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
                                 className="flex w-fit items-center gap-1.5 rounded-full px-3 py-1"
-                                style={{ backgroundColor: "rgba(128,180,141,0.2)" }}>
-                                <Leaf size={11} color="#376847" />
-                                <span className="text-xs font-medium" style={{ color: "#376847" }}>Curated Selection</span>
+                                style={{ backgroundColor: "rgba(31,77,61,0.15)" }}>
+                                <Leaf size={11} color="#1F4D3D" />
+                                <span className="text-xs font-medium" style={{ color: "#1F4D3D" }}>Curated Selection</span>
                             </motion.div>
 
                             <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.55 }}
                                 className="font-bold leading-tight m-0"
-                                style={{ fontFamily: "'Inter', sans-serif", fontSize: 34, color: "#735A3E", lineHeight: "42px" }}>
+                                style={{ fontFamily: "'Inter', sans-serif", fontSize: 34, color: "#1F4D3D", lineHeight: "42px" }}>
                                 {activeAddress
-                                    ? <>Delivering to <br /><span style={{ color: "#4E453D" }}>{activeAddress.label}</span></>
+                                    ? <>Delivering to <br /><span style={{ color: "#16241D" }}>{activeAddress.label}</span></>
                                     : <>Freshness Delivered<br />To Your Doorstep</>
                                 }
                             </motion.h1>
 
                             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}
-                                className="text-sm m-0" style={{ lineHeight: "22px", color: "#4E453D", maxWidth: 384 }}>
+                                className="text-sm m-0" style={{ lineHeight: "22px", color: "#6E7C74", maxWidth: 384 }}>
                                 {activeAddress
                                     ? activeAddress.address
                                     : "Experience the warmth of your local neighbourhood market from the comfort of your home."
@@ -399,16 +399,16 @@ export default function CustomerHome() {
                             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}
                                 className="flex items-center gap-4 pt-2">
                                 <motion.button
-                                    whileHover={{ scale: 1.04, boxShadow: "0px 8px 24px rgba(115,90,62,0.35)" }}
+                                    whileHover={{ scale: 1.04, boxShadow: "0px 8px 24px rgba(31,77,61,0.35)" }}
                                     whileTap={{ scale: 0.96 }}
                                     className="text-white rounded-xl font-semibold cursor-pointer border-none"
-                                    style={{ backgroundColor: "#735A3E", padding: "14px 28px", fontFamily: "'Inter', sans-serif", fontSize: 15 }}
+                                    style={{ backgroundColor: "#1F4D3D", padding: "14px 28px", fontFamily: "'Inter', sans-serif", fontSize: 15 }}
                                     onClick={() => !activeAddress && openLocationModal()}
                                 >
                                     {activeAddress ? "Free delivery over ₹300" : "Set delivery location"}
                                 </motion.button>
                                 {activeAddress && (
-                                    <span className="text-xs italic" style={{ color: "#80756B" }}>*Limited time, new users only</span>
+                                    <span className="text-xs italic" style={{ color: "#6E7C74" }}>*Limited time, new users only</span>
                                 )}
                             </motion.div>
                         </div>
@@ -428,7 +428,7 @@ export default function CustomerHome() {
                             ))}
                         </div>
                     ) : categories.length === 0 ? (
-                        <p className="text-sm text-center py-8" style={{ color: "#9C8C7C" }}>No categories yet.</p>
+                        <p className="text-sm text-center py-8" style={{ color: "#6E7C74" }}>No categories yet.</p>
                     ) : (
                         <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
                             viewport={{ once: true, margin: "-40px" }} className="flex justify-between flex-wrap gap-4">
@@ -436,15 +436,15 @@ export default function CustomerHome() {
                                 <motion.button key={cat._id} variants={fadeUp} custom={i}
                                     whileHover={{ y: -6 }} whileTap={{ scale: 0.94 }}
                                     className="flex flex-col items-center gap-4 cursor-pointer border-none bg-transparent">
-                                    <motion.div whileHover={{ boxShadow: "0px 8px 24px rgba(194,163,131,0.30)", borderColor: "#C2A383" }}
+                                    <motion.div whileHover={{ boxShadow: "0px 8px 24px rgba(31,77,61,0.30)", borderColor: "#1F4D3D" }}
                                         className="w-32 h-32 rounded-full flex items-center justify-center overflow-hidden transition-shadow"
-                                        style={{ backgroundColor: "#F3EDE4", border: "2px solid #D2C4B9", boxShadow: "0px 2px 12px rgba(194,163,131,0.14)" }}>
+                                        style={{ backgroundColor: "#F5F7F3", border: "2px solid #E3E7E1", boxShadow: "0px 2px 12px rgba(31,77,61,0.14)" }}>
                                         {cat.image
                                             ? <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
                                             : <span className="text-5xl select-none">{categoryEmoji(cat.name)}</span>
                                         }
                                     </motion.div>
-                                    <span className="font-semibold text-sm" style={{ fontFamily: "'Inter', sans-serif", color: "#1D1B16" }}>{cat.name}</span>
+                                    <span className="font-semibold text-sm" style={{ fontFamily: "'Inter', sans-serif", color: "#16241D" }}>{cat.name}</span>
                                 </motion.button>
                             ))}
                         </motion.div>
@@ -459,7 +459,7 @@ export default function CustomerHome() {
                             {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
                         </div>
                     ) : popularProducts.length === 0 ? (
-                        <p className="text-sm text-center py-8" style={{ color: "#9C8C7C" }}>No products available yet.</p>
+                        <p className="text-sm text-center py-8" style={{ color: "#6E7C74" }}>No products available yet.</p>
                     ) : (
                         <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
                             viewport={{ once: true, margin: "-40px" }} className="grid grid-cols-4 gap-6">
@@ -479,12 +479,12 @@ export default function CustomerHome() {
                                                 </motion.div>
                                             </div>
                                             <div className="px-[17px] pt-[17px] flex flex-col gap-0.5 flex-1">
-                                                <span className="text-xs font-medium block" style={{ color: "#376847" }}>{p.storeId?.storeName}</span>
-                                                <span className="font-semibold block" style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#1D1B16", lineHeight: "22px", marginTop: 3 }}>{p.name}</span>
-                                                <span className="text-sm block" style={{ color: "#D2C4B9" }}>{p.unit || p.weight || catName}</span>
+                                                <span className="text-xs font-medium block" style={{ color: "#1F4D3D" }}>{p.storeId?.storeName}</span>
+                                                <span className="font-semibold block" style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#16241D", lineHeight: "22px", marginTop: 3 }}>{p.name}</span>
+                                                <span className="text-sm block" style={{ color: "#9BAAA1" }}>{p.unit || p.weight || catName}</span>
                                             </div>
                                             <div className="px-[17px] py-4 flex items-center justify-between">
-                                                <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#735A3E" }}>₹{p.price}</span>
+                                                <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#1F4D3D" }}>₹{p.price}</span>
                                                 <AddToCartButton productId={p._id} />
                                             </div>
                                         </Card>
@@ -499,10 +499,10 @@ export default function CustomerHome() {
                 <section>
                     <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
                         className="flex items-center justify-between mb-6">
-                        <span className="text-xl font-semibold" style={{ fontFamily: "'Inter', sans-serif", color: "#735A3E" }}>
+                        <span className="text-xl font-semibold" style={{ fontFamily: "'Inter', sans-serif", color: "#1F4D3D" }}>
                             Nearby Stores
                             {activeCoords && (
-                                <span className="ml-2 text-sm font-normal" style={{ color: "#9C8C7C" }}>
+                                <span className="ml-2 text-sm font-normal" style={{ color: "#6E7C74" }}>
                                     within 10 km
                                 </span>
                             )}
@@ -510,11 +510,11 @@ export default function CustomerHome() {
                         <div className="flex items-center gap-2">
                             {[ChevronLeft, ChevronRight].map((Icon, i) => (
                                 <motion.button key={i}
-                                    whileHover={{ backgroundColor: "#FDF3E3", scale: 1.06 }}
+                                    whileHover={{ backgroundColor: "#EEF3EC", scale: 1.06 }}
                                     whileTap={{ scale: 0.92 }}
                                     className="w-8 h-8 rounded-full bg-white border flex items-center justify-center cursor-pointer transition-colors"
-                                    style={{ borderColor: "#D2C4B9" }}>
-                                    <Icon size={14} color="#735A3E" />
+                                    style={{ borderColor: "#E3E7E1" }}>
+                                    <Icon size={14} color="#1F4D3D" />
                                 </motion.button>
                             ))}
                         </div>
@@ -523,18 +523,18 @@ export default function CustomerHome() {
                     {!activeCoords && !profileLoading ? (
                         <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
                             className="rounded-xl border p-8 text-center"
-                            style={{ borderColor: "#D2C4B9", backgroundColor: "#F9F3EA" }}>
-                            <MapPin size={32} color="#C2A383" className="mx-auto mb-3" />
-                            <p className="font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif", color: "#735A3E" }}>
+                            style={{ borderColor: "#E3E7E1", backgroundColor: "#F5F7F3" }}>
+                            <MapPin size={32} color="#1F4D3D" className="mx-auto mb-3" />
+                            <p className="font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif", color: "#1F4D3D" }}>
                                 Set your location to see nearby stores
                             </p>
-                            <p className="text-sm mb-4" style={{ color: "#80756B" }}>
+                            <p className="text-sm mb-4" style={{ color: "#6E7C74" }}>
                                 We'll show you stores that deliver to your area.
                             </p>
                             <motion.button whileTap={{ scale: 0.96 }}
                                 onClick={openLocationModal}
                                 className="rounded-xl px-6 py-2.5 text-sm font-semibold"
-                                style={{ backgroundColor: "#735A3E", color: "#FFF9EF" }}>
+                                style={{ backgroundColor: "#1F4D3D", color: "#FFFFFF" }}>
                                 Add delivery address
                             </motion.button>
                         </motion.div>
@@ -543,9 +543,9 @@ export default function CustomerHome() {
                             <StoreSkeleton /><StoreSkeleton />
                         </div>
                     ) : nearbyStores.length === 0 ? (
-                        <div className="rounded-xl border p-8 text-center" style={{ borderColor: "#D2C4B9", backgroundColor: "#F9F3EA" }}>
-                            <p className="font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif", color: "#735A3E" }}>No stores nearby yet</p>
-                            <p className="text-sm" style={{ color: "#80756B" }}>We're growing! Check back soon for stores in your area.</p>
+                        <div className="rounded-xl border p-8 text-center" style={{ borderColor: "#E3E7E1", backgroundColor: "#F5F7F3" }}>
+                            <p className="font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif", color: "#16241D" }}>No stores nearby yet</p>
+                            <p className="text-sm" style={{ color: "#6E7C74" }}>We're growing! Check back soon for stores in your area.</p>
                         </div>
                     ) : (
                         <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
@@ -579,25 +579,25 @@ export default function CustomerHome() {
                                                 onClick={() => goToStore(s._id)}
                                                 className="cursor-pointer"
                                             >
-                                                <span className="font-semibold text-lg block" style={{ fontFamily: "'Inter', sans-serif", color: "#1D1B16" }}>{s.storeName}</span>
+                                                <span className="font-semibold text-lg block" style={{ fontFamily: "'Inter', sans-serif", color: "#16241D" }}>{s.storeName}</span>
                                                 <div className="flex items-center gap-2 mt-1.5">
                                                     {s.averageRating > 0 && (
                                                         <StarRating rating={s.averageRating} />
                                                     )}
-                                                    <span style={{ color: "#D2C4B9" }}>·</span>
-                                                    <Clock size={12} color="#4E453D" />
-                                                    <span className="text-sm" style={{ color: "#4E453D" }}>
+                                                    <span style={{ color: "#9BAAA1" }}>·</span>
+                                                    <Clock size={12} color="#16241D" />
+                                                    <span className="text-sm" style={{ color: "#16241D" }}>
                                                         {etaWindow(s.distanceKm)} mins
                                                     </span>
                                                 </div>
                                             </div>
                                             <motion.button
-                                                whileHover={{ backgroundColor: "#E3CCB4" }}
+                                                whileHover={{ backgroundColor: "#DCE8E0" }}
                                                 whileTap={{ scale: 0.94 }}
                                                 disabled={s.status === "CLOSED"}
                                                 onClick={() => goToStore(s._id)}
                                                 className="flex-shrink-0 rounded-lg border-none cursor-pointer text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                style={{ backgroundColor: "#EEDDC7", padding: "8px 18px", color: "#6D614F", fontFamily: "'Inter', sans-serif" }}>
+                                                style={{ backgroundColor: "#E7EFEA", padding: "8px 18px", color: "#1F4D3D", fontFamily: "'Inter', sans-serif" }}>
                                                 {s.status === "CLOSED" ? "Closed" : "View Menu"}
                                             </motion.button>
                                         </div>
@@ -616,7 +616,7 @@ export default function CustomerHome() {
                             {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
                         </div>
                     ) : trendingProducts.length === 0 ? (
-                        <p className="text-sm text-center py-8" style={{ color: "#9C8C7C" }}>No products yet.</p>
+                        <p className="text-sm text-center py-8" style={{ color: "#6E7C74" }}>No products yet.</p>
                     ) : (
                         <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
                             viewport={{ once: true, margin: "-40px" }} className="grid grid-cols-4 gap-6">
@@ -636,12 +636,12 @@ export default function CustomerHome() {
                                                 </motion.div>
                                             </div>
                                             <div className="px-[17px] pt-[17px] flex-1">
-                                                <span className="text-xs font-medium block" style={{ color: "#376847" }}>{item.storeId?.storeName}</span>
-                                                <span className="font-semibold block" style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#1D1B16", lineHeight: "22px", marginTop: 3 }}>{item.name}</span>
-                                                <span className="text-sm block" style={{ color: "#D2C4B9" }}>{item.unit || item.weight || catName}</span>
+                                                <span className="text-xs font-medium block" style={{ color: "#1F4D3D" }}>{item.storeId?.storeName}</span>
+                                                <span className="font-semibold block" style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#16241D", lineHeight: "22px", marginTop: 3 }}>{item.name}</span>
+                                                <span className="text-sm block" style={{ color: "#9BAAA1" }}>{item.unit || item.weight || catName}</span>
                                             </div>
                                             <div className="px-[17px] py-4 flex items-center justify-between">
-                                                <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#735A3E" }}>₹{item.price}</span>
+                                                <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#1F4D3D" }}>₹{item.price}</span>
                                                 <AddToCartButton productId={item._id} icon />
                                             </div>
                                         </Card>
@@ -655,16 +655,16 @@ export default function CustomerHome() {
             </main>
 
             {/* ── Footer ── */}
-            <footer className="border-t py-8 px-10" style={{ borderColor: "#D2C4B9", backgroundColor: "#FFF9EF" }}>
+            <footer className="border-t py-8 px-10" style={{ borderColor: "#E3E7E1", backgroundColor: "#F7F8F5" }}>
                 <div className="mx-auto flex items-center justify-between" style={{ maxWidth: 1200 }}>
                     <div>
-                        <span className="text-lg italic font-bold" style={{ fontFamily: "'Inter', sans-serif", color: "#735A3E" }}>QuickKart</span>
-                        <p className="text-xs mt-1" style={{ color: "#80756B" }}>© 2026 QuickKart Neighbourhood Market. All rights reserved.</p>
+                        <span className="text-lg italic font-bold" style={{ fontFamily: "'Inter', sans-serif", color: "#1F4D3D" }}>QuickKart</span>
+                        <p className="text-xs mt-1" style={{ color: "#6E7C74" }}>© 2026 QuickKart Neighbourhood Market. All rights reserved.</p>
                     </div>
                     <div className="flex gap-6">
                         {["About Us", "Contact", "Privacy Policy", "Terms of Service"].map((link) => (
-                            <motion.a key={link} whileHover={{ color: "#735A3E" }} href="#"
-                                className="text-xs transition-colors" style={{ color: "#80756B", fontFamily: "'Inter', sans-serif" }}>
+                            <motion.a key={link} whileHover={{ color: "#1F4D3D" }} href="#"
+                                className="text-xs transition-colors" style={{ color: "#6E7C74", fontFamily: "'Inter', sans-serif" }}>
                                 {link}
                             </motion.a>
                         ))}

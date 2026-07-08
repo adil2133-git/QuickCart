@@ -19,7 +19,7 @@ function StatusPill({ status }: { status: OrderStatus }) {
 
   const classes = isCancelled
     ? "bg-[#F5E6E0] text-[#9C4A3A]"
-    : "bg-[#F5EBE0] text-[#6B4226]";
+    : "bg-[#E7EFEA] text-[#1F4D3D]";
 
   return (
     <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${classes}`}>
@@ -33,8 +33,8 @@ function StatusPill({ status }: { status: OrderStatus }) {
 function ProgressTracker({ order }: { order: CustomerOrder }) {
   const reachedIndex = stageIndexForStatus(order.status);
   const isComplete = order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED";
-  const barColor = order.status === "CANCELLED" ? "bg-[#D8B9A8]" : isComplete ? "bg-[#3A6B35]" : "bg-[#6B4226]";
-  const labelColor = order.status === "CANCELLED" ? "text-[#9C7E5F]" : isComplete ? "text-[#3A6B35]" : "text-[#6B4226]";
+  const barColor = order.status === "CANCELLED" ? "bg-[#DCE3DC]" : "bg-[#1F4D3D]";
+  const labelColor = order.status === "CANCELLED" ? "text-[#9BAAA1]" : "text-[#1F4D3D]";
 
   const stages = [
     { key: "PROCESSING", label: "Processing" },
@@ -45,12 +45,12 @@ function ProgressTracker({ order }: { order: CustomerOrder }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-sm font-medium text-[#3D2B1F]">Order Progress</span>
+        <span className="text-sm font-medium text-[#16241D]">Order Progress</span>
         <span className={`text-sm font-bold ${labelColor}`}>{order.progressPercent}%</span>
       </div>
       <div className="flex gap-1.5 mb-2">
         {stages.map((stage, i) => (
-          <div key={stage.key} className="flex-1 h-1.5 rounded-full bg-[#EDE0D4] overflow-hidden">
+          <div key={stage.key} className="flex-1 h-1.5 rounded-full bg-[#E3E7E1] overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${i <= reachedIndex ? barColor : ""}`}
               style={{ width: i <= reachedIndex ? "100%" : "0%" }}
@@ -63,7 +63,7 @@ function ProgressTracker({ order }: { order: CustomerOrder }) {
           <span
             key={stage.key}
             className={`text-[11px] font-semibold tracking-wide uppercase ${
-              i <= reachedIndex ? labelColor : "text-[#B89A7A]"
+              i <= reachedIndex ? labelColor : "text-[#9BAAA1]"
             }`}
           >
             {stage.label}
@@ -102,13 +102,13 @@ function OrderCard({ order }: { order: CustomerOrder }) {
   });
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E8D8C8] p-6 flex flex-col">
+    <div className="bg-white rounded-2xl border border-[#E3E7E1] p-6 flex flex-col">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-[#1A1108]" style={{ fontFamily: "Georgia, serif" }}>
+          <h3 className="text-lg font-semibold text-[#16241D]" style={{ fontFamily: "Georgia, serif" }}>
             {order.storeName}
           </h3>
-          <p className="text-xs text-[#9C7E5F] mt-1 font-mono">
+          <p className="text-xs text-[#6E7C74] mt-1 font-mono">
             #{order.orderNumber} · {formattedDate}
           </p>
         </div>
@@ -116,7 +116,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
       </div>
 
       <div className="flex items-center gap-3 mb-5">
-        <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#F5EBE0] shrink-0 flex items-center justify-center">
+        <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#F5F7F3] shrink-0 flex items-center justify-center">
           {order.previewItems[0]?.image ? (
             <img
               src={order.previewItems[0].image}
@@ -133,8 +133,8 @@ function OrderCard({ order }: { order: CustomerOrder }) {
           )}
         </div>
         <div>
-          <p className="text-base text-[#1A1108]">{order.itemSummary}</p>
-          <p className="text-sm text-[#9C7E5F]">{order.itemCount} items total</p>
+          <p className="text-base text-[#16241D]">{order.itemSummary}</p>
+          <p className="text-sm text-[#6E7C74]">{order.itemCount} items total</p>
         </div>
       </div>
 
@@ -145,14 +145,14 @@ function OrderCard({ order }: { order: CustomerOrder }) {
       )}
 
       {confirming ? (
-        <div className="border-t border-[#EDE0D4] pt-4 mt-auto">
+        <div className="border-t border-[#E3E7E1] pt-4 mt-auto">
           <div className="flex items-center justify-between gap-3 bg-[#FBEAE6] border border-[#F0C9BE] rounded-xl px-4 py-3">
             <p className="text-sm text-[#8A3B2A]">Cancel this order? This can't be undone.</p>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setConfirming(false)}
                 disabled={isCancelling}
-                className="text-sm font-semibold text-[#6B4226] hover:underline disabled:opacity-50"
+                className="text-sm font-semibold text-[#1F4D3D] hover:underline disabled:opacity-50"
               >
                 Keep it
               </button>
@@ -167,8 +167,8 @@ function OrderCard({ order }: { order: CustomerOrder }) {
           </div>
         </div>
       ) : (
-        <div className="border-t border-[#EDE0D4] pt-4 mt-auto flex items-center justify-between">
-          <span className="text-xl font-bold text-[#1A1108]" style={{ fontFamily: "Georgia, serif" }}>
+        <div className="border-t border-[#E3E7E1] pt-4 mt-auto flex items-center justify-between">
+          <span className="text-xl font-bold text-[#16241D]" style={{ fontFamily: "Georgia, serif" }}>
             ₹{order.totalAmount.toFixed(2)}
           </span>
 
@@ -184,16 +184,16 @@ function OrderCard({ order }: { order: CustomerOrder }) {
             )}
 
             {isPast ? (
-              <button className="text-sm font-semibold text-[#6B4226] hover:underline">
+              <button className="text-sm font-semibold text-[#1F4D3D] hover:underline">
                 View Details
               </button>
             ) : showCallRider ? (
-              <button className="flex items-center gap-2 bg-[#6B4226] hover:bg-[#5A3520] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
+              <button className="flex items-center gap-2 bg-[#1F4D3D] hover:bg-[#163D30] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
                 <Phone size={14} />
                 Call Rider
               </button>
             ) : (
-              <button className="text-sm font-semibold text-[#6B4226] hover:underline">
+              <button className="text-sm font-semibold text-[#1F4D3D] hover:underline">
                 Track Order
               </button>
             )}
@@ -213,40 +213,40 @@ export function OrdersContent() {
 
   return (
     <>
-      <div className="flex items-center gap-8 border-b border-[#E8D8C8] mb-8">
+      <div className="flex items-center gap-8 border-b border-[#E3E7E1] mb-8">
         <button
           onClick={() => setActiveTab("active")}
           className={`pb-3 text-lg font-semibold relative -mb-px ${
-            activeTab === "active" ? "text-[#1A1108]" : "text-[#B89A7A]"
+            activeTab === "active" ? "text-[#16241D]" : "text-[#9BAAA1]"
           }`}
           style={{ fontFamily: "Georgia, serif" }}
         >
           Active Orders
           {activeTab === "active" && (
-            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#6B4226] rounded-full" />
+            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#1F4D3D] rounded-full" />
           )}
         </button>
         <button
           onClick={() => setActiveTab("past")}
           className={`pb-3 text-lg font-semibold relative -mb-px ${
-            activeTab === "past" ? "text-[#1A1108]" : "text-[#B89A7A]"
+            activeTab === "past" ? "text-[#16241D]" : "text-[#9BAAA1]"
           }`}
           style={{ fontFamily: "Georgia, serif" }}
         >
           Past Orders
           {activeTab === "past" && (
-            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#6B4226] rounded-full" />
+            <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-[#1F4D3D] rounded-full" />
           )}
         </button>
       </div>
 
       {isLoading ? (
-        <p className="text-center text-[#9C7E5F] py-16">Loading your orders…</p>
+        <p className="text-center text-[#6E7C74] py-16">Loading your orders…</p>
       ) : error ? (
-        <p className="text-center text-[#9C7E5F] py-16">{error}</p>
+        <p className="text-center text-[#6E7C74] py-16">{error}</p>
       ) : orders.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-[#9C7E5F]">
+          <p className="text-[#6E7C74]">
             {activeTab === "active" ? "No active orders right now." : "No past orders yet."}
           </p>
         </div>
@@ -265,16 +265,16 @@ export function OrdersContent() {
 
 export default function MyOrdersPage() {
   return (
-    <div className="min-h-screen bg-[#FBF3E8]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-[#F7F8F5]" style={{ fontFamily: "'Inter', sans-serif" }}>
 
       <main className="max-w-6xl mx-auto px-6 py-10">
         <h1
-          className="text-4xl font-bold text-[#1A1108] mb-2"
+          className="text-4xl font-bold text-[#16241D] mb-2"
           style={{ fontFamily: "Georgia, serif" }}
         >
           My Orders
         </h1>
-        <p className="text-[#9C7E5F] mb-8">Track and manage your recent marketplace purchases</p>
+        <p className="text-[#6E7C74] mb-8">Track and manage your recent marketplace purchases</p>
 
         <OrdersContent />
       </main>

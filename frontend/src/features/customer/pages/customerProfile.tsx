@@ -66,11 +66,11 @@ const CustomerProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDF6EC] font-sans">
+    <div className="min-h-screen bg-[#F7F8F5] font-sans">
 
       <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6">
         {/* ── Sidebar ─────────────────────────────────────────── */}
-        <aside className="bg-white rounded-2xl shadow-sm p-3 h-fit">
+        <aside className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-3 h-fit">
           <nav className="space-y-1">
             <SidebarItem
               icon={<UserIcon size={18} />}
@@ -98,7 +98,7 @@ const CustomerProfilePage = () => {
             />
           </nav>
 
-          <div className="border-t border-[#EFE3D0] my-3" />
+          <div className="border-t border-[#E3E7E1] my-3" />
 
           <button
             onClick={logout}
@@ -118,19 +118,19 @@ const CustomerProfilePage = () => {
 
           {activeTab === "profile" && (
             <>
-              <section className="bg-white rounded-2xl shadow-sm p-10 text-center">
-                <h1 className="text-4xl font-semibold text-[#8B6B3D] mb-2">
+              <section className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-10 text-center">
+                <h1 className="text-4xl font-semibold text-[#1F4D3D] mb-2">
                   {user?.name ?? "—"}
                 </h1>
-                <p className="italic text-gray-500 mb-4">Member since {memberSince}</p>
-                <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-sm font-medium px-4 py-1.5 rounded-full">
-                  <Star size={14} className="fill-green-700" />
+                <p className="italic text-[#6E7C74] mb-4">Member since {memberSince}</p>
+                <span className="inline-flex items-center gap-1.5 bg-[#E7EFEA] text-[#1F4D3D] text-sm font-medium px-4 py-1.5 rounded-full">
+                  <Star size={14} className="fill-[#1F4D3D]" />
                   {isLoading ? "Loading..." : `${profile?.totalOrders ?? 0} orders placed`}
                 </span>
               </section>
 
-              <section className="bg-white rounded-2xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold text-[#8B6B3D] mb-5">
+              <section className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-8">
+                <h2 className="text-xl font-semibold text-[#1F4D3D] mb-5">
                   Personal Information
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -142,12 +142,12 @@ const CustomerProfilePage = () => {
           )}
 
           {activeTab === "addresses" && (
-            <section className="bg-white rounded-2xl shadow-sm p-8">
+            <section className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-8">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-xl font-semibold text-[#8B6B3D]">Saved Addresses</h2>
+                <h2 className="text-xl font-semibold text-[#1F4D3D]">Saved Addresses</h2>
                 <button
                   onClick={() => setShowAddForm((s) => !s)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-[#8B6B3D] hover:underline"
+                  className="flex items-center gap-1.5 text-sm font-medium text-[#1F4D3D] hover:underline"
                 >
                   <Plus size={16} />
                   Add Address
@@ -157,20 +157,20 @@ const CustomerProfilePage = () => {
               {showAddForm && (
                 <form
                   onSubmit={handleAddAddress}
-                  className="mb-6 p-5 rounded-xl bg-[#FDF6EC] space-y-3"
+                  className="mb-6 p-5 rounded-xl bg-[#F5F7F3] space-y-3"
                 >
                   <input
                     value={label}
                     onChange={(e) => setLabel(e.target.value)}
                     placeholder="Label (Home, Work...)"
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#EFE3D0] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A368]"
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#DCE3DC] bg-white focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]"
                   />
                   <input
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Full address"
                     required
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#EFE3D0] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A368]"
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#DCE3DC] bg-white focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]"
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <input
@@ -178,20 +178,20 @@ const CustomerProfilePage = () => {
                       onChange={(e) => setLat(e.target.value)}
                       placeholder="Latitude"
                       required
-                      className="px-4 py-2.5 rounded-lg border border-[#EFE3D0] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A368]"
+                      className="px-4 py-2.5 rounded-lg border border-[#DCE3DC] bg-white focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]"
                     />
                     <input
                       value={lng}
                       onChange={(e) => setLng(e.target.value)}
                       placeholder="Longitude"
                       required
-                      className="px-4 py-2.5 rounded-lg border border-[#EFE3D0] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A368]"
+                      className="px-4 py-2.5 rounded-lg border border-[#DCE3DC] bg-white focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-5 py-2.5 rounded-lg bg-[#C9A368] text-white font-medium disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-lg bg-[#1F4D3D] text-white font-medium disabled:opacity-50"
                   >
                     {submitting ? "Saving..." : "Save Address"}
                   </button>
@@ -200,25 +200,25 @@ const CustomerProfilePage = () => {
 
               <div className="space-y-3">
                 {profile?.savedAddresses.length === 0 && (
-                  <p className="text-gray-500 text-sm">No saved addresses yet.</p>
+                  <p className="text-[#6E7C74] text-sm">No saved addresses yet.</p>
                 )}
                 {profile?.savedAddresses.map((addr) => (
                   <div
                     key={addr._id}
-                    className="flex items-center justify-between p-4 rounded-xl border border-[#EFE3D0]"
+                    className="flex items-center justify-between p-4 rounded-xl border border-[#E3E7E1]"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-[#5C4A2E]">
+                        <span className="font-medium text-[#16241D]">
                           {addr.label || "Address"}
                         </span>
                         {profile.defaultAddress === addr._id && (
-                          <span className="text-xs bg-[#C9A368]/20 text-[#8B6B3D] px-2 py-0.5 rounded-full">
+                          <span className="text-xs bg-[#E7EFEA] text-[#1F4D3D] px-2 py-0.5 rounded-full">
                             Default
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500">{addr.address}</p>
+                      <p className="text-sm text-[#6E7C74]">{addr.address}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       {profile.defaultAddress !== addr._id && (
@@ -231,7 +231,7 @@ const CustomerProfilePage = () => {
     toast.error("Failed to update default address.");
   }
 }}
-                          className="text-sm text-[#8B6B3D] hover:underline"
+                          className="text-sm text-[#1F4D3D] hover:underline"
                         >
                           Set Default
                         </button>
@@ -258,14 +258,14 @@ const CustomerProfilePage = () => {
           )}
 
           {activeTab === "orders" && (
-            <section className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold text-[#8B6B3D] mb-5">My Orders</h2>
+            <section className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-8">
+              <h2 className="text-xl font-semibold text-[#1F4D3D] mb-5">My Orders</h2>
               <OrdersContent />
             </section>
           )}
 
           {activeTab === "notifications" && (
-            <section className="bg-white rounded-2xl shadow-sm p-8 text-gray-500 text-sm">
+            <section className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-8 text-[#6E7C74] text-sm">
               No notifications yet.
             </section>
           )}
@@ -288,7 +288,7 @@ const SidebarItem = ({
 }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${active ? "bg-[#C9A368] text-white" : "text-[#5C4A2E] hover:bg-[#FDF6EC]"
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${active ? "bg-[#1F4D3D] text-white" : "text-[#16241D] hover:bg-[#EEF3EC]"
       }`}
   >
     {icon}
@@ -298,8 +298,8 @@ const SidebarItem = ({
 
 const ReadOnlyField = ({ label, value }: { label: string; value: string }) => (
   <div>
-    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">{label}</p>
-    <div className="px-4 py-3 rounded-lg bg-[#FDF6EC] text-[#5C4A2E]">{value}</div>
+    <p className="text-xs font-medium text-[#6E7C74] uppercase tracking-wide mb-1.5">{label}</p>
+    <div className="px-4 py-3 rounded-lg bg-[#F5F7F3] text-[#16241D]">{value}</div>
   </div>
 );
 

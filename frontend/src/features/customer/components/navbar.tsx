@@ -97,9 +97,9 @@ interface IdleMessage {
 }
 
 const IDLE_MESSAGES: IdleMessage[] = [
-    { icon: Clock, text: "Avg delivery: 20–30 min", iconBg: "#735A3E", textColor: "#735A3E", pillBg: "#F3EAE0" },
-    { icon: Gift, text: "Free delivery over ₹300", iconBg: "#A8632F", textColor: "#8A4F23", pillBg: "#FBE9D8" },
-    { icon: BadgeCheck, text: "Fresh & quality assured", iconBg: "#376847", textColor: "#2F5B3D", pillBg: "#EAF2EC" },
+    { icon: Clock, text: "Avg delivery: 20–30 min", iconBg: "#1F4D3D", textColor: "#1F4D3D", pillBg: "#E7EFEA" },
+    { icon: Gift, text: "Free delivery over ₹300", iconBg: "#1F4D3D", textColor: "#1F4D3D", pillBg: "#E7EFEA" },
+    { icon: BadgeCheck, text: "Fresh & quality assured", iconBg: "#1F4D3D", textColor: "#1F4D3D", pillBg: "#E7EFEA" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -133,12 +133,12 @@ function NavTextLink({ label, to }: NavLinkItem) {
             to={to}
             aria-current={isActive ? "page" : undefined}
             className="relative cursor-pointer px-1 py-1 text-[13px] font-medium tracking-wide transition-colors"
-            style={{ fontFamily: FONT_UI, color: isActive ? "#735A3E" : "#4E453D", letterSpacing: "0.01em" }}
+            style={{ fontFamily: FONT_UI, color: isActive ? "#1F4D3D" : "#16241D", letterSpacing: "0.01em" }}
         >
             {label}
             <motion.span
                 className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full"
-                style={{ backgroundColor: "#735A3E" }}
+                style={{ backgroundColor: "#1F4D3D" }}
                 initial={false}
                 animate={{ opacity: isActive ? 1 : 0, scaleX: isActive ? 1 : 0.6 }}
                 transition={{ duration: 0.18 }}
@@ -262,28 +262,28 @@ function LocationPicker() {
                     aria-haspopup="dialog"
                     className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     style={{
-                        borderColor: "#D2C4B9",
-                        backgroundColor: open ? "rgba(211,196,185,0.22)" : "rgba(211,196,185,0.12)",
-                        outlineColor: "#C2A383",
+                        borderColor: "#DCE3DC",
+                        backgroundColor: open ? "rgba(220,227,220,0.35)" : "rgba(220,227,220,0.2)",
+                        outlineColor: "#1F4D3D",
                     }}
                 >
-                    <MapPin size={14} color="#735A3E" className="shrink-0" />
+                    <MapPin size={14} color="#1F4D3D" className="shrink-0" />
                     <span className="flex min-w-0 flex-col leading-tight">
                         <span
                             className="text-[10px] font-semibold uppercase tracking-widest"
-                            style={{ fontFamily: FONT_UI, color: "#9C8C7C", letterSpacing: "0.08em" }}
+                            style={{ fontFamily: FONT_UI, color: "#6E7C74", letterSpacing: "0.08em" }}
                         >
                             Deliver to
                         </span>
                         <span
                             className="block max-w-[100px] truncate text-[12px] font-semibold sm:max-w-[140px] lg:max-w-[220px]"
-                            style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                            style={{ fontFamily: FONT_UI, color: "#16241D" }}
                             title={active ? `${active.label} · ${active.address}` : undefined}
                         >
                             {pillText}
                         </span>
                     </span>
-                    <ChevronDown size={13} color="#4E453D" className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                    <ChevronDown size={13} color="#16241D" className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
                 </motion.button>
 
                 <AnimatePresence>
@@ -297,12 +297,12 @@ function LocationPicker() {
                             exit={{ opacity: 0, y: -6, scale: 0.98 }}
                             transition={{ duration: 0.15, ease: "easeOut" }}
                             className="absolute left-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border shadow-lg"
-                            style={{ borderColor: "#E5DAC9", backgroundColor: "#FFFDF9" }}
+                            style={{ borderColor: "#E3E7E1", backgroundColor: "#FFFFFF" }}
                         >
                             <div className="px-4 pt-3.5 pb-2">
                                 <p
                                     className="text-[10px] font-semibold uppercase tracking-widest"
-                                    style={{ fontFamily: FONT_UI, color: "#9C8C7C", letterSpacing: "0.1em" }}
+                                    style={{ fontFamily: FONT_UI, color: "#6E7C74", letterSpacing: "0.1em" }}
                                 >
                                     Saved addresses
                                 </p>
@@ -310,10 +310,10 @@ function LocationPicker() {
 
                             {loading ? (
                                 <div className="flex items-center justify-center py-6">
-                                    <Loader2 size={18} className="animate-spin" style={{ color: "#C2A383" }} />
+                                    <Loader2 size={18} className="animate-spin" style={{ color: "#1F4D3D" }} />
                                 </div>
                             ) : addresses.length === 0 ? (
-                                <p className="px-4 pb-4 text-xs" style={{ fontFamily: FONT_UI, color: "#9C8C7C" }}>
+                                <p className="px-4 pb-4 text-xs" style={{ fontFamily: FONT_UI, color: "#6E7C74" }}>
                                     No saved addresses yet.
                                 </p>
                             ) : (
@@ -328,13 +328,13 @@ function LocationPicker() {
                                                 <button
                                                     onClick={() => handleSwitch(addr._id)}
                                                     disabled={!!switching}
-                                                    className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F9F3EA] focus-visible:bg-[#F9F3EA] focus-visible:outline-none disabled:opacity-60"
+                                                    className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#EEF3EC] focus-visible:bg-[#EEF3EC] focus-visible:outline-none disabled:opacity-60"
                                                 >
                                                     <span
                                                         className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
                                                         style={{
-                                                            backgroundColor: isActive ? "#735A3E" : "#EFE6D8",
-                                                            color: isActive ? "#fff" : "#735A3E",
+                                                            backgroundColor: isActive ? "#1F4D3D" : "#E3E7E1",
+                                                            color: isActive ? "#fff" : "#1F4D3D",
                                                         }}
                                                     >
                                                         {isSwitching
@@ -346,15 +346,15 @@ function LocationPicker() {
                                                         <span className="flex items-center gap-1.5">
                                                             <span
                                                                 className="text-[13px] font-semibold"
-                                                                style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                                                                style={{ fontFamily: FONT_UI, color: "#16241D" }}
                                                             >
                                                                 {addr.label}
                                                             </span>
-                                                            {isActive && <Check size={13} color="#376847" />}
+                                                            {isActive && <Check size={13} color="#1F4D3D" />}
                                                         </span>
                                                         <span
                                                             className="block truncate text-xs"
-                                                            style={{ fontFamily: FONT_UI, color: "#9C8C7C" }}
+                                                            style={{ fontFamily: FONT_UI, color: "#6E7C74" }}
                                                         >
                                                             {addr.address}
                                                         </span>
@@ -366,11 +366,11 @@ function LocationPicker() {
                                 </ul>
                             )}
 
-                            <div className="border-t px-2 py-2" style={{ borderColor: "#EFE6D8" }}>
+                            <div className="border-t px-2 py-2" style={{ borderColor: "#E3E7E1" }}>
                                 <button
                                     onClick={() => { setOpen(false); setShowAddModal(true); }}
-                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold transition-colors hover:bg-[#F9F3EA] focus-visible:bg-[#F9F3EA] focus-visible:outline-none"
-                                    style={{ fontFamily: FONT_UI, color: "#735A3E" }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold transition-colors hover:bg-[#EEF3EC] focus-visible:bg-[#EEF3EC] focus-visible:outline-none"
+                                    style={{ fontFamily: FONT_UI, color: "#1F4D3D" }}
                                 >
                                     <Plus size={15} /> Add new address
                                 </button>
@@ -419,12 +419,12 @@ function SearchBar() {
     return (
         <div ref={wrapRef} className="relative w-full min-w-[160px] max-w-[440px] flex-1">
             <motion.div
-                animate={open ? { boxShadow: "0 0 0 2px #C2A38355" } : { boxShadow: "0 0 0 0px transparent" }}
+                animate={open ? { boxShadow: "0 0 0 2px #1F4D3D55" } : { boxShadow: "0 0 0 0px transparent" }}
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-2 rounded-full border px-4 py-2.5"
-                style={{ backgroundColor: "#F9F3EA", borderColor: "#D2C4B9" }}
+                style={{ backgroundColor: "#F5F7F3", borderColor: "#DCE3DC" }}
             >
-                <Search size={16} color="#4E453D" />
+                <Search size={16} color="#16241D" />
                 <input
                     ref={inputRef}
                     value={query}
@@ -434,15 +434,15 @@ function SearchBar() {
                     placeholder="Search products & stores…"
                     aria-label="Search products and stores"
                     className="flex-1 bg-transparent text-[13px] outline-none"
-                    style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                    style={{ fontFamily: FONT_UI, color: "#16241D" }}
                 />
                 {query && (
                     <button
                         onClick={() => { setQuery(""); inputRef.current?.focus(); }}
                         aria-label="Clear search"
-                        className="rounded-full p-0.5 hover:bg-[#EFE6D8]"
+                        className="rounded-full p-0.5 hover:bg-[#F5F7F3]"
                     >
-                        <X size={14} color="#9C8C7C" />
+                        <X size={14} color="#6E7C74" />
                     </button>
                 )}
             </motion.div>
@@ -453,13 +453,13 @@ function SearchBar() {
                         initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.15 }}
                         className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-2xl border shadow-lg"
-                        style={{ borderColor: "#E5DAC9", backgroundColor: "#FFFDF9" }}
+                        style={{ borderColor: "#E3E7E1", backgroundColor: "#FFFFFF" }}
                     >
                         {showRecent && (
                             <div className="py-2">
                                 <p
                                     className="px-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest"
-                                    style={{ fontFamily: FONT_UI, color: "#9C8C7C", letterSpacing: "0.1em" }}
+                                    style={{ fontFamily: FONT_UI, color: "#6E7C74", letterSpacing: "0.1em" }}
                                 >
                                     Recent searches
                                 </p>
@@ -467,14 +467,14 @@ function SearchBar() {
                                     <button
                                         key={term}
                                         onClick={() => { setQuery(term); setOpen(false); }}
-                                        className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-[13px] transition-colors hover:bg-[#F9F3EA]"
+                                        className="flex w-full items-center gap-2.5 px-4 py-2 text-left text-[13px] transition-colors hover:bg-[#EEF3EC]"
                                         style={{
                                             fontFamily: FONT_UI,
-                                            backgroundColor: highlight === i ? "#F9F3EA" : "transparent",
-                                            color: "#4E453D",
+                                            backgroundColor: highlight === i ? "#EEF3EC" : "transparent",
+                                            color: "#16241D",
                                         }}
                                     >
-                                        <Clock size={13} color="#9C8C7C" /> {term}
+                                        <Clock size={13} color="#6E7C74" /> {term}
                                     </button>
                                 ))}
                             </div>
@@ -482,7 +482,7 @@ function SearchBar() {
                         {showResults && (
                             <div className="py-2">
                                 {results.length === 0 ? (
-                                    <p className="px-4 py-3 text-[13px]" style={{ fontFamily: FONT_UI, color: "#9C8C7C" }}>
+                                    <p className="px-4 py-3 text-[13px]" style={{ fontFamily: FONT_UI, color: "#6E7C74" }}>
                                         No matches for "{query}"
                                     </p>
                                 ) : (
@@ -490,19 +490,19 @@ function SearchBar() {
                                         <button
                                             key={item.label}
                                             onClick={() => { setQuery(item.label); setOpen(false); }}
-                                            className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F9F3EA]"
-                                            style={{ backgroundColor: highlight === i ? "#F9F3EA" : "transparent" }}
+                                            className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#EEF3EC]"
+                                            style={{ backgroundColor: highlight === i ? "#EEF3EC" : "transparent" }}
                                         >
                                             <span className="min-w-0">
                                                 <span
                                                     className="block truncate text-[13px] font-medium"
-                                                    style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                                                    style={{ fontFamily: FONT_UI, color: "#16241D" }}
                                                 >
                                                     {item.label}
                                                 </span>
                                                 <span
                                                     className="block truncate text-[11px]"
-                                                    style={{ fontFamily: FONT_UI, color: "#9C8C7C" }}
+                                                    style={{ fontFamily: FONT_UI, color: "#6E7C74" }}
                                                 >
                                                     {item.meta}
                                                 </span>
@@ -512,8 +512,8 @@ function SearchBar() {
                                                 style={{
                                                     fontFamily: FONT_UI,
                                                     letterSpacing: "0.06em",
-                                                    backgroundColor: item.type === "store" ? "#EAF2EC" : "#F3EAE0",
-                                                    color: item.type === "store" ? "#376847" : "#735A3E",
+                                                    backgroundColor: item.type === "store" ? "#E7EFEA" : "#F5F7F3",
+                                                    color: item.type === "store" ? "#1F4D3D" : "#6E7C74",
                                                 }}
                                             >
                                                 {item.type}
@@ -556,9 +556,9 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
 
     const idle = IDLE_MESSAGES[idleIndex];
     const Icon = isLive ? Truck : idle.icon;
-    const pillBg = isLive ? "#EAF2EC" : idle.pillBg;
-    const iconBg = isLive ? "#376847" : idle.iconBg;
-    const textColor = isLive ? "#2F5B3D" : idle.textColor;
+    const pillBg = isLive ? "#E7EFEA" : idle.pillBg;
+    const iconBg = isLive ? "#1F4D3D" : idle.iconBg;
+    const textColor = isLive ? "#1F4D3D" : idle.textColor;
     const label = isLive ? `Arriving in ${etaMinutes} min` : idle.text;
 
     return (
@@ -656,13 +656,13 @@ function NotificationBell() {
                 onClick={() => setOpen(!isOpen)}
                 aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
                 className="relative cursor-pointer rounded-full p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ outlineColor: "#C2A383" }}
+                style={{ outlineColor: "#1F4D3D" }}
             >
-                <Bell size={18} color="#735A3E" />
+                <Bell size={18} color="#1F4D3D" />
                 {unread > 0 && (
                     <span
                         className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
-                        style={{ backgroundColor: "#C24B3F", boxShadow: "0 0 0 2px #FFF9EF" }}
+                        style={{ backgroundColor: "#C24B3F", boxShadow: "0 0 0 2px #F7F8F5" }}
                     >
                         {unread > 9 ? "9+" : unread}
                     </span>
@@ -678,12 +678,12 @@ function NotificationBell() {
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
                         className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border shadow-lg"
-                        style={{ borderColor: "#E5DAC9", backgroundColor: "#FFFDF9" }}
+                        style={{ borderColor: "#E3E7E1", backgroundColor: "#FFFFFF" }}
                     >
                         <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
                             <p
                                 className="text-[10px] font-semibold uppercase tracking-widest"
-                                style={{ fontFamily: FONT_UI, color: "#9C8C7C", letterSpacing: "0.1em" }}
+                                style={{ fontFamily: FONT_UI, color: "#6E7C74", letterSpacing: "0.1em" }}
                             >
                                 Notifications
                             </p>
@@ -691,7 +691,7 @@ function NotificationBell() {
                                 <button
                                     onClick={handleMarkAllRead}
                                     className="text-[11px] font-semibold hover:underline"
-                                    style={{ fontFamily: FONT_UI, color: "#735A3E" }}
+                                    style={{ fontFamily: FONT_UI, color: "#1F4D3D" }}
                                 >
                                     Mark all read
                                 </button>
@@ -700,22 +700,22 @@ function NotificationBell() {
                         <ul role="list" className="max-h-80 overflow-y-auto">
                             {notifications.length === 0 ? (
                                 <li className="flex flex-col items-center justify-center gap-2 py-10">
-                                    <Bell size={28} color="#D6C5B0" />
-                                    <span className="text-[13px]" style={{ color: "#B3A593" }}>
+                                    <Bell size={28} color="#DCE3DC" />
+                                    <span className="text-[13px]" style={{ color: "#9BAAA1" }}>
                                         No notifications yet
                                     </span>
                                 </li>
                             ) : (
                                 notifications.map((n) => (
-                                    <li key={n._id} className="border-t first:border-t-0" style={{ borderColor: "#F3EDE2" }}>
+                                    <li key={n._id} className="border-t first:border-t-0" style={{ borderColor: "#E3E7E1" }}>
                                         <button
                                             onClick={() => {
                                                 if (!n.isRead) handleMarkRead(n._id);
                                                 setOpen(false);
                                                 if (n.orderId) navigate(`/customer/orders`);
                                             }}
-                                            className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#F9F3EA]"
-                                            style={{ background: !n.isRead ? "#FDF8F2" : undefined }}
+                                            className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#EEF3EC]"
+                                            style={{ background: !n.isRead ? "#E7EFEA" : undefined }}
                                         >
                                             <span
                                                 className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
@@ -723,14 +723,14 @@ function NotificationBell() {
                                             />
                                             <span className="min-w-0 flex-1">
                                                 <span className="flex items-baseline justify-between gap-2">
-                                                    <span className="text-[13px] font-semibold" style={{ fontFamily: FONT_UI, color: "#4E453D" }}>
+                                                    <span className="text-[13px] font-semibold" style={{ fontFamily: FONT_UI, color: "#16241D" }}>
                                                         {n.title}
                                                     </span>
-                                                    <span className="shrink-0 text-[11px]" style={{ fontFamily: FONT_UI, color: "#B3A593" }}>
+                                                    <span className="shrink-0 text-[11px]" style={{ fontFamily: FONT_UI, color: "#9BAAA1" }}>
                                                         {timeAgo(n.createdAt)}
                                                     </span>
                                                 </span>
-                                                <span className="block text-[12px] leading-snug" style={{ fontFamily: FONT_UI, color: "#80756B" }}>
+                                                <span className="block text-[12px] leading-snug" style={{ fontFamily: FONT_UI, color: "#6E7C74" }}>
                                                     {n.message}
                                                 </span>
                                             </span>
@@ -769,21 +769,21 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                 exit={{ x: "100%" }}
                 transition={{ duration: 0.22, ease: "easeOut" }}
                 className="absolute right-0 top-0 flex h-full w-[88%] max-w-sm flex-col gap-5 overflow-y-auto px-5 py-5"
-                style={{ backgroundColor: "#FFF9EF" }}
+                style={{ backgroundColor: "#F7F8F5" }}
             >
                 <div className="flex items-center justify-between">
                     <span
                         className="text-[15px] font-semibold"
-                        style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                        style={{ fontFamily: FONT_UI, color: "#16241D" }}
                     >
                         Menu
                     </span>
                     <button
                         onClick={onClose}
                         aria-label="Close menu"
-                        className="rounded-full p-1.5 hover:bg-[#EFE6D8]"
+                        className="rounded-full p-1.5 hover:bg-[#F5F7F3]"
                     >
-                        <X size={18} color="#4E453D" />
+                        <X size={18} color="#16241D" />
                     </button>
                 </div>
 
@@ -793,20 +793,20 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                 <Link
                     to="/customer/profile"
                     onClick={onClose}
-                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#F9F3EA]"
-                    style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#EEF3EC]"
+                    style={{ fontFamily: FONT_UI, color: "#16241D" }}
                 >
                     <User size={16} /> Profile
                 </Link>
 
-                <nav className="flex flex-col gap-1 border-t pt-3" style={{ borderColor: "#EFE6D8" }}>
+                <nav className="flex flex-col gap-1 border-t pt-3" style={{ borderColor: "#E3E7E1" }}>
                     {NAV_LINKS.map((link) => (
                         <Link
                             key={link.to}
                             to={link.to}
                             onClick={onClose}
-                            className="rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#F9F3EA]"
-                            style={{ fontFamily: FONT_UI, color: "#4E453D" }}
+                            className="rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors hover:bg-[#EEF3EC]"
+                            style={{ fontFamily: FONT_UI, color: "#16241D" }}
                         >
                             {link.label}
                         </Link>
@@ -856,8 +856,8 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="sticky top-0 z-50 border-b"
             style={{
-                backgroundColor: "#FFF9EF",
-                borderColor: "#D2C4B9",
+                backgroundColor: "#F7F8F5",
+                borderColor: "#E3E7E1",
                 boxShadow: "0px 1px 8px rgba(0,0,0,0.06)",
             }}
         >
@@ -871,17 +871,17 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                         whileHover={{ rotate: -6 }}
                         transition={{ duration: 0.2 }}
                         className="flex h-8 w-8 items-center justify-center rounded-xl sm:h-9 sm:w-9"
-                        style={{ backgroundColor: "#735A3E" }}
+                        style={{ backgroundColor: "#1F4D3D" }}
                     >
-                        <Leaf size={16} color="#FFF9EF" strokeWidth={2.25} className="sm:hidden" />
-                        <Leaf size={18} color="#FFF9EF" strokeWidth={2.25} className="hidden sm:block" />
+                        <Leaf size={16} color="#FFFFFF" strokeWidth={2.25} className="sm:hidden" />
+                        <Leaf size={18} color="#FFFFFF" strokeWidth={2.25} className="hidden sm:block" />
                     </motion.span>
                     <span
                         className="hidden cursor-pointer text-[19px] font-semibold leading-none tracking-tight sm:block lg:text-[21px]"
                         style={{
                             fontFamily: FONT_BRAND,
                             fontWeight: 480,
-                            color: "#4E453D",
+                            color: "#16241D",
                             letterSpacing: "-0.02em",
                         }}
                     >
@@ -919,7 +919,7 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                         aria-label="Open search"
                         className="flex items-center justify-center rounded-full p-1 md:hidden"
                     >
-                        <Search size={19} color="#735A3E" />
+                        <Search size={19} color="#1F4D3D" />
                     </button>
 
                     <NotificationBell />
@@ -933,11 +933,11 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                             className="flex items-center justify-center rounded-full p-1"
                             style={{
                                 backgroundColor: pathname === CART_PATH
-                                    ? "rgba(115,90,62,0.1)"
+                                    ? "rgba(31,77,61,0.1)"
                                     : "transparent",
                             }}
                         >
-                            <ShoppingCart size={20} color="#735A3E" />
+                            <ShoppingCart size={20} color="#1F4D3D" />
                         </Link>
                         <AnimatePresence>
                             {cartCount > 0 && (
@@ -947,7 +947,7 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                                     animate={{ scale: 1 }}
                                     exit={{ scale: 0 }}
                                     className="pointer-events-none absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full"
-                                    style={{ backgroundColor: "#376847" }}
+                                    style={{ backgroundColor: "#1F4D3D" }}
                                 >
                                     <span
                                         className="font-bold text-white"
@@ -969,11 +969,11 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                             className="flex items-center justify-center rounded-full p-1"
                             style={{
                                 backgroundColor: pathname === PROFILE_PATH
-                                    ? "rgba(115,90,62,0.1)"
+                                    ? "rgba(31,77,61,0.1)"
                                     : "transparent",
                             }}
                         >
-                            <User size={18} color="#735A3E" />
+                            <User size={18} color="#1F4D3D" />
                         </Link>
                     </motion.div>
 
@@ -983,9 +983,9 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                         aria-label="Open menu"
                         className="flex flex-col items-center justify-center gap-[3px] rounded-full p-1.5 lg:hidden"
                     >
-                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#735A3E" }} />
-                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#735A3E" }} />
-                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#735A3E" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#1F4D3D" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#1F4D3D" }} />
+                        <span className="block h-[1.5px] w-[18px]" style={{ backgroundColor: "#1F4D3D" }} />
                     </button>
                 </div>
             </div>
