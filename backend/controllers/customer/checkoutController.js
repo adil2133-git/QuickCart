@@ -7,7 +7,7 @@ const User = require("../../models/shared/user");
 const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
 const { sendOrderPlacedEmail, sendNewOrderStoreEmail } = require("../../services/mailService");
-const { notifyCustomer } = require("../../services/notificationService");
+const { notifyCustomer, notifyStore } = require("../../services/notificationService");
 
 const DELIVERY_CHARGE = 30;
 const PACKAGING_FEE = 15;
@@ -261,6 +261,10 @@ const placeOrder = async (req, res) => {
                         storeName: storeProfile.storeName,
                         order,
                     }).catch(() => {});
+                }
+
+                if (storeProfile?.userId?._id) {
+                    notifyStore.newOrder(storeProfile.userId._id, order.orderNumber, order._id).catch(() => {});
                 }
             })
             .catch((err) => console.error("[order emails] Failed to resolve store:", err));

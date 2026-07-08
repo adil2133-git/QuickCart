@@ -93,6 +93,11 @@ const notifyCustomer = {
 
 // ─── Order lifecycle — store ──────────────────────────────────────────────────
 const notifyStore = {
+    newOrder: (userId, orderNumber, orderId) => notify({
+        userId, role: "STORE", orderId, type: "ORDER",
+        title:   "New Order Received 🛍️",
+        message: `You've received a new order #${orderNumber}. Tap to review and accept.`,
+    }),
     driverAssigned: (userId, orderNumber, driverName, orderId) => notify({
         userId, role: "STORE", orderId, type: "DELIVERY",
         title:   "Driver Assigned 🛵",
