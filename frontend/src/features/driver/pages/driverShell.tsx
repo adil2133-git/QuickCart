@@ -5,12 +5,14 @@ import { useAuthStore } from "../../auth/state/authState";
 import { useDriverLocationTracking } from "../hooks/useDriverLocationTracking";
 import { useDriverDeliverySocket } from "../hooks/useDriverDeliverySocket";
 import DeliveryRequestPopup from "../components/deliveryRequestPopup";
+import { useNotificationsSync } from "../../shared/hooks/useNotifications";
 
 export default function DriverShell() {
   const user = useAuthStore((s) => s.user);
 
   useDriverLocationTracking();
   useDriverDeliverySocket();
+  useNotificationsSync();
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FDF8F1] font-[Inter,sans-serif]">
