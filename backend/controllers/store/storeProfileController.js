@@ -137,6 +137,59 @@ const toggleManualClose = async (req, res) => {
     }
 };
 
+// ─── Set store status directly: OPEN / BUSY / CLOSED  (PATCH /api/store/status) ───
+// Used by the Dashboard's 3-way selector. Distinct from toggleManualClose (which
+// only flips the CLOSED override from the Profile page) — this covers all 3 states
+// and keeps isManuallyClosed in sync so both entry points stay consistent.
+const VALID_STORE_STATUSES = ["OPEN", "BUSY", "CLOSED"];
+
+const updateStoreStatus = async (req, res) => {
+    try {
+        const storeId = await resolveStoreId(req);
+
+        if (!storeId) {
+            return res.status(404).json({ success: false, message: "Store profile not found for this account." });
+        }
+
+        const { status } = req.body;
+
+        if (!VALID_STORE_STATUSES.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: `status must be one of: ${VALID_STORE_STATUSES.join(", ")}`,
+            });
+        }
+
+        const store = await StoreProfile.findById(storeId);
+
+        if (!store) {
+            return res.status(404).json({ success: false, message: "Store profile not found." });
+        }
+
+        if (status === "CLOSED") {
+            store.isManuallyClosed = true;
+        } else {
+            // Reopening (OPEN or BUSY) always clears the manual-close override.
+            store.isManuallyClosed = false;
+            store.storeStatus = status;
+        }
+
+        await store.save();
+
+        const liveStatus = getLiveStoreStatus(store);
+
+        return res.status(200).json({
+            success: true,
+            message: `Store marked as ${liveStatus.status.toLowerCase()}.`,
+            status: liveStatus.status,
+            isManuallyClosed: store.isManuallyClosed,
+            storeStatus: store.storeStatus,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Server error.", error: error.message });
+    }
+};
+
 // ─── Update Store Info (name, address, pincode)  (PATCH /api/store/info) ───
 const updateStoreInfo = async (req, res) => {
     try {
@@ -284,6 +337,7 @@ module.exports = {
     getMyStoreProfile,
     updateStoreBranding,
     toggleManualClose,
+    updateStoreStatus,
     updateStoreInfo,
     updateOperatingHours,
     getPublicStoreProfile,

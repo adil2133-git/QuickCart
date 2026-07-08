@@ -21,6 +21,10 @@ function getLiveStoreStatus(store, now = new Date()) {
         return { status: "BUSY", reason: "MANUALLY_BUSY" };
     }
 
+    if (store.storeStatus === "OPEN") {
+        return { status: "OPEN", reason: "MANUALLY_OPEN" };
+    }
+
     const todayName = DAY_NAMES[now.getDay()];
     const todayHours = (store.operatingHours || []).find((h) => h.day === todayName);
 

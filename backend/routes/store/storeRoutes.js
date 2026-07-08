@@ -11,6 +11,7 @@ const {
     getMyStoreProfile,
     updateStoreBranding,
     toggleManualClose,
+    updateStoreStatus,
     updateStoreInfo,
     updateOperatingHours,
 } = require("../../controllers/store/storeProfileController");
@@ -45,6 +46,7 @@ router.get("/me", protectRoutes, authorizeRoles("STORE"), getMyStoreProfile);
 router.get("/dashboard/summary", protectRoutes, authorizeRoles("STORE"), getDashboardSummary);
 router.patch("/branding", protectRoutes, authorizeRoles("STORE"), uploadStoreBranding, updateStoreBranding);
 router.patch("/toggleManualClose", protectRoutes, authorizeRoles("STORE"), toggleManualClose);
+router.patch("/status", protectRoutes, authorizeRoles("STORE"), updateStoreStatus);
 router.patch("/info", protectRoutes, authorizeRoles("STORE"), updateStoreInfo);
 router.patch("/hours", protectRoutes, authorizeRoles("STORE"), updateOperatingHours);
 
