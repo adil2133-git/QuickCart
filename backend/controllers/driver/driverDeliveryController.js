@@ -2,6 +2,7 @@ const Order = require("../../models/shared/order");
 const DriverProfile = require("../../models/driver/driverProfile");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const CustomerProfile = require("../../models/customer/customerProfile");
+const StoreProfile = require("../../models/store/storeProfile");
 const { sendOrderDeliveredEmail } = require("../../services/mailService");
 const { emitToStore, emitToCustomer } = require("../../socket");
 const { notifyCustomer, notifyStore, notifyDriver } = require("../../services/notificationService");
@@ -362,8 +363,8 @@ const advanceDeliveryStage = async (req, res) => {
                 }).catch(() => {});
         }
 
-        // Notify store when driver reaches or picks up
-        if (stage === "REACHED_STORE" || stage === "PICKED_UP") {
+        // Notify store when driver reaches, picks up, or completes delivery
+        if (stage === "REACHED_STORE" || stage === "PICKED_UP" || stage === "DELIVERED") {
             StoreProfile.findById(order.storeId)
                 .populate("userId", "_id")
                 .lean()
@@ -374,6 +375,9 @@ const advanceDeliveryStage = async (req, res) => {
                     });
                     if (stage === "REACHED_STORE" && sp?.userId?._id) {
                         notifyStore.driverArrived(sp.userId._id, order.orderNumber, driver.fullName ?? "Driver", order._id).catch(() => {});
+                    }
+                    if (stage === "DELIVERED" && sp?.userId?._id) {
+                        notifyStore.delivered(sp.userId._id, order.orderNumber, order._id).catch(() => {});
                     }
                 }).catch(() => {});
         }

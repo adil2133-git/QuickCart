@@ -98,6 +98,21 @@ const notifyStore = {
         title:   "New Order Received 🛍️",
         message: `You've received a new order #${orderNumber}. Tap to review and accept.`,
     }),
+    delivered: (userId, orderNumber, orderId) => notify({
+        userId, role: "STORE", orderId, type: "ORDER",
+        title:   "Order Delivered ✅",
+        message: `Order #${orderNumber} has been delivered to the customer.`,
+    }),
+    outOfStock: (userId, productName) => notify({
+        userId, role: "STORE", type: "ORDER",
+        title:   "Out of Stock 🚫",
+        message: `${productName} is now out of stock. Restock soon to avoid missed orders.`,
+    }),
+    lowStock: (userId, productName, stockQuantity) => notify({
+        userId, role: "STORE", type: "ORDER",
+        title:   "Running Low on Stock ⚠️",
+        message: `${productName} has only ${stockQuantity} unit(s) left. Consider restocking.`,
+    }),
     driverAssigned: (userId, orderNumber, driverName, orderId) => notify({
         userId, role: "STORE", orderId, type: "DELIVERY",
         title:   "Driver Assigned 🛵",

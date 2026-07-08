@@ -12,6 +12,10 @@ const { notifyCustomer, notifyStore } = require("../../services/notificationServ
 const DELIVERY_CHARGE = 30;
 const PACKAGING_FEE = 15;
 
+// Matches LOW_STOCK_THRESHOLD in storeDashboardController.js — keep in sync
+// until this becomes a real per-store config value.
+const LOW_STOCK_THRESHOLD = 10;
+
 // resolveCustomerProfile returns the full profile doc (not just the id) —
 // callers below rely on savedAddresses/defaultAddress/codAllowed too.
 const resolveCustomerProfileDoc = async (req) => {
@@ -170,6 +174,7 @@ const placeOrder = async (req, res) => {
         const totalAmount = subtotal + DELIVERY_CHARGE + PACKAGING_FEE;
 
         let createdOrder;
+        const stockAlerts = []; // { productName, stockQuantity } — filled during the decrement loop below
 
         await session.withTransaction(async () => {
             // Decrement stock for each product
@@ -181,6 +186,14 @@ const placeOrder = async (req, res) => {
                 );
                 if (!updated) {
                     throw new Error(`Insufficient stock for ${item.productName}.`);
+                }
+
+                // Only alert the moment stock *crosses* into low/out-of-stock —
+                // not on every order placed after it's already below threshold,
+                // otherwise the store gets spammed with the same alert repeatedly.
+                const preStock = productMap.get(item.productId.toString())?.stockQuantity ?? 0;
+                if (preStock > LOW_STOCK_THRESHOLD && updated.stockQuantity <= LOW_STOCK_THRESHOLD) {
+                    stockAlerts.push({ productName: item.productName, stockQuantity: updated.stockQuantity });
                 }
             }
 
@@ -265,6 +278,14 @@ const placeOrder = async (req, res) => {
 
                 if (storeProfile?.userId?._id) {
                     notifyStore.newOrder(storeProfile.userId._id, order.orderNumber, order._id).catch(() => {});
+
+                    for (const alert of stockAlerts) {
+                        if (alert.stockQuantity === 0) {
+                            notifyStore.outOfStock(storeProfile.userId._id, alert.productName).catch(() => {});
+                        } else {
+                            notifyStore.lowStock(storeProfile.userId._id, alert.productName, alert.stockQuantity).catch(() => {});
+                        }
+                    }
                 }
             })
             .catch((err) => console.error("[order emails] Failed to resolve store:", err));
