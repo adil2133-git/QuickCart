@@ -6,8 +6,8 @@ import {
   ShoppingCart, ArrowRight, MapPin, Boxes, Sparkles, Radar,
   Store, Bike, Users, Zap, Clock3,
 } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import {Navbar} from '../components/navbar';
+import {Footer} from '../components/footer';
 
 /* ─── motion presets ─────────────────────────────────────────────────────── */
 

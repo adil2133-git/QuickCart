@@ -32,7 +32,6 @@ function StatusPill({ status }: { status: OrderStatus }) {
 
 function ProgressTracker({ order }: { order: CustomerOrder }) {
   const reachedIndex = stageIndexForStatus(order.status);
-  const isComplete = order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED";
   const barColor = order.status === "CANCELLED" ? "bg-[#DCE3DC]" : "bg-[#145C43]";
   const labelColor = order.status === "CANCELLED" ? "text-[#9BAAA1]" : "text-[#145C43]";
 

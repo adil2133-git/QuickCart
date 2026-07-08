@@ -280,7 +280,6 @@ export default function StoresPage() {
     const stores = useStoresListStore((s) => s.stores);
     const storesLoading = useStoresListStore((s) => s.storesLoading);
     const storesError = useStoresListStore((s) => s.storesError);
-    const cartCount = useCartStore((s) => s.cartItemCount());
     const fetchCart = useCartStore((s) => s.fetchCart);
     const sortKey = useStoresListStore((s) => s.sortKey);
     const openNowOnly = useStoresListStore((s) => s.openNowOnly);

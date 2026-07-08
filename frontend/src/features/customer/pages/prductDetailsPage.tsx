@@ -427,7 +427,6 @@ const ProductDetailPage: React.FC = () => {
 
   // Cart item count for NavBar badge
   const cartItems = useCartStore((s) => s.items);
-  const cartCount = cartItems.reduce((sum, i) => sum + i.quantity, 0);
 
   const [activeTab, setActiveTab] = useState<TabKey>("description");
   const [addedToCart, setAddedToCart] = useState(false);

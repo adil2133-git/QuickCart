@@ -348,8 +348,7 @@ const OrderSummary: React.FC<{
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
-  const { cart, isLoading, error, fetchCart, conflict, clearError } =
-    useCartStore();
+  const { cart, isLoading, fetchCart } = useCartStore();
 
   useEffect(() => {
     fetchCart();

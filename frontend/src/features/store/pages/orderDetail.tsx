@@ -284,12 +284,6 @@ export default function OrderDetailPage() {
                   ${order.deliveryCharge.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-[#7A6352]">Tax</span>
-                <span className="font-medium text-[#2B1B0E]">
-                  ${(order.tax ?? 0).toFixed(2)}
-                </span>
-              </div>
               <div className="border-t border-[#EADFD3] pt-3">
                 <div className="flex justify-between">
                   <span className="text-base font-bold text-[#2B1B0E]">Total</span>
@@ -299,17 +293,6 @@ export default function OrderDetailPage() {
                 </div>
               </div>
             </div>
-
-            {/* Merchant note */}
-            {order.merchantNote && (
-              <div className="mt-4 rounded-xl border border-[#EADFD3] bg-[#FBF1E9] p-4">
-                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#7A6352]">
-                  <span className="text-base">ℹ️</span>
-                  <span>Merchant Instructions</span>
-                </div>
-                <p className="text-sm italic text-[#5C4A37]">"{order.merchantNote}"</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

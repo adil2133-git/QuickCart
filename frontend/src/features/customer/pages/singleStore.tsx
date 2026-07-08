@@ -269,7 +269,6 @@ function StorePageContent({ storeId }: { storeId: string }) {
   const reviewsLoading = useSingleStoreStore((s) => s.reviewsLoading);
 
   const followed = useSingleStoreStore((s) => s.followed);
-  const cartCount = useCartStore((s) => s.cartItemCount());
   const fetchCart = useCartStore((s) => s.fetchCart);
 
   // ── Actions ────────────────────────────────────────────────────────────────
