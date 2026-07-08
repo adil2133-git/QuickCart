@@ -28,6 +28,7 @@ import {
 import { useCartStore } from "../state/cartState";
 import { useProductDetail } from "../hooks/useProductDetail";
 import type { Product, Review, StoreInfo } from "../types/product";
+import { useViewedProductsStore } from "../state/viewProductState"
 
 // ─── Mock reviews ─────────────────────────────────────────────────────────────
 
@@ -419,6 +420,7 @@ const ProductDetailPage: React.FC = () => {
 
   const { product, isLoading, error } = useProductDetail(productId, storeId);
   const { quantity, reset } = useProductDetailStore();
+  const recordView = useViewedProductsStore((s) => s.recordView);
 
   // ✅ Only pull what actually exists in your cart store
   const addToCartAction = useCartStore((s) => s.addToCart);
@@ -435,6 +437,21 @@ const ProductDetailPage: React.FC = () => {
     void fetchCart();
     return () => reset();
   }, [fetchCart, reset]);
+
+  useEffect(() => {
+  if (!product) return;
+
+  recordView({
+    _id: product._id,
+    productName: product.productName,
+    price: product.price,
+    images: product.images ?? [],
+    unit: product.unit,
+    storeId: product.storeId,
+    categoryId: product.categoryId,
+    viewedAt: Date.now(),
+  });
+}, [product, recordView]);
 
   if (isLoading) return <ProductDetailSkeleton />;
   if (error || !product) {
