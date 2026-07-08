@@ -10,7 +10,7 @@ import type { Order } from "../types/dashboard";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { summary, isLoading, error } = useStoreDashboard();
+  const { summary, isLoading, error, updateStatus } = useStoreDashboard();
 
   if (isLoading && !summary) {
     return <div className="p-6 text-sm text-[#A38F7D]">Loading dashboard…</div>;
@@ -41,7 +41,11 @@ export default function DashboardPage() {
 
         <div className="space-y-6">
           <BestSellingCard items={summary.bestSelling} />
-          <StoreStatusCard status={summary.status} todaysHours={summary.todaysHours} />
+          <StoreStatusCard
+            status={summary.status}
+            todaysHours={summary.todaysHours}
+            onStatusChange={updateStatus}
+          />
           <MerchantSupportCard integrationStatus="ONLINE" />
         </div>
       </div>

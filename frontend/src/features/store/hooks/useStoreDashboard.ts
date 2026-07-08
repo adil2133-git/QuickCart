@@ -1,15 +1,21 @@
 import { useEffect } from "react";
 import api from "../../../api/axios";
 import { useDashboardStore } from "../state/dashboardState";
-import type { DashboardSummary } from "../types/dashboard";
+import type { DashboardSummary, StoreStatus } from "../types/dashboard";
 
 interface GetDashboardSummaryResponse {
   success: boolean;
   summary: DashboardSummary;
 }
 
+interface UpdateStoreStatusResponse {
+  success: boolean;
+  status: StoreStatus;
+}
+
 export function useStoreDashboard() {
-  const { summary, isLoading, error, setLoading, setSummary, setError } = useDashboardStore();
+  const { summary, isLoading, error, setLoading, setSummary, setError, setStatus } =
+    useDashboardStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -35,5 +41,20 @@ export function useStoreDashboard() {
     };
   }, []);
 
-  return { summary, isLoading, error };
+  // Optimistically applies the new status, then confirms with the server.
+  // Rolls back to the previous status if the request fails.
+  const updateStatus = async (status: StoreStatus) => {
+    const previous = summary?.status;
+    if (previous === status) return;
+
+    setStatus(status);
+    try {
+      const { data } = await api.patch<UpdateStoreStatusResponse>("/store/status", { status });
+      if (data.success) setStatus(data.status);
+    } catch {
+      if (previous) setStatus(previous);
+    }
+  };
+
+  return { summary, isLoading, error, updateStatus };
 }
