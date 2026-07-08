@@ -110,4 +110,18 @@ const notifyStore = {
     }),
 };
 
-module.exports = { notifyCustomer, notifyStore };
+// ─── Order lifecycle — driver ─────────────────────────────────────────────────
+const notifyDriver = {
+    assigned: (userId, orderNumber, storeName, orderId) => notify({
+        userId, role: "DRIVER", orderId, type: "DELIVERY",
+        title:   "Delivery Assigned 📦",
+        message: `You've been assigned order #${orderNumber} from ${storeName}. Head to the store to pick it up.`,
+    }),
+    delivered: (userId, orderNumber, earnings, orderId) => notify({
+        userId, role: "DRIVER", orderId, type: "ORDER",
+        title:   "Delivery Completed 🎉",
+        message: `Order #${orderNumber} delivered successfully. You earned ₹${earnings}.`,
+    }),
+};
+
+module.exports = { notifyCustomer, notifyStore, notifyDriver };

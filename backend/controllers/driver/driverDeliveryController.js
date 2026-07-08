@@ -4,8 +4,7 @@ const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest
 const CustomerProfile = require("../../models/customer/customerProfile");
 const { sendOrderDeliveredEmail } = require("../../services/mailService");
 const { emitToStore, emitToCustomer } = require("../../socket");
-const { notifyCustomer, notifyStore } = require("../../services/notificationService");
-
+const { notifyCustomer, notifyStore, notifyDriver } = require("../../services/notificationService");
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // Resolves the logged-in driver user to their DriverProfile.
@@ -240,6 +239,14 @@ const acceptDeliveryRequest = async (req, res) => {
                 }
             }).catch(() => {});
 
+        // Confirmation notification for the driver themselves.
+        notifyDriver.assigned(
+            req.user.userID,
+            order.orderNumber,
+            order.storeId?.storeName ?? "the store",
+            order._id
+        ).catch(() => {});
+
         return res.status(200).json({
             success: true,
             activeDelivery: toActiveShape(order, "NAVIGATE_TO_STORE"),
@@ -324,6 +331,13 @@ const advanceDeliveryStage = async (req, res) => {
             driver.totalDeliveries += 1;
             driver.availabilityStatus = "ONLINE";
             await driver.save();
+
+            notifyDriver.delivered(
+                req.user.userID,
+                order.orderNumber,
+                order.deliveryCharge ?? 0,
+                order._id
+            ).catch(() => {});
         }
 
         await order.save();
