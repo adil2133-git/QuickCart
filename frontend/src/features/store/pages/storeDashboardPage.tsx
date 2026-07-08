@@ -6,11 +6,13 @@ import StoreStatusCard from "../components/dashboard/StoreStatusCard";
 import MerchantSupportCard from "../components/dashboard/MerchantSupportCard";
 import RestockBanner from "../components/dashboard/RestockBanner";
 import { useStoreDashboard } from "../hooks/useStoreDashboard";
+import { useStoreDashboardSocket } from "../hooks/useStoreDashboardSocket";
 import type { Order } from "../types/dashboard";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { summary, isLoading, error, updateStatus } = useStoreDashboard();
+  useStoreDashboardSocket();
 
   if (isLoading && !summary) {
     return <div className="p-6 text-sm text-[#A38F7D]">Loading dashboard…</div>;
