@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Heart,
   ShoppingCart,
   Zap,
-  Star,
   MapPin,
-  Package,
   ChevronRight,
   Share2,
   Shield,
@@ -15,7 +13,6 @@ import {
   Truck,
   Plus,
   Minus,
-  Check,
   ChevronLeft,
   Award,
   Tag,
@@ -27,65 +24,10 @@ import {
 } from "../state/productState";
 import { useCartStore } from "../state/cartState";
 import { useProductDetail } from "../hooks/useProductDetail";
-import type { Product, Review, StoreInfo } from "../types/product";
-import { useViewedProductsStore } from "../state/viewProductState"
+import type { Product, StoreInfo } from "../types/product";
+import { useViewedProductsStore } from "../state/viewProductState";
 
-// ─── Mock reviews ─────────────────────────────────────────────────────────────
-
-const MOCK_REVIEWS: Review[] = [
-  {
-    id: "r1",
-    userName: "Priya M.",
-    rating: 5,
-    comment:
-      "Absolutely love this! The quality is amazing and delivery was super fast. Will definitely order again.",
-    date: "2024-12-10",
-    verified: true,
-  },
-  {
-    id: "r2",
-    userName: "Arjun K.",
-    rating: 4,
-    comment:
-      "Great product, very fresh. Packaging could be better but the product itself is top notch.",
-    date: "2024-11-28",
-    verified: true,
-  },
-  {
-    id: "r3",
-    userName: "Sneha R.",
-    rating: 5,
-    comment:
-      "Exactly as described. Love supporting local stores through QuickKart!",
-    date: "2024-11-15",
-    verified: false,
-  },
-];
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-const StarRating: React.FC<{ rating: number; size?: "sm" | "md" }> = ({
-  rating,
-  size = "md",
-}) => {
-  const starSize = size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4";
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={`${starSize} ${
-            star <= Math.floor(rating)
-              ? "fill-[#145C43] text-[#145C43]"
-              : star - 0.5 <= rating
-              ? "fill-[#145C43]/50 text-[#145C43]"
-              : "fill-transparent text-[#DCE3DC]"
-          }`}
-        />
-      ))}
-    </div>
-  );
-};
+// ─── Badge ────────────────────────────────────────────────────────────────────
 
 const Badge: React.FC<{
   children: React.ReactNode;
@@ -133,7 +75,6 @@ const ProductDetailSkeleton: React.FC = () => (
             <div className="h-8 bg-[#E3E7E1] rounded-lg animate-pulse w-3/4" />
             <div className="h-4 bg-[#E3E7E1] rounded animate-pulse w-1/4" />
           </div>
-          <div className="h-4 bg-[#E3E7E1] rounded animate-pulse w-1/3" />
           <div className="h-10 bg-[#E3E7E1] rounded-lg animate-pulse w-1/2" />
           <div className="h-px bg-[#E3E7E1]" />
           <div className="flex gap-3">
@@ -304,9 +245,11 @@ const QuantitySelector: React.FC = () => {
 };
 
 const InfoPill: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-  <div className="flex items-center gap-2 text-sm text-[#6E7C74]">
-    <span className="text-[#145C43]">{icon}</span>
-    {label}
+  <div className="flex items-center gap-2.5">
+    <span className="w-8 h-8 rounded-full bg-[#E8EFEC] flex items-center justify-center text-[#145C43] flex-shrink-0">
+      {icon}
+    </span>
+    <span className="text-sm text-[#153A2C] font-medium">{label}</span>
   </div>
 );
 
@@ -332,23 +275,12 @@ const StoreCard: React.FC<{ store: StoreInfo; onViewStore?: (id: string) => void
       </div>
       <div>
         <p className="font-semibold text-[#16241D] text-sm">{store.storeName}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          {store.distance && (
-            <div className="flex items-center gap-1 text-xs text-[#6E7C74]">
-              <MapPin className="w-3 h-3" />
-              {store.distance}
-            </div>
-          )}
-          {store.rating && (
-            <>
-              <span className="text-[#DCE3DC]">•</span>
-              <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 fill-[#145C43] text-[#145C43]" />
-                <span className="text-xs font-medium text-[#6E7C74]">{store.rating}</span>
-              </div>
-            </>
-          )}
-        </div>
+        {store.distance && (
+          <div className="flex items-center gap-1 text-xs text-[#6E7C74] mt-0.5">
+            <MapPin className="w-3 h-3" />
+            {store.distance}
+          </div>
+        )}
       </div>
     </div>
     <div className="flex items-center gap-1 text-xs font-medium text-[#145C43] group-hover:gap-2 transition-all">
@@ -358,55 +290,18 @@ const StoreCard: React.FC<{ store: StoreInfo; onViewStore?: (id: string) => void
   </div>
 );
 
-// ─── Review Card ──────────────────────────────────────────────────────────────
-
-const ReviewCard: React.FC<{ review: Review }> = ({ review }) => (
-  <div className="py-4 border-b border-[#E3E7E1] last:border-0">
-    <div className="flex items-start justify-between mb-2">
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-full bg-[#F5F7F3] flex items-center justify-center">
-          <span className="text-xs font-semibold text-[#145C43]">{review.userName[0]}</span>
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[#16241D]">{review.userName}</span>
-            {review.verified && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#145C43] bg-[#E8EFEC] px-1.5 py-0.5 rounded-full">
-                <Check className="w-2.5 h-2.5" />
-                Verified
-              </span>
-            )}
-          </div>
-          <span className="text-xs text-[#9BAAA1]">
-            {new Date(review.date).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          </span>
-        </div>
-      </div>
-      <StarRating rating={review.rating} size="sm" />
-    </div>
-    <p className="text-sm text-[#153A2C] leading-relaxed pl-10">{review.comment}</p>
-  </div>
-);
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-type TabKey = "description" | "details" | "reviews";
 
 const buildStoreInfo = (product: Product): StoreInfo => {
   const s = product.storeId as unknown as {
     _id: string;
     storeName?: string;
-    averageRating?: number;
   } | null;
 
   return {
     _id: s?._id ?? "",
     storeName: s?.storeName ?? "Unknown Store",
-    rating: s?.averageRating,
+    rating: undefined,
     totalRatings: undefined,
     distance: undefined,
   };
@@ -422,16 +317,9 @@ const ProductDetailPage: React.FC = () => {
   const { quantity, reset } = useProductDetailStore();
   const recordView = useViewedProductsStore((s) => s.recordView);
 
-  // ✅ Only pull what actually exists in your cart store
   const addToCartAction = useCartStore((s) => s.addToCart);
   const getItemQuantity = useCartStore((s) => s.getItemQuantity);
   const fetchCart = useCartStore((s) => s.fetchCart);
-
-  // Cart item count for NavBar badge
-  const cartItems = useCartStore((s) => s.items);
-
-  const [activeTab, setActiveTab] = useState<TabKey>("description");
-  const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
     void fetchCart();
@@ -439,19 +327,19 @@ const ProductDetailPage: React.FC = () => {
   }, [fetchCart, reset]);
 
   useEffect(() => {
-  if (!product) return;
+    if (!product) return;
 
-  recordView({
-    _id: product._id,
-    productName: product.productName,
-    price: product.price,
-    images: product.images ?? [],
-    unit: product.unit,
-    storeId: product.storeId,
-    categoryId: product.categoryId,
-    viewedAt: Date.now(),
-  });
-}, [product, recordView]);
+    recordView({
+      _id: product._id,
+      productName: product.productName,
+      price: product.price,
+      images: product.images ?? [],
+      unit: product.unit,
+      storeId: product.storeId,
+      categoryId: product.categoryId,
+      viewedAt: Date.now(),
+    });
+  }, [product, recordView]);
 
   if (isLoading) return <ProductDetailSkeleton />;
   if (error || !product) {
@@ -463,30 +351,18 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const storeInfo    = buildStoreInfo(product);
+  const storeInfo = buildStoreInfo(product);
   const cartQuantity = getItemQuantity(product._id);
-  const isAvailable  = product.availabilityStatus === "AVAILABLE";
+  const isAvailable = product.availabilityStatus === "AVAILABLE";
 
-  const averageRating = 4.8;
-  const totalReviews  = 124;
-
-  // ✅ Synchronous — no async/await, no conflict check, pass full product object
   const handleAddToCart = () => {
     addToCartAction(product._id, quantity);
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
     toast.success("Added to cart", {
       description: `${product.productName} · ${quantity} × ₹${product.price.toLocaleString("en-IN")}`,
     });
   };
 
   const handleViewStore = (id: string) => navigate(`/customer/store/${id}`);
-
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: "description", label: "Description" },
-    { key: "details",     label: "Details" },
-    { key: "reviews",     label: `Reviews (${totalReviews})` },
-  ];
 
   return (
     <div className="min-h-screen bg-[#F7F8F5]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -495,7 +371,7 @@ const ProductDetailPage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
         <nav className="flex items-center gap-1.5 text-sm text-[#9BAAA1]">
           {[
-            { label: "Home",    path: "/customer/home" },
+            { label: "Home", path: "/customer/home" },
             { label: product.categoryId?.categoryName ?? "Category", path: "/customer/discovery" },
             { label: product.productName, path: "#" },
           ].map((crumb, i, arr) => (
@@ -524,23 +400,19 @@ const ProductDetailPage: React.FC = () => {
 
           <ImageGallery images={product.images} productName={product.productName} />
 
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 bg-white rounded-2xl border border-[#E3E7E1] p-6">
 
             {/* Badges */}
-            <div className="flex flex-wrap gap-2">
-              {product.isBestseller && (
-                <Badge variant="amber"><Award className="w-3 h-3" /> Bestseller</Badge>
-              )}
-              {product.availabilityStatus === "AVAILABLE" && (
-                <Badge variant="green"><Check className="w-3 h-3" /> In Stock · Ready to Ship</Badge>
-              )}
-              {product.availabilityStatus === "OUT_OF_STOCK" && (
-                <Badge variant="red">Out of Stock</Badge>
-              )}
-              {product.categoryId?.categoryName && (
-                <Badge variant="brown"><Tag className="w-3 h-3" /> {product.categoryId.categoryName}</Badge>
-              )}
-            </div>
+            {(product.isBestseller || product.categoryId?.categoryName) && (
+              <div className="flex flex-wrap gap-2">
+                {product.isBestseller && (
+                  <Badge variant="amber"><Award className="w-3 h-3" /> Bestseller</Badge>
+                )}
+                {product.categoryId?.categoryName && (
+                  <Badge variant="brown"><Tag className="w-3 h-3" /> {product.categoryId.categoryName}</Badge>
+                )}
+              </div>
+            )}
 
             {/* Name */}
             <div>
@@ -552,26 +424,31 @@ const ProductDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Rating */}
+            {/* Price + availability */}
             <div className="flex items-center gap-3">
-              <StarRating rating={averageRating} />
-              <span className="text-sm font-semibold text-[#16241D]">{averageRating}</span>
-              <button
-                onClick={() => setActiveTab("reviews")}
-                className="text-sm text-[#145C43] underline-offset-2 hover:underline"
-              >
-                ({totalReviews} reviews)
-              </button>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-baseline gap-3">
               <span className="text-3xl font-bold text-[#16241D]">
                 ₹{product.price.toLocaleString("en-IN")}
               </span>
+              <span
+                className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                  isAvailable ? "text-[#145C43]" : "text-[#991B1B]"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isAvailable ? "bg-[#145C43]" : "bg-[#991B1B]"
+                  }`}
+                />
+                {isAvailable ? "In stock" : "Out of stock"}
+              </span>
             </div>
 
-            <div className="h-px bg-[#E3E7E1]" />
+            {/* Description — shown directly, no tab click needed */}
+            {product.description && (
+              <p className="text-sm text-[#6E7C74] leading-relaxed">
+                {product.description}
+              </p>
+            )}
 
             {/* Quantity + CTA */}
             {isAvailable && (
@@ -587,27 +464,16 @@ const ProductDetailPage: React.FC = () => {
                 </div>
 
                 <div className="flex gap-3">
-                  {/* ✅ Add to Cart — synchronous, no isAddingThis / conflict */}
                   <button
                     onClick={handleAddToCart}
-                    className={`flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-semibold text-sm border-2 transition-all ${
-                      addedToCart
-                        ? "bg-[#145C43] border-[#145C43] text-white"
-                        : "bg-white border-[#145C43] text-[#145C43] hover:bg-[#F5F7F3]"
-                    }`}
+                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-semibold text-sm bg-[#145C43] text-white hover:bg-[#114E39] transition-all"
                   >
-                    {addedToCart ? (
-                      <><Check className="w-4 h-4" /> Added to Cart</>
-                    ) : (
-                      <>
-                        <ShoppingCart className="w-4 h-4" />
-                        Add to Cart
-                        {cartQuantity > 0 && (
-                          <span className="bg-[#145C43] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {cartQuantity}
-                          </span>
-                        )}
-                      </>
+                    <ShoppingCart className="w-4 h-4" />
+                    Add to Cart
+                    {cartQuantity > 0 && (
+                      <span className="bg-white/20 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartQuantity}
+                      </span>
                     )}
                   </button>
 
@@ -617,7 +483,7 @@ const ProductDetailPage: React.FC = () => {
 
                   <button
                     aria-label="Share product"
-                    className="w-12 h-12 rounded-xl border border-[#DCE3DC] flex items-center justify-center text-[#6E7C74] hover:bg-[#F5F7F3] transition-colors"
+                    className="w-12 h-12 rounded-xl border border-[#DCE3DC] flex items-center justify-center text-[#6E7C74] hover:bg-[#F5F7F3] transition-colors flex-shrink-0"
                   >
                     <Share2 className="w-4 h-4" />
                   </button>
@@ -631,21 +497,13 @@ const ProductDetailPage: React.FC = () => {
               </div>
             )}
 
+            <div className="h-px bg-[#E3E7E1]" />
+
             {/* Trust pills */}
-            <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-[#FFFFFF] border border-[#E3E7E1]">
+            <div className="grid grid-cols-3 gap-3">
               <InfoPill icon={<Truck className="w-4 h-4" />} label="Fast Delivery" />
               <InfoPill icon={<Shield className="w-4 h-4" />} label="Secure Pay" />
               <InfoPill icon={<RotateCcw className="w-4 h-4" />} label="Easy Returns" />
-            </div>
-
-            {/* Stock info */}
-            <div className="flex items-center gap-2 text-sm text-[#6E7C74]">
-              <Package className="w-4 h-4 text-[#145C43]" />
-              <span>
-                {product.stockQuantity > 0
-                  ? `${product.stockQuantity} ${product.unit ?? "units"} available`
-                  : "Out of stock"}
-              </span>
             </div>
 
             <div className="h-px bg-[#E3E7E1]" />
@@ -657,95 +515,6 @@ const ProductDetailPage: React.FC = () => {
                   Sold by
                 </p>
                 <StoreCard store={storeInfo} onViewStore={handleViewStore} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Tabs ── */}
-        <div className="mt-10 bg-white rounded-2xl border border-[#E3E7E1] overflow-hidden">
-          <div className="flex border-b border-[#E3E7E1]">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 py-3.5 text-sm font-medium transition-all relative ${
-                  activeTab === tab.key ? "text-[#145C43]" : "text-[#9BAAA1] hover:text-[#145C43]"
-                }`}
-              >
-                {tab.label}
-                {activeTab === tab.key && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#145C43] rounded-t-full" />
-                )}
-              </button>
-            ))}
-          </div>
-
-          <div className="p-6">
-            {activeTab === "description" && (
-              <p className="text-[#153A2C] leading-relaxed text-sm sm:text-base">
-                {product.description || "No description available for this product."}
-              </p>
-            )}
-
-            {activeTab === "details" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { label: "Product Name",   value: product.productName },
-                  { label: "Category",       value: product.categoryId?.categoryName ?? "—" },
-                  { label: "Unit",           value: product.unit ?? "—" },
-                  { label: "Stock Quantity", value: `${product.stockQuantity} ${product.unit ?? "units"}` },
-                  { label: "Availability",   value: product.availabilityStatus.replace("_", " ") },
-                  {
-                    label: "Added On",
-                    value: product.createdAt
-                      ? new Date(product.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric", month: "long", year: "numeric",
-                        })
-                      : "—",
-                  },
-                ].map(({ label, value }) => (
-                  <div
-                    key={label}
-                    className="flex items-start justify-between py-2.5 px-3 rounded-lg bg-[#FFFFFF] border border-[#E3E7E1]"
-                  >
-                    <span className="text-xs font-medium text-[#9BAAA1] uppercase tracking-wide">{label}</span>
-                    <span className="text-sm font-medium text-[#16241D] text-right capitalize">{value}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {activeTab === "reviews" && (
-              <div>
-                <div className="flex items-center gap-6 mb-6 pb-5 border-b border-[#E3E7E1]">
-                  <div className="text-center">
-                    <p className="text-5xl font-bold text-[#16241D]">{averageRating}</p>
-                    <StarRating rating={averageRating} />
-                    <p className="text-xs text-[#9BAAA1] mt-1">{totalReviews} reviews</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    {[5, 4, 3, 2, 1].map((star) => (
-                      <div key={star} className="flex items-center gap-2">
-                        <span className="text-xs text-[#9BAAA1] w-2">{star}</span>
-                        <Star className="w-3 h-3 fill-[#145C43] text-[#145C43]" />
-                        <div className="flex-1 h-1.5 rounded-full bg-[#E3E7E1] overflow-hidden">
-                          <div
-                            className="h-full bg-[#145C43] rounded-full"
-                            style={{
-                              width: `${star === 5 ? 68 : star === 4 ? 20 : star === 3 ? 8 : star === 2 ? 3 : 1}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  {MOCK_REVIEWS.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
-                  ))}
-                </div>
               </div>
             )}
           </div>
