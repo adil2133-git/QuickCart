@@ -234,8 +234,62 @@ const cancelOrder = async (req, res) => {
     }
 };
 
+// ─── GET /api/customer/orders/active-delivery ───────────────────────────────
+// Powers the floating tracking widget — returns the customer's current
+// OUT_FOR_DELIVERY order (driver already has it, en route) with everything
+// the widget/tracking screen need in one call, or activeDelivery: null if
+// nothing is currently out for delivery.
+const getActiveDelivery = async (req, res) => {
+    try {
+        const customerId = await resolveCustomerId(req);
+
+        const order = await Order.findOne({
+            customerId,
+            orderStatus: "OUT_FOR_DELIVERY",
+        })
+            .sort({ createdAt: -1 })
+            .populate("storeId", "storeName coordinates")
+            .populate({
+                path: "driverId",
+                select: "vehicleType vehicleNumber currentLocation userId",
+                populate: { path: "userId", select: "name phone" },
+            })
+            .lean();
+
+        if (!order || !order.driverId) {
+            return res.status(200).json({ success: true, activeDelivery: null });
+        }
+
+        return res.status(200).json({
+            success: true,
+            activeDelivery: {
+                orderId: order._id,
+                orderNumber: order.orderNumber,
+                orderStatus: order.orderStatus,
+                deliveryAddress: order.deliveryAddress,
+                deliveryCoordinates: order.deliveryCoordinates,
+                store: {
+                    storeName: order.storeId?.storeName ?? "Store",
+                    coordinates: order.storeId?.coordinates ?? null,
+                },
+                driver: {
+                    name: order.driverId?.userId?.name ?? "Your delivery partner",
+                    phone: order.driverId?.userId?.phone ?? null,
+                    vehicleType: order.driverId?.vehicleType ?? null,
+                    vehicleNumber: order.driverId?.vehicleNumber ?? null,
+                    currentLocation: order.driverId?.currentLocation ?? null,
+                },
+            },
+        });
+    } catch (err) {
+        console.error("GET ACTIVE DELIVERY ERROR:", err);
+        return res.status(500).json({ success: false, message: "Internal server error." });
+    }
+};
+
 module.exports = {
     getOrders,
     getOrderDetail,
     cancelOrder,
+    getActiveDelivery,
 };

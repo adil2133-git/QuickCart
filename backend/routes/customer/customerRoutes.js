@@ -47,6 +47,7 @@ const {
     getOrders,
     getOrderDetail,
     cancelOrder,
+    getActiveDelivery,
 } = require("../../controllers/customer/ordersController");
 
 const { getRecentlyOrdered } = require("../../controllers/customer/homeController");
@@ -79,6 +80,7 @@ router.get("/checkout/summary", protectRoutes, authorizeRoles("CUSTOMER"), getCh
 router.post("/checkout/place-order", protectRoutes, authorizeRoles("CUSTOMER"), placeOrder);
 
 router.get("/orders", protectRoutes, authorizeRoles("CUSTOMER"), getOrders);
+router.get("/orders/active-delivery", protectRoutes, authorizeRoles("CUSTOMER"), getActiveDelivery);
 router.get("/orders/:id", protectRoutes, authorizeRoles("CUSTOMER"), getOrderDetail);
 router.patch("/orders/:id/cancel", protectRoutes, authorizeRoles("CUSTOMER"), cancelOrder);
 

@@ -5,13 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
     MapPin, ShoppingCart, Star, ChevronLeft, ChevronRight,
-    Plus, Check, ArrowRight, Clock, Leaf,
+    Plus, Check, ArrowRight, Clock, Leaf, RotateCcw, History,
 } from "lucide-react";
 import LocationPickerModal from "../components/locationPickerModal";
 import api from "../../../api/axios";
 import { useLocationStore } from "../state/locationState";
 import { useStoresListStore } from "../state/storesListState";
 import { useCartStore } from "../state/cartState";
+import { useViewedProductsStore } from "../state/viewProductState";
 import type { StoreProfileSummary } from "../types/store";
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
@@ -53,6 +54,20 @@ interface Category {
     _id: string;
     name: string;
     image?: string;
+}
+
+// Shape returned by GET /customer/home/recent-orders — note the backend uses
+// the real schema field names (productName / categoryName), unlike the
+// `Product` shape above.
+interface OrderedProduct {
+    _id: string;
+    productName: string;
+    price: number;
+    images?: string[];
+    unit?: string;
+    stockQuantity?: number;
+    storeId?: { _id: string; storeName: string };
+    categoryId?: { _id: string; categoryName: string };
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -135,8 +150,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 // ─── Add to Cart Button ────────────────────────────────────────────────────────
 
-function AddToCartButton({ onAdd, icon = false, productId }: { onAdd?: () => void; icon?: boolean; productId?: string }) {
-    const [added, setAdded] = useState(false);
+function AddToCartButton({ onAdd, icon = false, productId, label = "Add to Cart", addedLabel = "Added!" }: { onAdd?: () => void; icon?: boolean; productId?: string; label?: string; addedLabel?: string }) {    const [added, setAdded] = useState(false);
     const addToCart = useCartStore((s) => s.addToCart);
 
     const handleClick = async () => {
@@ -173,8 +187,8 @@ function AddToCartButton({ onAdd, icon = false, productId }: { onAdd?: () => voi
         >
             <AnimatePresence mode="wait" initial={false}>
                 {added
-                    ? <motion.span key="c" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }} className="flex items-center gap-2"><Check size={14} /> Added!</motion.span>
-                    : <motion.span key="a" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }} className="flex items-center gap-2"><ShoppingCart size={14} /> Add to Cart</motion.span>
+                    ? <motion.span key="c" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }} className="flex items-center gap-2"><Check size={14} /> {addedLabel}</motion.span>
+                    : <motion.span key="a" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }} className="flex items-center gap-2"><ShoppingCart size={14} /> {label}</motion.span>
                 }
             </AnimatePresence>
         </motion.button>
@@ -222,8 +236,21 @@ function StoreStatusBadge({ status, index }: { status: StoreProfileSummary["stat
     );
 }
 
-// ─── Category emoji fallback map ──────────────────────────────────────────────
+// ─── "Bought Before" ribbon badge (Order It Again cards) ─────────────────────
 
+function BoughtBeforeBadge() {
+    return (
+        <div
+            className="absolute top-3 left-3 rounded-full px-2.5 py-1 flex items-center gap-1.5"
+            style={{ backgroundColor: "rgba(20,92,67,0.88)", backdropFilter: "blur(6px)" }}
+        >
+            <RotateCcw size={10} color="white" />
+            <span className="text-[11px] font-semibold text-white">Bought before</span>
+        </div>
+    );
+}
+
+// ─── Category emoji fallback map ──────────────────────────────────────────────
 const CATEGORY_EMOJI: Record<string, string> = {
     fruits: "🍊", dairy: "🥛", bakery: "🍞", snacks: "🌰",
     vegetables: "🥕", pantry: "🫙", meat: "🥩", beverages: "☕",
@@ -299,6 +326,13 @@ export default function CustomerHome() {
     const [loadingPopular, setLoadingPopular] = useState(true);
     const [loadingTrending, setLoadingTrending] = useState(true);
 
+    // ── Order It Again — customer's own recent order history (backend) ────────
+    const [recentlyOrdered, setRecentlyOrdered] = useState<OrderedProduct[]>([]);
+    const [loadingRecentOrders, setLoadingRecentOrders] = useState(true);
+
+    // ── Recently Viewed — client-side, batched, persisted locally ─────────────
+    const viewedProducts = useViewedProductsStore((s) => s.displayed);
+
     // ── 1. Fetch profile on mount ─────────────────────────────────────────────
     useEffect(() => {
         fetchProfile();
@@ -326,11 +360,21 @@ export default function CustomerHome() {
             .then(({ data }) => setTrendingProducts(data.products ?? []))
             .catch(console.error)
             .finally(() => setLoadingTrending(false));
+
+        api.get("/customer/home/recent-orders")
+            .then(({ data }) => setRecentlyOrdered(data.products ?? []))
+            .catch(console.error)
+            .finally(() => setLoadingRecentOrders(false));
     }, []);
 
     // ── Navigate to a store's menu page ────────────────────────────────────────
     const goToStore = (storeId: string) => {
         navigate(`/customer/store/${storeId}`);
+    };
+
+    // ── Navigate to a single product's detail page ─────────────────────────────
+    const goToProduct = (storeId: string, productId: string) => {
+        navigate(`/customer/store/${storeId}/product/${productId}`);
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
@@ -402,6 +446,57 @@ export default function CustomerHome() {
                         </motion.div>
                     </div>
                 </motion.section>
+
+                {/* ── ORDER IT AGAIN ── */}
+                {(loadingRecentOrders || recentlyOrdered.length > 0) && (
+                    <section>
+                        <SectionHeader title="Order It Again" action="View Order History" />
+                        {loadingRecentOrders ? (
+                            <div className="grid grid-cols-4 gap-6">
+                                {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+                            </div>
+                        ) : (
+                            <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
+                                viewport={{ once: true, margin: "-40px" }} className="grid grid-cols-4 gap-6">
+                                {recentlyOrdered.slice(0, 4).map((item) => {
+                                    const catName = item.categoryId?.categoryName;
+                                    const storeId = item.storeId?._id;
+                                    return (
+                                        <motion.div key={item._id} variants={scaleIn}>
+                                            <Card className="flex flex-col h-full">
+                                                <div className="p-[17px] pb-0">
+                                                    <motion.div
+                                                        whileHover={{ scale: 1.03 }} transition={{ duration: 0.3 }}
+                                                        onClick={() => storeId && goToProduct(storeId, item._id)}
+                                                        className="relative h-48 rounded-lg flex items-center justify-center text-6xl overflow-hidden cursor-pointer"
+                                                        style={{ backgroundColor: productBg(catName) }}>
+                                                        {item.images?.[0]
+                                                            ? <img src={item.images[0]} alt={item.productName} className="w-full h-full object-cover" />
+                                                            : <span className="select-none">{productEmoji(catName)}</span>
+                                                        }
+                                                        <BoughtBeforeBadge />
+                                                    </motion.div>
+                                                </div>
+                                                <div
+                                                    onClick={() => storeId && goToProduct(storeId, item._id)}
+                                                    className="px-[17px] pt-[17px] flex-1 cursor-pointer"
+                                                >
+                                                    <span className="text-xs font-medium block" style={{ color: "#145C43" }}>{item.storeId?.storeName}</span>
+                                                    <span className="font-semibold block" style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#16241D", lineHeight: "22px", marginTop: 3 }}>{item.productName}</span>
+                                                    <span className="text-sm block" style={{ color: "#9BAAA1" }}>{item.unit || catName}</span>
+                                                </div>
+                                                <div className="px-[17px] py-4 flex items-center justify-between">
+                                                    <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#145C43" }}>₹{item.price}</span>
+                                                    <AddToCartButton productId={item._id} label="Reorder" addedLabel="In Cart!" />
+                                                </div>
+                                            </Card>
+                                        </motion.div>
+                                    );
+                                })}
+                            </motion.div>
+                        )}
+                    </section>
+                )}
 
                 {/* ── BROWSE BY CATEGORY ── */}
                 <section>
@@ -639,6 +734,54 @@ export default function CustomerHome() {
                         </motion.div>
                     )}
                 </section>
+
+                {/* ── RECENTLY VIEWED ── */}
+                {viewedProducts.length > 0 && (
+                    <section className="pb-4">
+                        <motion.div variants={fadeUp} initial="hidden" whileInView="show"
+                            viewport={{ once: true, margin: "-40px" }}
+                            className="flex items-end justify-between mb-6">
+                            <span className="text-xl font-semibold flex items-center gap-2" style={{ fontFamily: "'Inter', sans-serif", color: "#145C43" }}>
+                                <History size={18} color="#145C43" />
+                                Recently Viewed
+                            </span>
+                        </motion.div>
+
+                        <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
+                            viewport={{ once: true, margin: "-40px" }}
+                            className="flex gap-5 overflow-x-auto scrollbar-hide pb-2">
+                            {viewedProducts.map((item) => {
+                                const catName = item.categoryId?.categoryName;
+                                return (
+                                    <motion.div key={item._id} variants={fadeUp} className="flex-shrink-0" style={{ width: 190 }}>
+                                        <Card className="flex flex-col h-full">
+                                            <div
+                                                onClick={() => goToProduct(item.storeId, item._id)}
+                                                className="h-36 flex items-center justify-center text-5xl overflow-hidden cursor-pointer"
+                                                style={{ backgroundColor: productBg(catName) }}>
+                                                {item.images?.[0]
+                                                    ? <img src={item.images[0]} alt={item.productName} className="w-full h-full object-cover" />
+                                                    : <span className="select-none">{productEmoji(catName)}</span>
+                                                }
+                                            </div>
+                                            <div
+                                                onClick={() => goToProduct(item.storeId, item._id)}
+                                                className="px-3.5 pt-3 flex-1 cursor-pointer"
+                                            >
+                                                <span className="font-medium block truncate" style={{ fontFamily: "'Inter', sans-serif", fontSize: 13.5, color: "#16241D" }}>{item.productName}</span>
+                                                <span className="text-xs block" style={{ color: "#9BAAA1" }}>{item.unit || catName}</span>
+                                            </div>
+                                            <div className="px-3.5 py-3 flex items-center justify-between">
+                                                <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 14.5, color: "#145C43" }}>₹{item.price}</span>
+                                                <AddToCartButton productId={item._id} icon />
+                                            </div>
+                                        </Card>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
+                    </section>
+                )}
 
             </main>
 
