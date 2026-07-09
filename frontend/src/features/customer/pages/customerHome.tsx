@@ -13,6 +13,7 @@ import { useLocationStore } from "../state/locationState";
 import { useStoresListStore } from "../state/storesListState";
 import { useCartStore } from "../state/cartState";
 import { useViewedProductsStore } from "../state/viewProductState";
+import DeliveryTrackingWidget from "../components/deliveryTrackingWidget";
 import type { StoreProfileSummary } from "../types/store";
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
@@ -393,6 +394,9 @@ export default function CustomerHome() {
                     <LocationPickerModal onSaved={onLocationSaved} />
                 )}
             </AnimatePresence>
+
+            {/* Live delivery tracking — floating card / minimized side tab */}
+            <DeliveryTrackingWidget />
 
             <main className="mx-auto px-10 py-12 flex flex-col gap-14" style={{ maxWidth: 1200 }}>
 

@@ -41,6 +41,7 @@ import StoresPage from './features/customer/pages/storesPage'
 import CartPage from './features/customer/pages/cartPage'
 import CheckoutPage from './features/customer/pages/checkoutPage'
 import MyOrdersPage from './features/customer/pages/myOrdersPage'
+import OrderTrackingPage from './features/customer/pages/orderTrackingPage'
 import CustomerProfilePage from './features/customer/pages/customerProfile'
 import OrdersPage from './features/store/pages/ordersList'
 import OrderDetailPage from './features/store/pages/orderDetail'
@@ -129,6 +130,7 @@ function App() {
         {/* These two stay outside the shell — they manage their own header */}
         <Route path="/customer/discovery" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><ProductDiscoveryPage /></ProtectedRoute>} />
         <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute>} />
+        <Route path="/customer/track/:orderId" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><OrderTrackingPage /></ProtectedRoute>} />
 
         {/* ── Driver routes (all wrapped in DriverShell) ────────────── */}
         <Route
