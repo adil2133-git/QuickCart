@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Phone, X } from "lucide-react";
 import { useCancelOrder, useOrdersList, useOrdersTab } from "../hooks/useMyOrders";
 import type { CustomerOrder, OrderStatus } from "../types/myOrders";
@@ -81,7 +82,8 @@ function OrderCard({ order }: { order: CustomerOrder }) {
   const showCallRider = order.status === "OUT_FOR_DELIVERY";
   const canCancel = order.status === "PROCESSING";
 
-  const { cancelOrder } = useCancelOrder();
+ const { cancelOrder } = useCancelOrder();
+  const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -187,12 +189,18 @@ function OrderCard({ order }: { order: CustomerOrder }) {
                 View Details
               </button>
             ) : showCallRider ? (
-              <button className="flex items-center gap-2 bg-[#145C43] hover:bg-[#114E39] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors">
+              <button
+                onClick={() => navigate(`/customer/track/${order.id}`)}
+                className="flex items-center gap-2 bg-[#145C43] hover:bg-[#114E39] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors"
+              >
                 <Phone size={14} />
                 Call Rider
               </button>
             ) : (
-              <button className="text-sm font-semibold text-[#145C43] hover:underline">
+              <button
+                onClick={() => navigate(`/customer/track/${order.id}`)}
+                className="text-sm font-semibold text-[#145C43] hover:underline"
+              >
                 Track Order
               </button>
             )}

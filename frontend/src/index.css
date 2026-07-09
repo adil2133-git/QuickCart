@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+/* Tailwind's base reset sets `img { max-width: 100%; height: auto }`, which
+   breaks Leaflet's absolutely-positioned tile images (they need their real
+   pixel width/height to tile correctly) — without this override, every map
+   in the app renders blank. */
+.leaflet-container img {
+  max-width: none !important;
+}

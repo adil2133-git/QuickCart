@@ -68,6 +68,7 @@ function MiniMap({
         }
 
         mapRef.current = map;
+        requestAnimationFrame(() => map.invalidateSize());
         return () => { map.remove(); mapRef.current = null; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
