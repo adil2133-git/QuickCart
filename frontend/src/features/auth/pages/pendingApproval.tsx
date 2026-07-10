@@ -224,6 +224,14 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
       await fetchProfile();
       setLoading(false);
     })();
+
+    // Silent background poll every 60 seconds — if approved, fetchProfile
+    // redirects to /login automatically so the user never has to check manually
+    const interval = setInterval(() => {
+      fetchProfile();
+    }, 60_000);
+
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
@@ -236,8 +244,8 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
     );
   };
 
-  const { logout: handleLogout } = useLogout();
-  
+  const { logout: handleLogout, isLoggingOut } = useLogout();
+
   // ── Loading ──
   if (loading) {
     return (
@@ -276,6 +284,36 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
             style={{ border: "1px solid #2a1a0e", color: "#2a1a0e" }}
           >
             Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Rejected state ──
+  if (profile?.approvalStatus === "REJECTED") {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: "#f5ede4" }}>
+        <div className="flex flex-col items-center gap-4 max-w-sm text-center px-6">
+          <AlertCircle size={40} style={{ color: "#b03a2e" }} />
+          <h2 className="text-2xl font-bold" style={{ color: "#1a1108" }}>Application Rejected</h2>
+          <p className="text-sm leading-relaxed" style={{ color: "#7a6550" }}>
+            Unfortunately your application was not approved at this time.
+            Please contact support for more information.
+          </p>
+          <a
+            href="mailto:support@quickkart.com"
+            className="text-sm font-semibold underline"
+            style={{ color: "#7a5c34" }}
+          >
+            support@quickkart.com
+          </a>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-sm font-semibold px-6 py-2.5 rounded-xl"
+            style={{ backgroundColor: "#2a1a0e", color: "#ffffff" }}
+          >
+            <LogOut size={15} /> Logout
           </button>
         </div>
       </div>
@@ -366,12 +404,12 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
           </p>
 
           {/* Show name from store if available, as a warm greeting */}
-          {storeUser?.name && (
+          {profile?.name && (
             <p
               className="mt-2 text-sm font-medium"
               style={{ color: "#c9a96e" }}
             >
-              Hi, {storeUser.name} 👋
+              Hi, {profile.name} 👋
             </p>
           )}
         </div>
@@ -677,11 +715,12 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-widest py-3 rounded-xl transition-colors"
+            disabled={isLoggingOut}
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-widest py-3 rounded-xl transition-colors disabled:opacity-50"
             style={{ color: "#b03a2e" }}
           >
             <LogOut size={15} />
-            Logout
+            {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
         </div>
 
