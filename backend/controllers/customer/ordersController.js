@@ -245,7 +245,7 @@ const getActiveDelivery = async (req, res) => {
 
         const order = await Order.findOne({
             customerId,
-            orderStatus: "OUT_FOR_DELIVERY",
+            orderStatus: { $in: ["DRIVER_ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY"] },
         })
             .sort({ createdAt: -1 })
             .populate("storeId", "storeName coordinates")
