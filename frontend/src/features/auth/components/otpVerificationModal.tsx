@@ -79,8 +79,9 @@ export default function OtpVerificationModal({
         setVerified(true);
         setTimeout(() => onVerified(), 800);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid or expired OTP. Please try again.");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setError(axiosError.response?.data?.message || "Invalid or expired OTP. Please try again.");
     } finally {
       setVerifying(false);
     }
@@ -99,8 +100,9 @@ export default function OtpVerificationModal({
       setCount(28);
       setOtp(["", "", "", ""]);
       inputsRef.current[0]?.focus();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to resend OTP. Please try again.");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setError(axiosError.response?.data?.message || "Failed to resend OTP. Please try again.");
     } finally {
       setResending(false);
     }

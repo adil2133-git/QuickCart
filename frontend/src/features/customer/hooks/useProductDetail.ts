@@ -34,10 +34,15 @@ export const useProductDetail = (productId: string, storeId?: string) => {
         });
 
         setProduct(res.data.product);
-      } catch (err: any) {
-        if (err?.name === "CanceledError" || err?.name === "AbortError" || axios.isCancel(err)) return;
+      } catch (err: unknown) {
+        const axiosError = err as {
+          name?: string;
+          response?: { data?: { message?: string } };
+          message?: string;
+        };
+        if (axiosError?.name === "CanceledError" || axiosError?.name === "AbortError" || axios.isCancel(err)) return;
         setError(
-          err?.response?.data?.message || err?.message || "An unexpected error occurred."
+          axiosError?.response?.data?.message || axiosError?.message || "An unexpected error occurred."
         );
       } finally {
         setLoading(false);

@@ -20,7 +20,7 @@ export interface CustomerProfile {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function apiGet<T = any>(path: string): Promise<T> {
+async function apiGet<T>(path: string): Promise<T> {
     const res = await api.get<T>(path);
     return res.data;
 }
@@ -89,10 +89,11 @@ export const useLocationStore = create<LocationState>()(
                         activeCoords: def?.coordinates?.lat ? def.coordinates : null,
                         showLocationModal: !profile.defaultAddress || profile.savedAddresses.length === 0,
                     });
-                } catch (err: any) {
+                } catch (err: unknown) {
+                    const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
                     set({
                         profileError:
-                            err?.response?.data?.message || err?.message || "Couldn't load your saved location.",
+                            axiosError?.response?.data?.message || axiosError?.message || "Couldn't load your saved location.",
                     });
                 } finally {
                     set({ profileLoading: false });

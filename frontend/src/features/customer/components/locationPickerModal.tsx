@@ -132,6 +132,49 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
         return () => document.removeEventListener("keydown", handler);
     }, [onClose]);
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+        setResolving(true);
+        setResolvedAddress(null);
+        try {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+                { headers: { "Accept-Language": "en" } }
+            );
+            const data = await res.json();
+            setResolvedAddress(data?.display_name || null);
+        } catch {
+            setResolvedAddress(null);
+        } finally {
+            setResolving(false);
+        }
+    }, []);
+
+    const updatePending = useCallback((lat: number, lng: number) => {
+        const coords = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
+        setPending(coords);
+        setConfirmed(null);
+        void reverseGeocode(coords.lat, coords.lng);
+    }, [reverseGeocode]);
+
+    const placePin = useCallback((map: L.Map, lat: number, lng: number) => {
+        if (markerRef.current) markerRef.current.remove();
+
+        const marker = L.marker([lat, lng], {
+            icon: makeMarkerIcon(),
+            draggable: true,
+        }).addTo(map);
+
+        marker.on("dragend", (e) => {
+            const pos = (e.target as L.Marker).getLatLng();
+            updatePending(pos.lat, pos.lng);
+        });
+
+        markerRef.current = marker;
+        updatePending(lat, lng);
+    }, [updatePending]);
+
     // ── Init Leaflet map ───────────────────────────────────────────────────────
     useEffect(() => {
         if (!mapContainerRef.current || mapRef.current) return;
@@ -158,51 +201,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
             map.remove();
             mapRef.current = null;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    const placePin = (map: L.Map, lat: number, lng: number) => {
-        if (markerRef.current) markerRef.current.remove();
-
-        const marker = L.marker([lat, lng], {
-            icon: makeMarkerIcon(),
-            draggable: true,
-        }).addTo(map);
-
-        marker.on("dragend", (e) => {
-            const pos = (e.target as L.Marker).getLatLng();
-            updatePending(pos.lat, pos.lng);
-        });
-
-        markerRef.current = marker;
-        updatePending(lat, lng);
-    };
-
-    const updatePending = (lat: number, lng: number) => {
-        const coords = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
-        setPending(coords);
-        setConfirmed(null); // un-confirm until user taps Confirm
-        reverseGeocode(coords.lat, coords.lng);
-    };
-
-    const reverseGeocode = useCallback(async (lat: number, lng: number) => {
-        setResolving(true);
-        setResolvedAddress(null);
-        try {
-            const res = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-                { headers: { "Accept-Language": "en" } }
-            );
-            const data = await res.json();
-            setResolvedAddress(data?.display_name || null);
-        } catch {
-            setResolvedAddress(null);
-        } finally {
-            setResolving(false);
-        }
-    }, []);
+    }, [placePin]);
 
     // ── GPS ───────────────────────────────────────────────────────────────────
 
@@ -277,8 +276,9 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                 coordinates: { lat: confirmed.lat, lng: confirmed.lng },
             });
             onSaved(selectedLabel);
-        } catch (err: any) {
-            setSaveError(err.response?.data?.message || "Couldn't save address. Try again.");
+        } catch (err: unknown) {
+            const axiosError = err as { response?: { data?: { message?: string } } };
+            setSaveError(axiosError.response?.data?.message || "Couldn't save address. Try again.");
         } finally {
             setSaving(false);
         }

@@ -60,7 +60,7 @@ export function useDriverDeliveryActions() {
     } finally {
       store.setRequestsLoading(false);
     }
-  }, []);
+  }, [store]);
 
   // ── Accept a request ────────────────────────────────────────────────────────
   const acceptRequest = useCallback(async (requestId: string) => {
@@ -75,7 +75,7 @@ export function useDriverDeliveryActions() {
       // surface via toast in component
       throw new Error("Failed to accept delivery request.");
     }
-  }, []);
+  }, [store]);
 
   // ── Decline a request ───────────────────────────────────────────────────────
   const declineRequest = useCallback(async (requestId: string) => {
@@ -85,7 +85,7 @@ export function useDriverDeliveryActions() {
     } catch {
       throw new Error("Failed to decline delivery request.");
     }
-  }, []);
+  }, [store]);
 
   // ── Fetch active delivery ───────────────────────────────────────────────────
   const fetchActiveDelivery = useCallback(async () => {
@@ -101,41 +101,7 @@ export function useDriverDeliveryActions() {
     } finally {
       store.setActiveLoading(false);
     }
-  }, []);
-
-  // ── Advance delivery stage ──────────────────────────────────────────────────
-  const advanceStage = useCallback(async (orderId: string, newStage: DeliveryStage) => {
-    try {
-      const { data } = await api.patch<{
-        success: boolean;
-        completedAt: string;
-        currentStage: DeliveryStage;
-      }>(`/driver/deliveries/${orderId}/stage`, { stage: newStage });
-
-      store.advanceStage(data.currentStage, data.completedAt);
-
-      // If delivered — move to completed tab after a brief moment
-      if (newStage === "DELIVERED") {
-        setTimeout(() => {
-          store.clearActiveDelivery();
-          store.setActiveTab("COMPLETED_HISTORY");
-          fetchCompleted(1);
-        }, 2000);
-      }
-    } catch {
-      throw new Error("Failed to update delivery stage.");
-    }
-  }, []);
-
-  // ── Confirm cash collected ──────────────────────────────────────────────────
-  const confirmCashCollected = useCallback(async (orderId: string) => {
-    try {
-      await api.post(`/driver/deliveries/${orderId}/cash-collected`);
-      store.markCashCollected();
-    } catch {
-      throw new Error("Failed to confirm cash collection.");
-    }
-  }, []);
+  }, [store]);
 
   // ── Fetch completed history ─────────────────────────────────────────────────
   const fetchCompleted = useCallback(async (page = 1) => {
@@ -160,7 +126,41 @@ export function useDriverDeliveryActions() {
     } finally {
       store.setCompletedLoading(false);
     }
-  }, []);
+  }, [store]);
+
+  // ── Advance delivery stage ──────────────────────────────────────────────────
+  const advanceStage = useCallback(async (orderId: string, newStage: DeliveryStage) => {
+    try {
+      const { data } = await api.patch<{
+        success: boolean;
+        completedAt: string;
+        currentStage: DeliveryStage;
+      }>(`/driver/deliveries/${orderId}/stage`, { stage: newStage });
+
+      store.advanceStage(data.currentStage, data.completedAt);
+
+      // If delivered — move to completed tab after a brief moment
+      if (newStage === "DELIVERED") {
+        setTimeout(() => {
+          store.clearActiveDelivery();
+          store.setActiveTab("COMPLETED_HISTORY");
+          fetchCompleted(1);
+        }, 2000);
+      }
+    } catch {
+      throw new Error("Failed to update delivery stage.");
+    }
+  }, [fetchCompleted, store]);
+
+  // ── Confirm cash collected ──────────────────────────────────────────────────
+  const confirmCashCollected = useCallback(async (orderId: string) => {
+    try {
+      await api.post(`/driver/deliveries/${orderId}/cash-collected`);
+      store.markCashCollected();
+    } catch {
+      throw new Error("Failed to confirm cash collection.");
+    }
+  }, [store]);
 
   // ── Fetch today's stats ─────────────────────────────────────────────────────
   const fetchTodayStats = useCallback(async () => {
@@ -175,7 +175,7 @@ export function useDriverDeliveryActions() {
     } finally {
       store.setStatsLoading(false);
     }
-  }, []);
+  }, [store]);
 
   // ── Toggle online/offline ───────────────────────────────────────────────────
   const toggleAvailability = useCallback(async (goOnline: boolean) => {
@@ -187,7 +187,7 @@ export function useDriverDeliveryActions() {
     } catch {
       throw new Error("Failed to update availability.");
     }
-  }, []);
+  }, [store]);
 
   // ── Fetch current availability (source of truth on page load) ───────────────
   const fetchAvailability = useCallback(async () => {
@@ -203,7 +203,7 @@ export function useDriverDeliveryActions() {
     } catch {
       // Non-critical — leave isOnline as-is if this fails
     }
-  }, []);
+  }, [store]);
 
   return {
     fetchRequests,

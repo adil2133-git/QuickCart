@@ -120,9 +120,9 @@ function CountdownRing({
       }
       return;
     }
-    const id = setInterval(() => setRemaining((r) => r - 1), 1000);
-    return () => clearInterval(id);
-  }, [remaining]);
+    const id = window.setInterval(() => setRemaining((r) => r - 1), 1000);
+    return () => window.clearInterval(id);
+  }, [onExpire, remaining]);
 
   const radius = 18;
   const circ = 2 * Math.PI * radius;

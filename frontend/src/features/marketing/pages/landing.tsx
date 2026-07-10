@@ -1,5 +1,4 @@
 // QuickKartLanding.tsx (main page)
-import React from "react";
 import { motion, type Variants } from "framer-motion";
 import {
   ShoppingCart, Store, Bike, Search, Navigation, PackageCheck,

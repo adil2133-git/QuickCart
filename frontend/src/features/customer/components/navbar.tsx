@@ -152,14 +152,19 @@ function NavTextLink({ label, to }: NavLinkItem) {
 /* -------------------------------------------------------------------------- */
 
 function usePrefersReducedMotion(): boolean {
-    const [reduced, setReduced] = useState(false);
+    const [reduced, setReduced] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    });
+
     useEffect(() => {
+        if (typeof window === "undefined") return;
         const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-        setReduced(mq.matches);
         const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
         mq.addEventListener("change", handler);
         return () => mq.removeEventListener("change", handler);
     }, []);
+
     return reduced;
 }
 
@@ -544,17 +549,14 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
 
     useEffect(() => {
         if (isLive || paused || reducedMotion) return;
-        const id = setInterval(() => {
+        const id = window.setInterval(() => {
             setIdleIndex((i) => (i + 1) % IDLE_MESSAGES.length);
         }, IDLE_ROTATE_MS);
-        return () => clearInterval(id);
+        return () => window.clearInterval(id);
     }, [isLive, paused, reducedMotion]);
 
-    useEffect(() => {
-        if (!isLive) setIdleIndex(0);
-    }, [isLive]);
-
-    const idle = IDLE_MESSAGES[idleIndex];
+    const displayIndex = isLive ? idleIndex : 0;
+    const idle = IDLE_MESSAGES[displayIndex];
     const Icon = isLive ? Truck : idle.icon;
     const pillBg = isLive ? "#E8EFEC" : idle.pillBg;
     const iconBg = isLive ? "#145C43" : idle.iconBg;
@@ -583,7 +585,7 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
             >
                 <AnimatePresence mode="wait" initial={false}>
                     <motion.span
-                        key={isLive ? "live-icon" : `idle-icon-${idleIndex}`}
+                        key={isLive ? "live-icon" : `idle-icon-${displayIndex}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -607,7 +609,7 @@ function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
                 </span>
                 <AnimatePresence mode="wait" initial={false}>
                     <motion.span
-                        key={isLive ? "live-text" : `idle-text-${idleIndex}`}
+                        key={isLive ? "live-text" : `idle-text-${displayIndex}`}
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
@@ -843,11 +845,6 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
     // ── Fixed routes ──────────────────────────────────────────────────────────
     const CART_PATH = "/customer/cart";
     const PROFILE_PATH = "/customer/profile";
-
-    // Close mobile menu on route change
-    useEffect(() => {
-        setMobileOpen(false);
-    }, [pathname]);
 
     return (
         <motion.header

@@ -13,23 +13,16 @@ import {
   Clock,
   Star,
   MessageCircle,
-  User,
   Navigation,
-  Home,
   Store,
   ShoppingBag,
-  ChevronRight,
-  AlertCircle,
   Headphones,
-  Mail,
   Flag,
   ZoomIn,
   ZoomOut,
   Maximize2,
   Minimize2,
-  Car,
   Bike,
-  Footprints,
 } from "lucide-react";
 import { useActiveDeliveryStore } from "../state/activeDeliveryState";
 import { useActiveDeliveryTracking } from "../hooks/useActiveDeliveryTracking";
@@ -106,13 +99,24 @@ function LiveMap({
   const driverMarkerRef = useRef<L.Marker | null>(null);
   const routeLayerRef = useRef<L.Layer | null>(null);
   const hasFitBoundsRef = useRef(false);
+  const driverPosRef = useRef(driverPos);
+  const destinationPosRef = useRef(destinationPos);
+  const storePosRef = useRef(storePos);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+
+  useEffect(() => {
+    driverPosRef.current = driverPos;
+    destinationPosRef.current = destinationPos;
+    storePosRef.current = storePos;
+  }, [destinationPos, driverPos, storePos]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    const initialDriver = driverPosRef.current;
+
     const map = L.map(containerRef.current, {
-      center: [driverPos.lat, driverPos.lng],
+      center: [initialDriver.lat, initialDriver.lng],
       zoom: 15,
       zoomControl: false,
     });
@@ -170,7 +174,7 @@ function LiveMap({
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [destinationPos, driverPos.lat, driverPos.lng, storePos]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -185,7 +189,7 @@ function LiveMap({
       mapRef.current.fitBounds(points, { padding: [80, 80], maxZoom: 14 });
       hasFitBoundsRef.current = true;
     }
-  }, [driverPos.lat, driverPos.lng, destinationPos, storePos]);
+  }, [destinationPos, driverPos.lat, driverPos.lng, storePos]);
 
   const handleZoomIn = () => {
     mapRef.current?.zoomIn();

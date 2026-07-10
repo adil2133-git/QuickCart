@@ -166,9 +166,10 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
         pagination: res.data.pagination,
         listLoading: false,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        listError: err?.response?.data?.message || "Failed to load applications.",
+        listError: axiosError?.response?.data?.message || "Failed to load applications.",
         listLoading: false,
       });
     }
@@ -193,9 +194,10 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
     try {
       const res = await api.get(`/admin/store/applications/${id}`);
       set({ currentApplication: res.data.application, detailLoading: false });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        detailError: err?.response?.data?.message || "Failed to load application.",
+        detailError: axiosError?.response?.data?.message || "Failed to load application.",
         detailLoading: false,
       });
     }
@@ -232,9 +234,10 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
         noteDraft: "",
         savingNote: false,
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        noteError: err?.response?.data?.message || "Failed to add note.",
+        noteError: axiosError?.response?.data?.message || "Failed to add note.",
         savingNote: false,
       });
     }
@@ -273,9 +276,10 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
           a.id === id ? { ...a, status: res.data.status === "ACTIVE" ? "approved" : res.data.status === "REJECTED" ? "rejected" : a.status } : a
         ),
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        decisionError: err?.response?.data?.message || "Failed to submit decision.",
+        decisionError: axiosError?.response?.data?.message || "Failed to submit decision.",
         submitting: false,
       });
     }

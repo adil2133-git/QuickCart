@@ -704,7 +704,7 @@ export default function MarketplaceFinal() {
   const [maxDistance,        setMaxDistance]        = useState<string | null>(null);
   const [viewMode,           setViewMode]           = useState<ViewMode>("grid");
   const [sortBy,             setSortBy]             = useState("Best Match");
-  const [cartCount,          setCartCount]          = useState(3);
+  const [cartCount] = useState(3);
   const [drawerOpen,         setDrawerOpen]         = useState(false);
 
   const toggleStore = (s: string) =>

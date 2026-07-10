@@ -59,11 +59,19 @@ const STORE_HEALTH = [
   { label: "Under Review", value: 3, max: 130, color: "#D94F4F" },
 ];
 
-function CustomTooltip({ active, payload }: any) {
+function CustomTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number | string }>;
+}) {
   if (!active || !payload?.length) return null;
+  const value = payload[0]?.value;
+  if (typeof value !== "number") return null;
   return (
     <div className="rounded-lg bg-[#2A1F18] px-3 py-1.5 text-[12px] font-semibold text-[#F4EDE2] shadow-lg">
-      ₹{payload[0].value.toLocaleString("en-IN")}
+      ₹{value.toLocaleString("en-IN")}
     </div>
   );
 }

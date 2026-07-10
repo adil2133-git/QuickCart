@@ -84,12 +84,13 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const { data } = await api.get(CART);
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isLoading: false });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
       // 401 is handled globally by your interceptor (redirect to /login)
       // Only surface non-auth errors here
-      if (err.response?.status !== 401) {
+      if (axiosError.response?.status !== 401) {
         set({
-          error: err.response?.data?.message ?? "Failed to load cart.",
+          error: axiosError.response?.data?.message ?? "Failed to load cart.",
           isLoading: false,
         });
       } else {
@@ -108,23 +109,24 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const { data } = await api.post(`${CART}/add`, { productId: resolvedProductId, quantity });
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isUpdating: null });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number; data?: { cartStoreName?: string; newStoreName?: string; productId?: string; quantity?: number; message?: string } } };
       // 409 = multi-store conflict — handle in UI, not as a generic error
-      if (err.response?.status === 409) {
-        const d = err.response.data;
+      if (axiosError.response?.status === 409) {
+        const d = axiosError.response?.data as { cartStoreName?: string; newStoreName?: string; productId?: string; quantity?: number } | undefined;
         set({
           conflict: {
-            cartStoreName: d.cartStoreName,
-            newStoreName: d.newStoreName,
-            pendingProductId: d.productId,
-            pendingQuantity: d.quantity,
+            cartStoreName: d?.cartStoreName ?? "",
+            newStoreName: d?.newStoreName ?? "",
+            pendingProductId: d?.productId ?? "",
+            pendingQuantity: d?.quantity ?? 0,
           },
           isUpdating: null,
         });
         return;
       }
-      if (err.response?.status !== 401) {
-        toast.error(err.response?.data?.message ?? "Failed to add item.");
+      if (axiosError.response?.status !== 401) {
+        toast.error(axiosError.response?.data?.message ?? "Failed to add item.");
       }
       set({ isUpdating: null });
     }
@@ -137,9 +139,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const { data } = await api.patch(`${CART}/item/${productId}`, { quantity });
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isUpdating: null });
-    } catch (err: any) {
-      if (err.response?.status !== 401) {
-        toast.error(err.response?.data?.message ?? "Failed to update quantity.");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
+      if (axiosError.response?.status !== 401) {
+        toast.error(axiosError.response?.data?.message ?? "Failed to update quantity.");
       }
       set({ isUpdating: null });
     }
@@ -152,9 +155,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const { data } = await api.delete(`${CART}/item/${productId}`);
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isUpdating: null });
-    } catch (err: any) {
-      if (err.response?.status !== 401) {
-        toast.error(err.response?.data?.message ?? "Failed to remove item.");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
+      if (axiosError.response?.status !== 401) {
+        toast.error(axiosError.response?.data?.message ?? "Failed to remove item.");
       }
       set({ isUpdating: null });
     }
@@ -167,9 +171,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const { data } = await api.delete(CART);
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isLoading: false });
-    } catch (err: any) {
-      if (err.response?.status !== 401) {
-        toast.error(err.response?.data?.message ?? "Failed to clear cart.");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
+      if (axiosError.response?.status !== 401) {
+        toast.error(axiosError.response?.data?.message ?? "Failed to clear cart.");
       }
       set({ isLoading: false });
     }
@@ -194,10 +199,11 @@ export const useCartStore = create<CartStore>((set, get) => ({
       });
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isLoading: false });
-    } catch (err: any) {
-      if (err.response?.status !== 401) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
+      if (axiosError.response?.status !== 401) {
         set({
-          error: err.response?.data?.message ?? "Failed to replace cart.",
+          error: axiosError.response?.data?.message ?? "Failed to replace cart.",
           isLoading: false,
         });
       } else {

@@ -30,6 +30,14 @@ type Errors = Partial<Record<keyof ProductFormValues, string>>;
 
 type ImageSlot = { kind: "existing"; url: string } | { kind: "new"; file: File; previewUrl: string };
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (typeof response?.data?.message === "string") return response.data.message;
+  }
+  return fallback;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Image dropzone — supports multiple images, mixed existing + new           */
 /* -------------------------------------------------------------------------- */
@@ -185,13 +193,17 @@ export default function AddEditProductPage() {
 
   useEffect(() => {
     if (!isEditMode || !id) return;
-    let cancelled = false;
-    setLoadingProduct(true);
-    setLoadError(null);
 
-    fetchProductById(id)
-      .then((product) => {
+    let cancelled = false;
+
+    const loadProduct = async () => {
+      setLoadingProduct(true);
+      setLoadError(null);
+
+      try {
+        const product = await fetchProductById(id);
         if (cancelled) return;
+
         setForm({
           productName: product.productName,
           description: product.description || "",
@@ -202,14 +214,15 @@ export default function AddEditProductPage() {
           availabilityStatus: product.availabilityStatus,
         });
         setImageSlots(product.images.map((url) => ({ kind: "existing", url })));
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
-        setLoadError(err?.response?.data?.message || "Couldn't load this product.");
-      })
-      .finally(() => {
+        setLoadError(getErrorMessage(err, "Couldn't load this product."));
+      } finally {
         if (!cancelled) setLoadingProduct(false);
-      });
+      }
+    };
+
+    void loadProduct();
 
     return () => {
       cancelled = true;
@@ -271,10 +284,10 @@ export default function AddEditProductPage() {
     setSaving(true);
     setLoadError(null);
     try {
-      const newFiles = imageSlots.filter((s) => s.kind === "new").map((s) => (s as any).file as File);
+      const newFiles = imageSlots.filter((s) => s.kind === "new").map((s) => s.file);
 
       if (isEditMode && id) {
-        const keptUrls = imageSlots.filter((s) => s.kind === "existing").map((s) => (s as any).url as string);
+        const keptUrls = imageSlots.filter((s) => s.kind === "existing").map((s) => s.url);
         await updateProduct(id, form, newFiles, keptUrls);
       } else {
         await createProduct(form, newFiles);
@@ -282,8 +295,8 @@ export default function AddEditProductPage() {
 
       setSaved(true);
       setTimeout(() => navigate("/store/products"), 900);
-    } catch (err: any) {
-      setLoadError(err?.response?.data?.message || "Couldn't save this product. Please try again.");
+    } catch (err: unknown) {
+      setLoadError(getErrorMessage(err, "Couldn't save this product. Please try again."));
     } finally {
       setSaving(false);
     }

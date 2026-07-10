@@ -21,7 +21,6 @@ import {
   MapPinned,
 } from "lucide-react";
 import api from "../../../api/axios";
-import { useAuthStore } from "../state/authState";
 import LocationPreviewMap from "../../admin/components/locationPreview";
 import { useLogout } from "../hooks/useLogout";
 
@@ -173,8 +172,6 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
   //
   // We do NOT block rendering based on the store alone, because the store is
   // intentionally empty for pending users.
-
-  const storeUser = useAuthStore((state) => state.user);
 
   const fetchProfile = async () => {
     try {

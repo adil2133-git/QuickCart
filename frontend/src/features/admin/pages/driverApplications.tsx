@@ -230,15 +230,13 @@ export default function DriverApplicationsPage() {
         return () => clearTimeout(t);
     }, [search]);
 
-    // Reset to page 1 whenever filters change.
-    useEffect(() => {
-        setPage(1);
-    }, [debouncedSearch, statusFilter, vehicleFilter, dateFilter]);
-
     useEffect(() => {
         let active = true;
-        setLoading(true);
-        setError(null);
+        const startRequest = () => {
+            setLoading(true);
+            setError(null);
+        };
+        queueMicrotask(startRequest);
 
         api
             .get("/admin/driver/applications", {
@@ -279,6 +277,7 @@ export default function DriverApplicationsPage() {
         setStatusFilter("All Statuses");
         setVehicleFilter("All Types");
         setDateFilter("");
+        setPage(1);
     };
 
     const totalPages = pagination?.totalPages ?? 1;
@@ -355,19 +354,39 @@ export default function DriverApplicationsPage() {
                                 <input
                                     type="text"
                                     value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                                    onChange={(e) => {
+                                        setSearch(e.target.value);
+                                        setPage(1);
+                                    }}
                                     placeholder="Name, Email, Vehicle Number"
                                     className="w-full bg-transparent text-[13px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
                                 />
                             </div>
 
-                            <FilterSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_FILTERS} />
-                            <FilterSelect value={vehicleFilter} onChange={setVehicleFilter} options={VEHICLE_FILTERS} />
+                            <FilterSelect
+                                value={statusFilter}
+                                onChange={(value) => {
+                                    setStatusFilter(value);
+                                    setPage(1);
+                                }}
+                                options={STATUS_FILTERS}
+                            />
+                            <FilterSelect
+                                value={vehicleFilter}
+                                onChange={(value) => {
+                                    setVehicleFilter(value);
+                                    setPage(1);
+                                }}
+                                options={VEHICLE_FILTERS}
+                            />
 
                             <input
                                 type="date"
                                 value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
+                                onChange={(e) => {
+                                    setDateFilter(e.target.value);
+                                    setPage(1);
+                                }}
                                 className="rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5 text-[13px] text-[#3A2C20] focus:outline-none"
                             />
 

@@ -1,5 +1,4 @@
 // components/Footer.tsx
-import React from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, MapPin } from "lucide-react";
 import { FaInstagram, FaTwitter } from "react-icons/fa";

@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import api from "../../../api/axios";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (typeof response?.data?.message === "string") return response.data.message;
+  }
+  return fallback;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Types — mirrored from getMyStoreProfile's response shape                 */
 /* -------------------------------------------------------------------------- */
@@ -79,9 +87,9 @@ export const useStoreProfileStore = create<StoreProfileState>((set, get) => ({
     try {
       const res = await api.get("/store/me");
       set({ store: res.data.store, loading: false });
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
-        error: err?.response?.data?.message || "Couldn't load your store profile.",
+        error: getErrorMessage(err, "Couldn't load your store profile."),
         loading: false,
       });
     }
@@ -105,11 +113,11 @@ export const useStoreProfileStore = create<StoreProfileState>((set, get) => ({
       );
       set({ actionSuccess: res.data.message });
       setTimeout(() => set({ actionSuccess: null }), 2500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // revert on failure
       set((state) => ({
         store: state.store ? { ...state.store, isManuallyClosed: prev } : state.store,
-        actionError: err?.response?.data?.message || "Couldn't update store status.",
+        actionError: getErrorMessage(err, "Couldn't update store status."),
         savingClose: false,
       }));
     }
@@ -139,8 +147,8 @@ export const useStoreProfileStore = create<StoreProfileState>((set, get) => ({
       const msg = field === "logo" ? "Logo updated." : "Cover image updated.";
       set({ actionSuccess: msg });
       setTimeout(() => set({ actionSuccess: null }), 2500);
-    } catch (err: any) {
-      set({ actionError: err?.response?.data?.message || "Upload failed. Try a smaller image." });
+    } catch (err: unknown) {
+      set({ actionError: getErrorMessage(err, "Upload failed. Try a smaller image.") });
     } finally {
       setUploading(false);
     }

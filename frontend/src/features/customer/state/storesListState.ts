@@ -4,7 +4,7 @@ import type { StoreProfileSummary } from "../types/store";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function apiGet<T = any>(
+async function apiGet<T>(
   path: string,
   params: Record<string, unknown> = {}
 ): Promise<T> {
@@ -66,10 +66,11 @@ export const useStoresListStore = create<StoresListState>((set) => ({
         { lat, lng, radius: radiusKm }
       );
       set({ stores: data.stores || [] });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
       set({
         storesError:
-          err?.response?.data?.message || err?.message || "Couldn't load nearby stores.",
+          axiosError?.response?.data?.message || axiosError?.message || "Couldn't load nearby stores.",
       });
     } finally {
       set({ storesLoading: false });

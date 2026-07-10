@@ -99,10 +99,6 @@ function StockCell({
     if (editing) inputRef.current?.focus();
   }, [editing]);
 
-  useEffect(() => {
-    setValue(String(product.stockQuantity));
-  }, [product.stockQuantity]);
-
   const commit = async () => {
     const parsed = Number(value);
     if (Number.isNaN(parsed) || parsed < 0) {
@@ -150,7 +146,10 @@ function StockCell({
 
   return (
     <button
-      onClick={() => setEditing(true)}
+      onClick={() => {
+        setValue(String(product.stockQuantity));
+        setEditing(true);
+      }}
       className={`group inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium tabular-nums transition-colors hover:bg-[#2B1B0E]/[0.05] ${
         zero ? "text-red-600" : low ? "text-amber-700" : "text-[#2B1B0E]"
       }`}

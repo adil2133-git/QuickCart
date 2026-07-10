@@ -16,7 +16,6 @@ import {
 import { toast } from "sonner";
 import type { ActiveDelivery } from "../types/driverDelivery";
 import { useDriverDeliveryActions, STAGE_LABELS, STAGE_ORDER } from "../hooks/useDriverDelivery";
-import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 
 // ─── Progress Step ────────────────────────────────────────────────────────────
 
@@ -88,9 +87,8 @@ function ProgressStep({
 // ─── Action Buttons ───────────────────────────────────────────────────────────
 
 function ActionButtons({ delivery }: { delivery: ActiveDelivery }) {
-  const { advanceStage, confirmCashCollected } = useDriverDeliveryActions();
+  const { advanceStage } = useDriverDeliveryActions();
   const [loading, setLoading] = useState(false);
-  const markCashCollected = useDriverDeliveryStore((s) => s.markCashCollected);
 
   const stage = delivery.currentStage;
   const isCOD  = delivery.paymentMethod === "COD";

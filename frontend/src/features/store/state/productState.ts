@@ -3,6 +3,14 @@ import { create } from "zustand";
 import { ProductsAPI, CategoriesAPI, type ProductFormValues } from "../productsApi";
 import type { Product, Category, AvailabilityStatus } from "../types/product";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (typeof response?.data?.message === "string") return response.data.message;
+  }
+  return fallback;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -104,9 +112,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
         pages: res.pages || 1,
         loading: false,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
-        error: err?.response?.data?.message || "Couldn't load products. Check your connection and try again.",
+        error: getErrorMessage(err, "Couldn't load products. Check your connection and try again."),
         loading: false,
       });
     }
@@ -175,11 +183,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }));
     try {
       await ProductsAPI.toggleAvailability(product._id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // revert on failure
       set((state) => ({
         products: state.products.map((p) => (p._id === product._id ? product : p)),
-        actionError: err?.response?.data?.message || "Couldn't update availability.",
+        actionError: getErrorMessage(err, "Couldn't update availability."),
       }));
     }
   },
@@ -191,8 +199,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
       set((state) => ({
         products: state.products.map((p) => (p._id === product._id ? updated : p)),
       }));
-    } catch (err: any) {
-      set({ actionError: err?.response?.data?.message || "Couldn't update stock." });
+    } catch (err: unknown) {
+      set({ actionError: getErrorMessage(err, "Couldn't update stock.") });
       throw err;
     }
   },
@@ -205,8 +213,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
         products: state.products.filter((p) => p._id !== id),
         total: state.total - 1,
       }));
-    } catch (err: any) {
-      set({ actionError: err?.response?.data?.message || "Couldn't delete product." });
+    } catch (err: unknown) {
+      set({ actionError: getErrorMessage(err, "Couldn't delete product.") });
       throw err;
     }
   },

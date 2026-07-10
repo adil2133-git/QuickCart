@@ -9,6 +9,25 @@ import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 
 type VehicleType = "Bike" | "Scooter";
 
+interface SectionHeaderProps {
+  icon: React.ReactNode;
+  label: string;
+}
+
+function SectionHeader({ icon, label }: SectionHeaderProps) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <span style={{ color: "#735a3e" }}>{icon}</span>
+      <span
+        className="text-xs font-bold tracking-widest uppercase"
+        style={{ color: "#735a3e" }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 interface UploadState {
   file: File | null;
   name: string | null;
@@ -124,24 +143,6 @@ export default function DeliveryPartnerRegistration() {
     "w-full h-11 px-3 bg-white border outline-none text-sm text-gray-800 placeholder-gray-400 rounded-lg transition-all";
   const inputStyle = { borderColor: "#d2c4b9" };
 
-  const SectionHeader = ({
-    icon,
-    label,
-  }: {
-    icon: React.ReactNode;
-    label: string;
-  }) => (
-    <div className="flex items-center gap-2 mb-4">
-      <span style={{ color: "#735a3e" }}>{icon}</span>
-      <span
-        className="text-xs font-bold tracking-widest uppercase"
-        style={{ color: "#735a3e" }}
-      >
-        {label}
-      </span>
-    </div>
-  );
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError("");
@@ -168,9 +169,10 @@ export default function DeliveryPartnerRegistration() {
       });
 
       setShowOtp(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
       setApiError(
-        err?.response?.data?.message ||
+        axiosError?.response?.data?.message ||
         "Something went wrong. Please try again."
       );
     } finally {

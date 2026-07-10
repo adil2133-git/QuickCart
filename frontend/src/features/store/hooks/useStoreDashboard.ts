@@ -3,6 +3,14 @@ import api from "../../../api/axios";
 import { useDashboardStore } from "../state/dashboardState";
 import type { DashboardSummary, StoreStatus } from "../types/dashboard";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (typeof response?.data?.message === "string") return response.data.message;
+  }
+  return fallback;
+}
+
 interface GetDashboardSummaryResponse {
   success: boolean;
   summary: DashboardSummary;
@@ -29,8 +37,7 @@ export function useStoreDashboard() {
         setSummary(data.summary);
       } catch (err) {
         if (cancelled) return;
-        const message =
-          (err as any)?.response?.data?.message ?? "Couldn't load your dashboard. Please try again.";
+        const message = getErrorMessage(err, "Couldn't load your dashboard. Please try again.");
         setError(message);
       }
     }
@@ -39,7 +46,7 @@ export function useStoreDashboard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setError, setLoading, setStatus, setSummary]);
 
   // Optimistically applies the new status, then confirms with the server.
   // Rolls back to the previous status if the request fails.

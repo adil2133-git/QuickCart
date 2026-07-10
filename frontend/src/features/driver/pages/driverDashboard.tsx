@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
@@ -26,28 +26,26 @@ const card: Variants = {
 function HeroCard() {
   const isOnline = useDriverDeliveryStore((s) => s.isOnline);
   const { toggleAvailability, fetchAvailability } = useDriverDeliveryActions();
-  const shiftStartRef = useRef<Date | null>(null);
+  const [shiftStart, setShiftStart] = useState<Date | null>(null);
 
   useEffect(() => {
-    fetchAvailability(); // hydrate real isOnline from the DB on mount/refresh
+    void fetchAvailability(); // hydrate real isOnline from the DB on mount/refresh
   }, [fetchAvailability]);
 
-  useEffect(() => {
-    if (isOnline && !shiftStartRef.current) {
-      shiftStartRef.current = new Date();
-    }
-    if (!isOnline) {
-      shiftStartRef.current = null;
-    }
-  }, [isOnline]);
-
-  const shiftLabel = shiftStartRef.current
-    ? shiftStartRef.current.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+  const shiftLabel = shiftStart
+    ? shiftStart.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
     : null;
 
   const handleToggle = async () => {
+    const nextOnline = !isOnline;
+    if (nextOnline) {
+      setShiftStart(new Date());
+    } else {
+      setShiftStart(null);
+    }
+
     try {
-      await toggleAvailability(!isOnline);
+      await toggleAvailability(nextOnline);
     } catch {
       toast.error("Could not update availability. Try again.");
     }
@@ -120,7 +118,7 @@ function KpiCards() {
   const statsLoading = useDriverDeliveryStore((s) => s.statsLoading);
   const { fetchTodayStats } = useDriverDeliveryActions();
 
-  useEffect(() => { fetchTodayStats(); }, []);
+  useEffect(() => { void fetchTodayStats(); }, [fetchTodayStats]);
 
   const kpis = [
     {
@@ -195,7 +193,7 @@ function ActiveDeliveryCard() {
   const activeLoading = useDriverDeliveryStore((s) => s.activeLoading);
   const { fetchActiveDelivery } = useDriverDeliveryActions();
 
-  useEffect(() => { fetchActiveDelivery(); }, []);
+  useEffect(() => { void fetchActiveDelivery(); }, [fetchActiveDelivery]);
 
   if (activeLoading && !delivery) {
     return (

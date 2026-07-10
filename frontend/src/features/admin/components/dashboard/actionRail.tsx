@@ -9,7 +9,6 @@ import {
   Check,
   X,
   UserPlus2,
-  ListPlus,
   Banknote,
   Download,
 } from "lucide-react";

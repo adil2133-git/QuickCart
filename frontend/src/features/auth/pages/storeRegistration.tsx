@@ -110,6 +110,38 @@ function LocationStep({
   const DEFAULT_CENTER: [number, number] = [20.5937, 78.9629];
   const DEFAULT_ZOOM = 5;
 
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    setResolving(true);
+    setResolvedAddress(null);
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+      const data = await res.json();
+      setResolvedAddress(data?.display_name || null);
+    } catch {
+      setResolvedAddress(null);
+    } finally {
+      setResolving(false);
+    }
+  }, []);
+
+  const setPendingCoords = useCallback((lat: number, lng: number) => {
+    const rounded = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
+    setPending(rounded);
+    onConfirm(null);
+    void reverseGeocode(rounded.lat, rounded.lng);
+  }, [onConfirm, reverseGeocode]);
+
+  const placeMarker = useCallback((map: L.Map, icon: L.DivIcon, lat: number, lng: number) => {
+    if (markerRef.current) markerRef.current.remove();
+    const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+    marker.on("dragend", (e) => {
+      const pos = (e.target as L.Marker).getLatLng();
+      setPendingCoords(pos.lat, pos.lng);
+    });
+    markerRef.current = marker;
+  }, [setPendingCoords]);
+
   // ── Init map once ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -176,41 +208,6 @@ function LocationStep({
       setSearchText(initialAddressHint);
     }
   }, [initialAddressHint, searchText]);
-
-  const placeMarker = (map: L.Map, icon: L.DivIcon, lat: number, lng: number) => {
-    if (markerRef.current) markerRef.current.remove();
-    const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
-    marker.on("dragend", (e) => {
-      const pos = (e.target as L.Marker).getLatLng();
-      setPendingCoords(pos.lat, pos.lng);
-    });
-    markerRef.current = marker;
-  };
-
-  // Any change to the pin — click, drag, search, GPS — resets confirmation
-  // state, so a previously-confirmed location can't survive a silent move.
-  const setPendingCoords = (lat: number, lng: number) => {
-    const rounded = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
-    setPending(rounded);
-    onConfirm(null); // un-confirm in parent until user re-confirms
-    reverseGeocode(rounded.lat, rounded.lng);
-  };
-
-  // ── Reverse geocode (pin → human-readable address, shown before confirming) ─
-  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
-    setResolving(true);
-    setResolvedAddress(null);
-    try {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
-      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
-      const data = await res.json();
-      setResolvedAddress(data?.display_name || null);
-    } catch {
-      setResolvedAddress(null);
-    } finally {
-      setResolving(false);
-    }
-  }, []);
 
   // ── Forward geocode (search box → pin) ───────────────────────────────────
   const handleSearch = async () => {
@@ -519,8 +516,9 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
       });
 
       setShowOtpModal(true);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Something went wrong");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setError(axiosError.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }

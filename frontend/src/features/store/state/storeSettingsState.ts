@@ -3,6 +3,14 @@ import { toast } from "sonner";
 import api from "../../../api/axios";
 import type { OperatingHour } from "./storeProfileState";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (typeof response?.data?.message === "string") return response.data.message;
+  }
+  return fallback;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -130,9 +138,9 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
         editingInfo: false,
         editingHours: false,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
-        error: err?.response?.data?.message || "Couldn't load store settings.",
+        error: getErrorMessage(err, "Couldn't load store settings."),
         loading: false,
       });
     }
@@ -177,8 +185,8 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
       }));
       toast.success(res.data.message || "Store information updated.");
       setTimeout(() => set({ actionSuccess: null }), 2500);
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "Couldn't update store information.";
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err, "Couldn't update store information.");
       set({ actionError: msg, savingInfo: false });
       toast.error(msg);
     }
@@ -199,8 +207,8 @@ export const useStoreSettingsStore = create<StoreSettingsState>((set, get) => ({
       }));
       toast.success(res.data.message || "Operating hours updated.");
       setTimeout(() => set({ actionSuccess: null }), 2500);
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "Couldn't update operating hours.";
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err, "Couldn't update operating hours.");
       set({ actionError: msg, savingHours: false });
       toast.error(msg);
     }

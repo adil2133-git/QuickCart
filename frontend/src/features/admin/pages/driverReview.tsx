@@ -106,8 +106,11 @@ export default function DriverApplicationReview() {
     useEffect(() => {
         if (!id) return;
         let active = true;
-        setLoading(true);
-        setLoadError(null);
+        const startRequest = () => {
+            setLoading(true);
+            setLoadError(null);
+        };
+        queueMicrotask(startRequest);
 
         api.get(`/admin/driver/applications/${id}`)
             .then((res) => active && setDriver(res.data.application))
@@ -158,8 +161,9 @@ export default function DriverApplicationReview() {
             const res = await api.post(`/admin/driver/applications/${id}/notes`, { note: note.trim() });
             setDriver((prev) => prev ? { ...prev, reviewNotes: res.data.reviewNotes } : prev);
             setNote("");
-        } catch (err: any) {
-            setActionError(err?.response?.data?.message || "Failed to add note.");
+        } catch (err: unknown) {
+            const axiosError = err as { response?: { data?: { message?: string } } };
+            setActionError(axiosError?.response?.data?.message || "Failed to add note.");
         } finally {
             setSavingNote(false);
         }
@@ -176,8 +180,9 @@ export default function DriverApplicationReview() {
             });
             setSubmittedDecision(decision);
             setDriver((prev) => prev ? { ...prev, status: res.data.status } : prev);
-        } catch (err: any) {
-            setActionError(err?.response?.data?.message || "Failed to submit decision.");
+        } catch (err: unknown) {
+            const axiosError = err as { response?: { data?: { message?: string } } };
+            setActionError(axiosError?.response?.data?.message || "Failed to submit decision.");
         } finally {
             setSubmitting(false);
         }

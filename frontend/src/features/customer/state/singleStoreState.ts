@@ -76,7 +76,7 @@ export type SortValue = "newest" | "priceAsc" | "priceDesc";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function apiGet<T = any>(
+async function apiGet<T>(
   path: string,
   params: Record<string, unknown> = {}
 ): Promise<T> {
@@ -213,10 +213,11 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
     try {
       const data = await apiGet<{ store: StoreProfileSummary }>(`/customer/${storeId}`);
       set({ store: data.store });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
       set({
         storeError:
-          err?.response?.data?.message || err?.message || "Something went wrong.",
+          axiosError?.response?.data?.message || axiosError?.message || "Something went wrong.",
       });
     } finally {
       set({ storeLoading: false });
@@ -277,10 +278,11 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
         pages: data.pages || 1,
         page: data.page || 1,
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
       set({
         productsError:
-          err?.response?.data?.message || err?.message || "Something went wrong.",
+          axiosError?.response?.data?.message || axiosError?.message || "Something went wrong.",
       });
     } finally {
       if (append) {

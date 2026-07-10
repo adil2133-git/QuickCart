@@ -19,15 +19,23 @@ function RequestCard({
   const [remaining, setRemaining] = useState(request.expiresInSeconds);
 
   useEffect(() => {
-    setRemaining(request.expiresInSeconds);
-    const t = setInterval(() => {
+    const resetTimer = window.setTimeout(() => {
+      setRemaining(request.expiresInSeconds);
+    }, 0);
+    const t = window.setInterval(() => {
       setRemaining((r) => {
-        if (r <= 1) { clearInterval(t); return 0; }
+        if (r <= 1) {
+          window.clearInterval(t);
+          return 0;
+        }
         return r - 1;
       });
     }, 1000);
-    return () => clearInterval(t);
-  }, [request.requestId, request.expiresInSeconds]);
+    return () => {
+      window.clearTimeout(resetTimer);
+      window.clearInterval(t);
+    };
+  }, [request.expiresInSeconds]);
 
   const pct = Math.max(0, (remaining / 45) * 100);
   const urgency = remaining <= 10;

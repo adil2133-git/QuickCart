@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
@@ -132,18 +132,8 @@ export default function Sidebar() {
     const { parentId, childId } = findActiveItem();
     const activeId = childId;
 
-    // Initialize open group based on active parent
     const [openGroup, setOpenGroup] = useState<string | null>(parentId);
-
-    // Keep open group in sync with route changes
-    useEffect(() => {
-        const newParentId = findParentId(activeId) || 
-                           (NAV_ITEMS.find(item => item.id === activeId)?.children ? activeId : null);
-        // Only update if different to avoid unnecessary re-renders
-        if (newParentId !== openGroup) {
-            setOpenGroup(newParentId);
-        }
-    }, [activeId]);
+    const activeOpenGroup = openGroup ?? parentId;
 
     const handleGroupClick = (item: NavItem) => {
         if (!item.children) {
@@ -193,7 +183,7 @@ export default function Sidebar() {
                     {NAV_ITEMS.map((item) => {
                         const Icon = item.icon;
                         const hasChildren = !!item.children;
-                        const isGroupOpen = openGroup === item.id;
+                        const isGroupOpen = activeOpenGroup === item.id;
                         
                         // Check if this item or any of its children is active
                         const isActive = activeId === item.id || 

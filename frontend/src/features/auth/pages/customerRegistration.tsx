@@ -52,9 +52,10 @@ export default function CustomerRegistration() {
         password,
       });
       setShowOtp(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
       setError(
-        err.response?.data?.message || "Registration failed. Please try again."
+        axiosError.response?.data?.message || "Registration failed. Please try again."
       );
     } finally {
       setLoading(false);

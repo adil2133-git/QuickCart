@@ -142,5 +142,5 @@ export function useDriverLocationTracking() {
                 heartbeatRef.current = null;
             }
         };
-    }, [isOnline]);
+    }, [isOnline, setCurrentArea, setLocationStatus]);
 }

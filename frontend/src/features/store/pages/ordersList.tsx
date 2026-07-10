@@ -105,14 +105,12 @@ export default function OrdersPage() {
 
     // ── Debounce search 400 ms ────────────────────────────────────────────────
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(search), 400);
+        const t = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(1);
+        }, 400);
         return () => clearTimeout(t);
     }, [search]);
-
-    // ── Reset to page 1 whenever tab or search changes ────────────────────────
-    useEffect(() => {
-        setPage(1);
-    }, [activeTab, debouncedSearch]);
 
     // ── Fetch whenever tab / search / page changes ────────────────────────────
     // NOTE: fetchOrders is intentionally excluded from deps — it's a stable
@@ -124,7 +122,8 @@ export default function OrdersPage() {
     }, [activeTab, debouncedSearch, page]);
 
     const handleTabChange = (key: OrderFilterTab) => {
-        setActiveTab(key);   // page reset handled by the effect above
+        setActiveTab(key);
+        setPage(1);
     };
 
     const handleAccept = async (e: React.MouseEvent, order: StoreOrder) => {

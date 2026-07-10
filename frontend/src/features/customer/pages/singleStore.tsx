@@ -293,7 +293,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
     fetchReviews(storeId);
     void fetchCart();
     return () => resetStore();
-  }, [storeId, fetchCart]);
+  }, [fetchBestsellers, fetchCart, fetchCategories, fetchReviews, fetchStore, resetStore, storeId]);
 
   // ── Debounced search ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -301,13 +301,13 @@ function StorePageContent({ storeId }: { storeId: string }) {
       setSearch(searchInput);
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, setSearch]);
 
   // ── Re-fetch products when filters change ──────────────────────────────────
   const search = useSingleStoreStore((s) => s.search);
   useEffect(() => {
     fetchProducts(storeId, 1);
-  }, [storeId, search, activeCategory, sort]);
+  }, [activeCategory, fetchProducts, search, sort, storeId]);
 
   // ── Sort dropdown close on outside click ───────────────────────────────────
   const sortRef = useRef<HTMLDivElement>(null);
@@ -318,7 +318,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+  }, [setSortOpen]);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (

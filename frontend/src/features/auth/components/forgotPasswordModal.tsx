@@ -32,9 +32,10 @@ export default function ForgotPasswordModal({ onClose }: ForgotPasswordModalProp
       // Always move to OTP step — backend doesn't reveal if email exists
       setEmail(trimmed);
       setStep("otp");
-    } catch (err: any) {
-      const msg = err.response?.data?.message;
-      if (err.response?.status === 429) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string }; status?: number } };
+      const msg = axiosError.response?.data?.message;
+      if (axiosError.response?.status === 429) {
         setError("OTP already sent. Please wait before requesting again.");
       } else {
         setError(msg || "Something went wrong. Please try again.");

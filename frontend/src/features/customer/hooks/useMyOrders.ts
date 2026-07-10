@@ -35,7 +35,8 @@ export function useOrdersList(tab: OrdersTab) {
       } catch (err) {
         if (cancelled) return;
         const message =
-          (err as any)?.response?.data?.message ?? "Couldn't load your orders. Please try again.";
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Couldn't load your orders. Please try again.";
         setError(message);
         toast.error(message, { id: "orders-load-error" });
       }
@@ -45,7 +46,7 @@ export function useOrdersList(tab: OrdersTab) {
     return () => {
       cancelled = true;
     };
-  }, [tab]);
+  }, [setError, setLoading, setOrders, tab]);
 
   return { orders, isLoading, error };
 }
@@ -63,7 +64,8 @@ export function useCancelOrder() {
       return true;
     } catch (err) {
       const message =
-        (err as any)?.response?.data?.message ?? "Couldn't cancel your order. Please try again.";
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Couldn't cancel your order. Please try again.";
       toast.error(message, { id: "cancel-order-error" });
       return false;
     }

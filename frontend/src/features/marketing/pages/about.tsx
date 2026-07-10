@@ -1,5 +1,4 @@
 // pages/About.tsx
-import React from "react";
 import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import {

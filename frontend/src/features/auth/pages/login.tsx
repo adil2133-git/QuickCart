@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ForgotPasswordModal from "../components/forgotPasswordModal";
 import api from "../../../api/axios";
-import { useAuthStore, type UserStatus } from "../state/authState";
+import { useAuthStore, type UserRole, type UserStatus } from "../state/authState";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 
 const ROLE_ROUTES: Record<string, string> = {
@@ -60,7 +60,8 @@ export default function QuickKartLogin() {
       const { id, name, email: userEmail, role, status } = data.user;
 
       // ── Save to Zustand (persisted to localStorage) ──────────────────
-      setUser({ id, name, email: userEmail, role: role as any, status: status as UserStatus | undefined });
+      const normalizedRole = role as UserRole;
+      setUser({ id, name, email: userEmail, role: normalizedRole, status: status as UserStatus | undefined });
 
       // ── Redirect pending approvals ───────────────────────────────────
       if (status === "PENDING_APPROVAL") {
@@ -70,8 +71,9 @@ export default function QuickKartLogin() {
 
       navigate(ROLE_ROUTES[role] || "/");
 
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Something went wrong");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setError(axiosError.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
