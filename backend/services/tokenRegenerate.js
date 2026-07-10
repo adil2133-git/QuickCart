@@ -18,7 +18,7 @@ const tokenRegenerate = (req, res) => {
                 role: decoded.role,
             },
             process.env.ACCESS_TOKEN,
-            { expiresIn: "1m" }
+            { expiresIn: "15m" }
         );
 
         return res
