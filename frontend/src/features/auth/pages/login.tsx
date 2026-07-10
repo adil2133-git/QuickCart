@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ForgotPasswordModal from "../components/forgotPasswordModal";
 import api from "../../../api/axios";
-import { useAuthStore } from "../state/authState";
+import { useAuthStore, type UserStatus } from "../state/authState";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 
 const ROLE_ROUTES: Record<string, string> = {
@@ -60,7 +60,7 @@ export default function QuickKartLogin() {
       const { id, name, email: userEmail, role, status } = data.user;
 
       // ── Save to Zustand (persisted to localStorage) ──────────────────
-      setUser({ id, name, email: userEmail, role: role as any, status });
+      setUser({ id, name, email: userEmail, role: role as any, status: status as UserStatus | undefined });
 
       // ── Redirect pending approvals ───────────────────────────────────
       if (status === "PENDING_APPROVAL") {

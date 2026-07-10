@@ -236,8 +236,8 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
     );
   };
 
-  const { logout: handleLogout, isLoggingOut } = useLogout();
-
+  const { logout: handleLogout } = useLogout();
+  
   // ── Loading ──
   if (loading) {
     return (

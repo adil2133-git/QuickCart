@@ -14,7 +14,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { ActiveDelivery, DeliveryStage } from "../types/driverDelivery";
+import type { ActiveDelivery } from "../types/driverDelivery";
 import { useDriverDeliveryActions, STAGE_LABELS, STAGE_ORDER } from "../hooks/useDriverDelivery";
 import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 
@@ -128,18 +128,6 @@ function ActionButtons({ delivery }: { delivery: ActiveDelivery }) {
     }
   };
 
-  const handleCashCollect = async () => {
-    setLoading(true);
-    try {
-      await confirmCashCollected(delivery.orderId);
-      markCashCollected();
-      toast.success("Cash collected! Tap 'Mark Delivered' to complete.");
-    } catch {
-      toast.error("Failed to confirm. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (isDelivered) {
     return (

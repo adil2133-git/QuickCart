@@ -69,7 +69,7 @@ interface DriverDeliveryState {
   setIsOnline: (v: boolean) => void;
 }
 
-export const useDriverDeliveryStore = create<DriverDeliveryState>((set, get) => ({
+export const useDriverDeliveryStore = create<DriverDeliveryState>((set) => ({
   // ── Tab ──────────────────────────────────────────────────────────────────────
   activeTab: "NEW_REQUESTS",
   setActiveTab: (tab) => set({ activeTab: tab }),
