@@ -32,6 +32,7 @@ const orderSchema = new mongoose.Schema(
         products: [orderProductSchema],
         subtotal: { type: Number, required: true },
         deliveryCharge: { type: Number, required: true, default: 0 },
+        handlingFee: { type: Number, required: true, default: 0 },
         totalAmount: { type: Number, required: true },
         paymentMethod: {
             type: String,
@@ -43,6 +44,14 @@ const orderSchema = new mongoose.Schema(
             enum: ["PENDING", "PAID", "FAILED", "REFUNDED"],
             default: "PENDING",
         },
+        // How much of totalAmount (if any) was paid from the customer's
+        // QuickKart wallet. For ONLINE orders, Razorpay only ever collects
+        // (totalAmount - walletAmountUsed) — this field is what makes that
+        // split auditable after the fact.
+        walletAmountUsed: { type: Number, default: 0 },
+        razorpayOrderId: { type: String, default: null },
+        razorpayPaymentId: { type: String, default: null },
+        razorpaySignature: { type: String, default: null },
         deliveryAddress: { type: String, required: true },
         // Captured from the customer's savedAddress at checkout time so
         // delivery-leg distance can be calculated for drivers. Optional
