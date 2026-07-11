@@ -44,6 +44,13 @@ const {
 } = require("../../controllers/customer/checkoutController");
 
 const {
+    createRazorpayOrder,
+    verifyPayment,
+} = require("../../controllers/customer/paymentController");
+
+const { getWallet } = require("../../controllers/customer/walletController");
+
+const {
     getOrders,
     getOrderDetail,
     cancelOrder,
@@ -78,6 +85,13 @@ router.delete("/cart", protectRoutes, authorizeRoles("CUSTOMER"), clearCart);
 
 router.get("/checkout/summary", protectRoutes, authorizeRoles("CUSTOMER"), getCheckoutSummary);
 router.post("/checkout/place-order", protectRoutes, authorizeRoles("CUSTOMER"), placeOrder);
+
+// --- Payment (online / Razorpay) -------------------------------------------
+router.post("/payment/create-order", protectRoutes, authorizeRoles("CUSTOMER"), createRazorpayOrder);
+router.post("/payment/verify-payment", protectRoutes, authorizeRoles("CUSTOMER"), verifyPayment);
+
+// --- Wallet ------------------------------------------------------------------
+router.get("/wallet", protectRoutes, authorizeRoles("CUSTOMER"), getWallet);
 
 router.get("/orders", protectRoutes, authorizeRoles("CUSTOMER"), getOrders);
 router.get("/orders/active-delivery", protectRoutes, authorizeRoles("CUSTOMER"), getActiveDelivery);
