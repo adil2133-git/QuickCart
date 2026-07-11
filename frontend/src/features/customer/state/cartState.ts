@@ -104,6 +104,14 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const resolvedProductId = typeof productIdOrItem === "string"
       ? productIdOrItem
       : productIdOrItem._id;
+
+    // If the item is already in the cart, increment quantity instead of
+    // adding a new entry — avoids duplicate rows and skips the conflict check
+    const existingQty = get().getItemQuantity(resolvedProductId);
+    if (existingQty > 0) {
+      return get().updateQuantity(resolvedProductId, existingQty + quantity);
+    }
+
     set({ isUpdating: resolvedProductId, error: null });
     try {
       const { data } = await api.post(`${CART}/add`, { productId: resolvedProductId, quantity });
