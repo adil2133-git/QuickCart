@@ -1,10 +1,23 @@
 const Order = require("../../models/shared/order");
 const Product = require("../../models/store/product");
 const StoreProfile = require("../../models/store/storeProfile");
+const CustomerProfile = require("../../models/customer/customerProfile");
 const { resolveCustomerProfile } = require("../../services/customerProfileService");
 const { emitToStore, emitToCustomer } = require("../../socket");
-const { notifyStore } = require("../../services/notificationService");
+const { notifyStore, notifyCustomer } = require("../../services/notificationService");
 const { sendOrderCancelledEmail } = require("../../services/mailService");
+const walletService = require("../../services/walletService");
+
+// Cancellation compensation, per "Money Handling & Business Rules" Section 12.
+// Only the two stages a customer can self-cancel from apply here -- store
+// keeps a slice of the handling fee as compensation for work already done,
+// and the customer gets the rest back automatically, credited to their
+// wallet (never a real-money gateway refund, so this can safely be instant).
+const REFUND_DEDUCTION_BY_STATUS = {
+    PENDING: 0,
+    ACCEPTED: 0,
+    PACKING: 20, // store has started packing -- keeps ₹20 of the handling fee
+};
 
 const resolveCustomerId = async (req) => {
     const profile = await resolveCustomerProfile(req.user.userID);
@@ -190,8 +203,40 @@ const cancelOrder = async (req, res) => {
             });
         }
 
+        const previousStatus = order.orderStatus;
         order.orderStatus = "CANCELLED";
+
+        // Only orders that were actually charged get a refund — COD orders
+        // (still PENDING payment at this point) never took the customer's
+        // money in the first place, so there's nothing to give back.
+        let refundAmount = 0;
+        if (order.paymentStatus === "PAID") {
+            const deduction = REFUND_DEDUCTION_BY_STATUS[previousStatus] ?? 0;
+            refundAmount = Math.max(order.totalAmount - deduction, 0);
+
+            await walletService.creditRefund({
+                customerId: order.customerId,
+                amount: refundAmount,
+                orderId: order._id,
+                description: `Refund for cancelled order #${order.orderNumber}`,
+            });
+
+            order.paymentStatus = "REFUNDED";
+        }
+
         await order.save();
+
+        if (refundAmount > 0) {
+            CustomerProfile.findById(order.customerId)
+                .populate("userId", "_id")
+                .lean()
+                .then((cp) => {
+                    if (cp?.userId?._id) {
+                        notifyCustomer.cancelled(cp.userId._id, order.orderNumber, order._id).catch(() => {});
+                    }
+                })
+                .catch(() => {});
+        }
 
         // Live update to the customer's own orders page (same event the
         // store-driven status changes use, so useCustomerOrderSocket just works).
@@ -199,6 +244,7 @@ const cancelOrder = async (req, res) => {
             orderId: order._id.toString(),
             orderStatus: "CANCELLED",
             orderNumber: order.orderNumber,
+            refundAmount,
         });
 
         // Live update + notification for the store
