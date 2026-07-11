@@ -276,6 +276,7 @@ export default function StoresPage() {
     const activeCoords = useLocationStore((s) => s.activeCoords);
     const profileLoading = useLocationStore((s) => s.profileLoading);
     const openLocationModal = useLocationStore((s) => s.openLocationModal);
+    const fetchProfile = useLocationStore((s) => s.fetchProfile);
 
     const stores = useStoresListStore((s) => s.stores);
     const storesLoading = useStoresListStore((s) => s.storesLoading);
@@ -295,6 +296,11 @@ export default function StoresPage() {
             fetchNearbyStores(activeCoords.lat, activeCoords.lng, 10);
         }
     }, [activeCoords, fetchNearbyStores]);
+
+    // ── Fetch profile on mount to ensure coords are loaded & auth is fresh ─
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
 
     useEffect(() => {
         void fetchCart();
