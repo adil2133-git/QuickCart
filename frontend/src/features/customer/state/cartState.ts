@@ -109,7 +109,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
     // adding a new entry — avoids duplicate rows and skips the conflict check
     const existingQty = get().getItemQuantity(resolvedProductId);
     if (existingQty > 0) {
-      return get().updateQuantity(resolvedProductId, existingQty + quantity);
+      await get().updateQuantity(resolvedProductId, existingQty + quantity);
+      toast.success("Added to cart", { duration: 2000 });
+      return;
     }
 
     set({ isUpdating: resolvedProductId, error: null });
@@ -208,6 +210,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       });
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isLoading: false });
+      toast.success("Cart updated", { duration: 2000 });
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
       if (axiosError.response?.status !== 401) {
