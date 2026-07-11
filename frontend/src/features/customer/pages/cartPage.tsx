@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Trash2,
@@ -12,8 +12,6 @@ import {
   Loader2,
   PackageOpen,
   Store,
-  X,
-  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCartStore } from "../state/cartState";
@@ -71,84 +69,6 @@ const EmptyCart: React.FC<{ onShop: () => void }> = ({ onShop }) => (
     </button>
   </div>
 );
-
-// ─── Multi-store Conflict Modal ───────────────────────────────────────────────
-
-const ConflictModal: React.FC = () => {
-  const { conflict, resolveConflict, dismissConflict } = useCartStore();
-  const [resolving, setResolving] = useState(false);
-
-  if (!conflict) return null;
-
-  const handleReplace = async () => {
-    setResolving(true);
-    await resolveConflict(true);
-    setResolving(false);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={dismissConflict}
-      />
-
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 z-10">
-        <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded-full bg-[#FEF3E2] flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="w-5 h-5 text-[#92400E]" />
-          </div>
-          <button
-            onClick={dismissConflict}
-            className="text-[#9BAAA1] hover:text-[#145C43] transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <h3 className="text-base font-bold text-[#16241D] mb-2">
-          Start a new cart?
-        </h3>
-        <p className="text-sm text-[#6E7C74] leading-relaxed mb-6">
-          Your cart has items from{" "}
-          <span className="font-semibold text-[#16241D]">
-            {conflict.cartStoreName}
-          </span>
-          . Adding from{" "}
-          <span className="font-semibold text-[#16241D]">
-            {conflict.newStoreName}
-          </span>{" "}
-          will clear your current cart. Orders can only be placed from a single
-          store at a time.
-        </p>
-
-        <div className="flex flex-col gap-2.5">
-          <button
-            onClick={handleReplace}
-            disabled={resolving}
-            className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-[#145C43] text-white text-sm font-semibold hover:bg-[#114E39] disabled:opacity-60 transition-all"
-          >
-            {resolving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            {resolving ? "Clearing cart…" : "Clear cart & add item"}
-          </button>
-
-          <button
-            onClick={dismissConflict}
-            className="w-full h-11 rounded-xl border border-[#DCE3DC] text-sm font-medium text-[#145C43] hover:bg-[#F5F7F3] transition-all"
-          >
-            Keep current cart
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ─── Cart Item Row ────────────────────────────────────────────────────────────
 
@@ -368,10 +288,6 @@ const CartPage: React.FC = () => {
 
   return (
     <>
-      {/* Conflict modal */}
-      <ConflictModal />
-
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
         <div className="mb-6">
