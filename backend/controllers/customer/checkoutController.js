@@ -1,20 +1,9 @@
-const mongoose = require("mongoose");
 const Cart = require("../../models/customer/cart");
-const Product = require("../../models/store/product");
-const { resolveCustomerProfile } = require("../../services/customerProfileService");
-const Order = require("../../models/shared/order");
-const User = require("../../models/shared/user");
-const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
-const { sendOrderPlacedEmail, sendNewOrderStoreEmail } = require("../../services/mailService");
-const { notifyCustomer, notifyStore } = require("../../services/notificationService");
-
-const DELIVERY_CHARGE = 30;
-const PACKAGING_FEE = 15;
-
-// Matches LOW_STOCK_THRESHOLD in storeDashboardController.js — keep in sync
-// until this becomes a real per-store config value.
-const LOW_STOCK_THRESHOLD = 10;
+const { resolveCustomerProfile } = require("../../services/customerProfileService");
+const { computeBill, PricingError, MIN_ORDER_VALUE } = require("../../services/pricingService");
+const walletService = require("../../services/walletService");
+const { createOrderFromCart } = require("../../services/orderCreationService");
 
 // resolveCustomerProfile returns the full profile doc (not just the id) —
 // callers below rely on savedAddresses/defaultAddress/codAllowed too.
@@ -22,18 +11,18 @@ const resolveCustomerProfileDoc = async (req) => {
     return await resolveCustomerProfile(req.user.userID);
 };
 
-// ─── Helper: flatten a savedAddress sub-doc into the string Order expects ─────
-const formatAddress = (addr) => {
-    if (!addr) return "";
-    return addr.address;
-};
-
-// ─── GET /api/customer/checkout/summary ──────────────────────────────────────
+// ─── GET /api/customer/checkout/summary?addressId=... ────────────────────────
 // Returns everything the checkout page needs in one call: cart contents,
-// the resolved default address, and computed totals. No writes happen here.
+// the resolved addresses, the customer's wallet balance, and computed totals
+// for whichever address is selected (defaults to the customer's default
+// address, or the first saved one). No writes happen here.
+//
+// Delivery charge depends on store -> address distance, so totals can only be
+// computed once an address is known -- that's why this now takes ?addressId.
 const getCheckoutSummary = async (req, res) => {
     try {
         const profile = await resolveCustomerProfileDoc(req);
+        const { addressId } = req.query;
 
         const cart = await Cart.findOne({ customerId: profile._id })
             .populate({
@@ -43,6 +32,8 @@ const getCheckoutSummary = async (req, res) => {
             })
             .lean();
 
+        const walletBalance = await walletService.getBalance(profile._id);
+
         if (!cart || cart.products.length === 0) {
             return res.status(200).json({
                 success: true,
@@ -50,17 +41,50 @@ const getCheckoutSummary = async (req, res) => {
                 addresses: profile.savedAddresses,
                 defaultAddressId: profile.defaultAddress,
                 codAllowed: profile.codAllowed,
+                walletBalance,
                 totals: null,
             });
         }
 
         const subtotal = cart.totalAmount;
-        const totals = {
-            productTotal: subtotal,
-            deliveryCharge: DELIVERY_CHARGE,
-            packagingFee: PACKAGING_FEE,
-            grandTotal: subtotal + DELIVERY_CHARGE + PACKAGING_FEE,
-        };
+
+        // Resolve which address totals are computed against
+        const resolvedAddressId = addressId || profile.defaultAddress || profile.savedAddresses[0]?._id;
+        const address = resolvedAddressId ? profile.savedAddresses.id(resolvedAddressId) : null;
+
+        let totals = null;
+        let pricingError = null;
+
+        if (address) {
+            // All cart items are expected to share one store (enforced at
+            // add-to-cart time) -- grab it from the first populated product.
+            const storeId = cart.products[0]?.productId?.storeId?._id;
+            const storeProfile = storeId
+                ? await StoreProfile.findById(storeId).select("coordinates").lean()
+                : null;
+
+            try {
+                const bill = computeBill({
+                    subtotal,
+                    storeCoordinates: storeProfile?.coordinates,
+                    addressCoordinates: address.coordinates,
+                });
+                totals = {
+                    productTotal: bill.subtotal,
+                    deliveryCharge: bill.deliveryCharge,
+                    packagingFee: bill.handlingFee,
+                    grandTotal: bill.totalAmount,
+                    distanceKm: bill.distanceKm,
+                    freeDeliveryApplied: bill.freeDeliveryApplied,
+                };
+            } catch (err) {
+                if (err instanceof PricingError) {
+                    pricingError = err.message;
+                } else {
+                    throw err;
+                }
+            }
+        }
 
         return res.status(200).json({
             success: true,
@@ -68,7 +92,10 @@ const getCheckoutSummary = async (req, res) => {
             addresses: profile.savedAddresses,
             defaultAddressId: profile.defaultAddress,
             codAllowed: profile.codAllowed,
+            walletBalance,
             totals,
+            pricingError,
+            minOrderValue: MIN_ORDER_VALUE,
         });
     } catch (err) {
         console.error("GET CHECKOUT SUMMARY ERROR:", err);
@@ -76,16 +103,14 @@ const getCheckoutSummary = async (req, res) => {
     }
 };
 
-// ─── POST /api/customer/checkout/place-order ─────────────────────────────────
-// Body: { addressId, paymentMethod, deliveryInstructions? }
-// COD only for now. Validates stock at order time, snapshots names/prices,
-// creates the Order, decrements stock, clears the cart — wrapped in a
-// transaction so a partial failure can't decrement stock without an order.
+// --- POST /api/customer/checkout/place-order -----------------------------
+// Body: { addressId, paymentMethod }
+// COD only -- ONLINE orders are created by paymentController.verifyPayment
+// after a Razorpay payment is verified (or immediately, if wallet balance
+// fully covers the total; see paymentController.createRazorpayOrder).
 const placeOrder = async (req, res) => {
-    const session = await mongoose.startSession();
-
     try {
-        const { addressId, paymentMethod, deliveryInstructions } = req.body;
+        const { addressId, paymentMethod } = req.body;
 
         if (!addressId) {
             return res.status(400).json({ success: false, message: "addressId is required." });
@@ -93,12 +118,11 @@ const placeOrder = async (req, res) => {
         if (paymentMethod !== "COD") {
             return res.status(400).json({
                 success: false,
-                message: "Only Cash on Delivery is supported right now.",
+                message: "Use /api/customer/payment/create-order for online payment.",
             });
         }
 
         const profile = await resolveCustomerProfileDoc(req);
-
         if (!profile.codAllowed) {
             return res.status(403).json({
                 success: false,
@@ -106,189 +130,12 @@ const placeOrder = async (req, res) => {
             });
         }
 
-        const address = profile.savedAddresses.id(addressId);
-        if (!address) {
-            return res.status(404).json({ success: false, message: "Address not found." });
-        }
-
-        const user = await User.findById(req.user.userID).select("name phone email").lean();
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found." });
-        }
-
-        const cart = await Cart.findOne({ customerId: profile._id });
-        if (!cart || cart.products.length === 0) {
-            return res.status(400).json({ success: false, message: "Your cart is empty." });
-        }
-
-        // Re-fetch products fresh — never trust the price/quantity cached on the cart
-        const productIds = cart.products.map((p) => p.productId);
-        const products = await Product.find({ _id: { $in: productIds } })
-            .select("productName price availabilityStatus stockQuantity storeId")
-            .lean();
-
-        const productMap = new Map(products.map((p) => [p._id.toString(), p]));
-
-        const orderProducts = [];
-        for (const item of cart.products) {
-            const product = productMap.get(item.productId.toString());
-
-            if (!product) {
-                return res.status(400).json({
-                    success: false,
-                    message: "One of the items in your cart is no longer available.",
-                });
-            }
-            if (product.availabilityStatus !== "AVAILABLE" && product.availabilityStatus !== undefined) {
-                return res.status(400).json({
-                    success: false,
-                    message: `${product.productName} is currently unavailable.`,
-                });
-            }
-            if (item.quantity > product.stockQuantity) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Only ${product.stockQuantity} unit(s) of ${product.productName} available.`,
-                });
-            }
-
-            orderProducts.push({
-                productId: product._id,
-                productName: product.productName,
-                quantity: item.quantity,
-                price: product.price, // always the current price, not the cart's cached price
-            });
-        }
-
-        // All items must belong to a single store — re-derived here rather than trusted
-        const storeId = products[0].storeId;
-        const mismatched = products.some((p) => p.storeId.toString() !== storeId.toString());
-        if (mismatched) {
-            return res.status(409).json({
-                success: false,
-                message: "Cart contains items from multiple stores. Please fix your cart before checking out.",
-            });
-        }
-
-        const subtotal = orderProducts.reduce((sum, p) => sum + p.price * p.quantity, 0);
-        const totalAmount = subtotal + DELIVERY_CHARGE + PACKAGING_FEE;
-
-        let createdOrder;
-        const stockAlerts = []; // { productName, stockQuantity } — filled during the decrement loop below
-
-        await session.withTransaction(async () => {
-            // Decrement stock for each product
-            for (const item of orderProducts) {
-                const updated = await Product.findOneAndUpdate(
-                    { _id: item.productId, stockQuantity: { $gte: item.quantity } },
-                    { $inc: { stockQuantity: -item.quantity } },
-                    { session, returnDocument: "after" }
-                );
-                if (!updated) {
-                    throw new Error(`Insufficient stock for ${item.productName}.`);
-                }
-
-                // Only alert the moment stock *crosses* into low/out-of-stock —
-                // not on every order placed after it's already below threshold,
-                // otherwise the store gets spammed with the same alert repeatedly.
-                const preStock = productMap.get(item.productId.toString())?.stockQuantity ?? 0;
-                if (preStock > LOW_STOCK_THRESHOLD && updated.stockQuantity <= LOW_STOCK_THRESHOLD) {
-                    stockAlerts.push({ productName: item.productName, stockQuantity: updated.stockQuantity });
-                }
-            }
-
-            createdOrder = await Order.create(
-                [
-                    {
-                        customerId: profile._id,
-                        storeId,
-                        products: orderProducts,
-                        subtotal,
-                        deliveryCharge: DELIVERY_CHARGE + PACKAGING_FEE,
-                        totalAmount,
-                        paymentMethod: "COD",
-                        paymentStatus: "PENDING",
-                        deliveryAddress: formatAddress(address),
-                        deliveryCoordinates: address.coordinates
-                            ? { lat: address.coordinates.lat, lng: address.coordinates.lng }
-                            : undefined,
-                        recipientName: user.name,
-                        recipientPhone: user.phone,
-                    },
-                ],
-                { session }
-            );
-
-            await Cart.findOneAndUpdate(
-                { customerId: profile._id },
-                { $set: { products: [], totalAmount: 0 } },
-                { session }
-            );
-
-            await CustomerProfile.findByIdAndUpdate(
-                profile._id,
-                { $inc: { totalOrders: 1 } },
-                { session }
-            );
+        const { order } = await createOrderFromCart({
+            userId: req.user.userID,
+            addressId,
+            paymentMethod: "COD",
+            paymentStatus: "PENDING",
         });
-
-        const order = createdOrder[0];
-
-        const { emitToStore } = require("../../socket");
-        emitToStore(storeId, "order:new", {
-            id: order._id.toString(),
-            orderNumber: order.orderNumber,
-            recipientName: order.recipientName,
-            totalAmount: order.totalAmount,
-            itemCount: order.products.reduce((sum, p) => sum + p.quantity, 0),
-            paymentMethod: order.paymentMethod,
-            orderStatus: order.orderStatus,
-            placedAt: order.createdAt,
-        });
-
-        // Notify customer their order was received
-        CustomerProfile.findById(order.customerId)
-            .populate("userId", "_id")
-            .lean()
-            .then((cp) => {
-                if (cp?.userId?._id) {
-                    notifyCustomer.orderPlaced(cp.userId._id, order.orderNumber, order._id).catch(() => {});
-                }
-            }).catch(() => {});
-
-        // Fire-and-forget order emails — don't hold up the customer's response.
-        StoreProfile.findById(storeId)
-            .populate("userId", "name email")
-            .lean()
-            .then((storeProfile) => {
-                sendOrderPlacedEmail({
-                    toEmail: user.email,
-                    customerName: user.name,
-                    order,
-                    storeName: storeProfile?.storeName || "the store",
-                }).catch(() => {});
-
-                if (storeProfile?.userId?.email) {
-                    sendNewOrderStoreEmail({
-                        toEmail: storeProfile.userId.email,
-                        storeName: storeProfile.storeName,
-                        order,
-                    }).catch(() => {});
-                }
-
-                if (storeProfile?.userId?._id) {
-                    notifyStore.newOrder(storeProfile.userId._id, order.orderNumber, order._id).catch(() => {});
-
-                    for (const alert of stockAlerts) {
-                        if (alert.stockQuantity === 0) {
-                            notifyStore.outOfStock(storeProfile.userId._id, alert.productName).catch(() => {});
-                        } else {
-                            notifyStore.lowStock(storeProfile.userId._id, alert.productName, alert.stockQuantity).catch(() => {});
-                        }
-                    }
-                }
-            })
-            .catch((err) => console.error("[order emails] Failed to resolve store:", err));
 
         return res.status(201).json({
             success: true,
@@ -297,12 +144,11 @@ const placeOrder = async (req, res) => {
         });
     } catch (err) {
         console.error("PLACE ORDER ERROR:", err);
-        if (err.message?.startsWith("Insufficient stock")) {
-            return res.status(400).json({ success: false, message: err.message });
-        }
-        return res.status(500).json({ success: false, message: "Internal server error." });
-    } finally {
-        session.endSession();
+        const status = err.status || (err.message?.startsWith("Insufficient stock") ? 400 : 500);
+        return res.status(status).json({
+            success: false,
+            message: status === 500 ? "Internal server error." : err.message,
+        });
     }
 };
 
