@@ -164,7 +164,7 @@ function DeliveryInstructions() {
 // but disabled, so it's clear it's coming rather than silently broken.
 
 function PaymentMethod() {
-  const { paymentMethod, setPaymentMethod } = usePayment();
+  const { paymentMethod, setPaymentMethod, walletBalance, useWallet, setUseWallet } = usePayment();
 
   return (
     <section className="bg-white rounded-2xl border border-[#E3E7E1] p-6">
@@ -173,6 +173,43 @@ function PaymentMethod() {
         <h2 className="text-lg font-semibold text-[#16241D]">Payment Method</h2>
       </div>
       <div className="space-y-3">
+        <label
+          className={`flex items-center gap-4 border rounded-xl px-4 py-4 cursor-pointer transition-colors ${
+            paymentMethod === "ONLINE" ? "border-[#145C43] bg-[#ECF2F0]" : "border-[#DCE3DC] bg-white hover:bg-[#F5F7F3]"
+          }`}
+        >
+          <input
+            type="radio"
+            name="payment"
+            value="online"
+            checked={paymentMethod === "ONLINE"}
+            onChange={() => setPaymentMethod("ONLINE")}
+            className="accent-[#145C43] w-4 h-4"
+          />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[#16241D]">Online Payment</p>
+            <p className="text-xs text-[#6E7C74]">UPI, Cards, Net Banking &mdash; via Razorpay</p>
+          </div>
+          <span className="text-lg">💳</span>
+        </label>
+
+        {paymentMethod === "ONLINE" && walletBalance > 0 && (
+          <label className="flex items-center gap-3 pl-4 pr-4 py-3 rounded-xl border border-dashed border-[#B9D6C9] bg-[#F5FAF7] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useWallet}
+              onChange={(e) => setUseWallet(e.target.checked)}
+              className="accent-[#145C43] w-4 h-4"
+            />
+            <span className="text-sm text-[#16241D] flex-1">
+              Use wallet balance{" "}
+              <span className="font-semibold text-[#145C43]">
+                (₹{walletBalance.toFixed(2)} available)
+              </span>
+            </span>
+          </label>
+        )}
+
         <label
           className={`flex items-center gap-4 border rounded-xl px-4 py-4 cursor-pointer transition-colors ${
             paymentMethod === "COD" ? "border-[#145C43] bg-[#ECF2F0]" : "border-[#DCE3DC] bg-white hover:bg-[#F5F7F3]"
@@ -192,17 +229,6 @@ function PaymentMethod() {
           </div>
           <span className="text-lg">💵</span>
         </label>
-
-        {/* Shrunk relative to COD and reduced to a single line — a disabled
-            option shouldn't compete at equal visual weight with the one the
-            user can actually pick. */}
-        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-dashed border-[#DCE3DC] opacity-60 cursor-not-allowed">
-          <input type="radio" name="payment" value="online" disabled className="accent-[#145C43] w-3.5 h-3.5" />
-          <p className="text-xs font-medium text-[#6E7C74] flex-1">Online Payment</p>
-          <span className="text-[10px] font-semibold tracking-wide uppercase text-[#6E7C74] bg-[#F5F7F3] px-2 py-0.5 rounded-full">
-            Coming soon
-          </span>
-        </div>
       </div>
     </section>
   );
@@ -214,10 +240,13 @@ function OrderSummary() {
   const { couponCode, setCouponCode, couponApplied, applyCoupon } = useCoupon();
   const totals = useOrderTotals();
   const cartItems = useCartItems();
+  const { paymentMethod } = usePayment();
   const { submit, isPlacingOrder } = usePlaceOrder();
   const navigate = useNavigate();
 
   const isEmpty = cartItems.length === 0;
+  const belowMinOrder = !isEmpty && totals.productTotal < totals.minOrderValue;
+  const isBlocked = Boolean(totals.pricingError) || belowMinOrder;
 
   const handlePlaceOrder = async () => {
     const order = await submit();
@@ -278,7 +307,11 @@ function OrderSummary() {
           </div>
           <div className="flex justify-between text-sm text-[#153A2C]">
             <span>Delivery Charge</span>
-            <span className="font-semibold">₹{totals.deliveryCharge.toFixed(2)}</span>
+            {totals.freeDeliveryApplied ? (
+              <span className="font-semibold text-green-600">FREE</span>
+            ) : (
+              <span className="font-semibold">₹{totals.deliveryCharge.toFixed(2)}</span>
+            )}
           </div>
           <div className="flex justify-between text-sm text-[#153A2C]">
             <span>Packaging Fee</span>
@@ -290,20 +323,48 @@ function OrderSummary() {
               <span>−₹{totals.couponDiscount.toFixed(2)}</span>
             </div>
           )}
+          {totals.walletAmountToApply > 0 && (
+            <div className="flex justify-between text-sm text-[#145C43] font-medium">
+              <span>Wallet Applied</span>
+              <span>−₹{totals.walletAmountToApply.toFixed(2)}</span>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-[#E3E7E1] mt-4 pt-4 flex justify-between items-center">
-          <span className="font-semibold text-[#16241D]">Grand Total</span>
-          <span className="text-lg font-bold text-[#145C43]">₹{totals.grandTotal.toFixed(2)}</span>
+          <span className="font-semibold text-[#16241D]">
+            {totals.walletAmountToApply > 0 ? "Amount to Pay" : "Grand Total"}
+          </span>
+          <span className="text-lg font-bold text-[#145C43]">
+            ₹{(paymentMethod === "ONLINE" ? totals.amountToPay : totals.grandTotal).toFixed(2)}
+          </span>
         </div>
+
+        {totals.pricingError && (
+          <p className="mt-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            {totals.pricingError}
+          </p>
+        )}
+        {belowMinOrder && (
+          <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+            Minimum order value is ₹{totals.minOrderValue}. Add ₹
+            {(totals.minOrderValue - totals.productTotal).toFixed(2)} more to checkout.
+          </p>
+        )}
 
         <button
           onClick={handlePlaceOrder}
-          disabled={isEmpty || isPlacingOrder}
+          disabled={isEmpty || isPlacingOrder || isBlocked}
           className="mt-5 w-full bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] text-[#16241D] rounded-xl py-3.5 text-sm font-bold tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-[#A9CC3B]/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isPlacingOrder && <Loader2 size={16} className="animate-spin" />}
-          {isPlacingOrder ? "Placing order…" : "Place Order"}
+          {isPlacingOrder
+            ? paymentMethod === "ONLINE"
+              ? "Processing payment…"
+              : "Placing order…"
+            : paymentMethod === "ONLINE" && totals.amountToPay > 0
+              ? `Pay ₹${totals.amountToPay.toFixed(2)}`
+              : "Place Order"}
         </button>
 
         <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-[#6E7C74]">

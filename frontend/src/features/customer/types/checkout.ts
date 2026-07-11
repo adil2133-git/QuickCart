@@ -1,4 +1,4 @@
-// ── Backend-shaped types ───────────────────────────────────────────────────
+// -- Backend-shaped types ---------------------------------------------------
 // These mirror what GET /api/customer/checkout/summary actually returns,
 // not the flat mock shapes the UI used before.
 
@@ -28,7 +28,7 @@ export interface PopulatedProduct {
 export interface CartProductLine {
   productId: PopulatedProduct;
   quantity: number;
-  price: number; // cached price at time of add — display only, never trust for totals
+  price: number; // cached price at time of add -- display only, never trust for totals
 }
 
 export interface CartResponse {
@@ -42,6 +42,8 @@ export interface OrderTotals {
   deliveryCharge: number;
   packagingFee: number;
   grandTotal: number;
+  distanceKm?: number;
+  freeDeliveryApplied?: boolean;
 }
 
 export interface CheckoutSummaryResponse {
@@ -50,15 +52,17 @@ export interface CheckoutSummaryResponse {
   addresses: SavedAddress[];
   defaultAddressId: string | null;
   codAllowed: boolean;
+  walletBalance: number;
   totals: OrderTotals | null;
+  pricingError?: string | null;
+  minOrderValue?: number;
 }
 
-export type PaymentMethod = "COD"; // "ONLINE" will be added when that's wired up
+export type PaymentMethod = "COD" | "ONLINE";
 
 export interface PlaceOrderPayload {
   addressId: string;
-  paymentMethod: PaymentMethod;
-  deliveryInstructions?: string;
+  paymentMethod: "COD";
 }
 
 export interface PlaceOrderResponse {
@@ -70,4 +74,54 @@ export interface PlaceOrderResponse {
     totalAmount: number;
     orderStatus: string;
   };
+}
+
+// -- Online payment ----------------------------------------------------------
+
+export interface CreateRazorpayOrderPayload {
+  addressId: string;
+  useWallet?: boolean;
+}
+
+export interface CreateRazorpayOrderResponse {
+  success: boolean;
+  fullyCoveredByWallet: boolean;
+  message?: string;
+  order?: PlaceOrderResponse["order"]; // present when fullyCoveredByWallet is true
+  razorpayOrder?: { id: string; amount: number; currency: string };
+  razorpayKeyId?: string;
+  totals?: OrderTotals;
+  walletAmountUsed?: number;
+  amountToPay?: number;
+}
+
+export interface VerifyPaymentPayload {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  addressId: string;
+  useWallet?: boolean;
+}
+
+export interface VerifyPaymentResponse {
+  success: boolean;
+  message: string;
+  order: PlaceOrderResponse["order"];
+}
+
+// -- Wallet --------------------------------------------------------------------
+
+export interface WalletTransaction {
+  id: string;
+  amount: number;
+  type: "REFUND_CREDIT" | "ORDER_PAYMENT" | "ADMIN_ADJUSTMENT";
+  description?: string;
+  orderNumber?: string | null;
+  createdAt: string;
+}
+
+export interface WalletResponse {
+  success: boolean;
+  balance: number;
+  transactions: WalletTransaction[];
 }
