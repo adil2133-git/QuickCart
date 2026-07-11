@@ -43,6 +43,7 @@ import CheckoutPage from './features/customer/pages/checkoutPage'
 import MyOrdersPage from './features/customer/pages/myOrdersPage'
 import OrderTrackingPage from './features/customer/pages/orderTrackingPage'
 import CustomerProfilePage from './features/customer/pages/customerProfile'
+import WalletPage from './features/customer/pages/walletPage'
 import OrdersPage from './features/store/pages/ordersList'
 import OrderDetailPage from './features/store/pages/orderDetail'
 import PackingChecklistPage from './features/store/pages/packingCheckList'
@@ -124,6 +125,7 @@ function App() {
           <Route path="store/:storeId/product/:productId" element={<ProductDetailPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="orders" element={<MyOrdersPage />} />
+          <Route path="wallet" element={<WalletPage />} />
           <Route path="profile" element={<CustomerProfilePage />} />
         </Route>
 

@@ -12,14 +12,12 @@ import {
     Home,
     Briefcase,
     Tag,
-    Truck,
     Clock,
-    Gift,
-    BadgeCheck,
     X,
     Check,
     Leaf,
     Loader2,
+    Wallet,
     type LucideIcon,
 } from "lucide-react";
 import api from "../../../api/axios";
@@ -52,7 +50,6 @@ interface NavLinkItem {
 
 interface NavBarProps {
     cartCount?: number;
-    activeOrderEta?: number;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -86,20 +83,6 @@ const SEARCH_INDEX: SearchItem[] = [
 const NAV_LINKS: NavLinkItem[] = [
     { label: "Stores", to: "/customer/stores" },
     { label: "Deals", to: "/deals" },
-];
-
-interface IdleMessage {
-    icon: LucideIcon;
-    text: string;
-    iconBg: string;
-    textColor: string;
-    pillBg: string;
-}
-
-const IDLE_MESSAGES: IdleMessage[] = [
-    { icon: Clock, text: "Avg delivery: 20–30 min", iconBg: "#145C43", textColor: "#145C43", pillBg: "#E8EFEC" },
-    { icon: Gift, text: "Free delivery over ₹300", iconBg: "#145C43", textColor: "#145C43", pillBg: "#E8EFEC" },
-    { icon: BadgeCheck, text: "Fresh & quality assured", iconBg: "#145C43", textColor: "#145C43", pillBg: "#E8EFEC" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -145,27 +128,6 @@ function NavTextLink({ label, to }: NavLinkItem) {
             />
         </Link>
     );
-}
-
-/* -------------------------------------------------------------------------- */
-/*  usePrefersReducedMotion                                                   */
-/* -------------------------------------------------------------------------- */
-
-function usePrefersReducedMotion(): boolean {
-    const [reduced, setReduced] = useState(() => {
-        if (typeof window === "undefined") return false;
-        return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    });
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-        const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-        mq.addEventListener("change", handler);
-        return () => mq.removeEventListener("change", handler);
-    }, []);
-
-    return reduced;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -536,96 +498,6 @@ function SearchBar() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  DeliveryStatusPill                                                        */
-/* -------------------------------------------------------------------------- */
-
-const IDLE_ROTATE_MS = 7000;
-
-function DeliveryStatusPill({ etaMinutes }: { etaMinutes?: number }) {
-    const isLive = !!etaMinutes;
-    const reducedMotion = usePrefersReducedMotion();
-    const [idleIndex, setIdleIndex] = useState(0);
-    const [paused, setPaused] = useState(false);
-
-    useEffect(() => {
-        if (isLive || paused || reducedMotion) return;
-        const id = window.setInterval(() => {
-            setIdleIndex((i) => (i + 1) % IDLE_MESSAGES.length);
-        }, IDLE_ROTATE_MS);
-        return () => window.clearInterval(id);
-    }, [isLive, paused, reducedMotion]);
-
-    const displayIndex = isLive ? idleIndex : 0;
-    const idle = IDLE_MESSAGES[displayIndex];
-    const Icon = isLive ? Truck : idle.icon;
-    const pillBg = isLive ? "#E8EFEC" : idle.pillBg;
-    const iconBg = isLive ? "#145C43" : idle.iconBg;
-    const textColor = isLive ? "#145C43" : idle.textColor;
-    const label = isLive ? `Arriving in ${etaMinutes} min` : idle.text;
-
-    return (
-        <motion.div
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-            animate={{ backgroundColor: pillBg }}
-            transition={{ duration: 0.25 }}
-            whileHover={{ scale: 1.03 }}
-            className="hidden flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 sm:flex"
-        >
-            <motion.span
-                animate={isLive
-                    ? { scale: [1, 1.25, 1], backgroundColor: iconBg }
-                    : { backgroundColor: iconBg }
-                }
-                transition={{
-                    scale: { duration: 1.6, repeat: isLive ? Infinity : 0, ease: "easeInOut" },
-                    backgroundColor: { duration: 0.25 },
-                }}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-            >
-                <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                        key={isLive ? "live-icon" : `idle-icon-${displayIndex}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="flex items-center justify-center"
-                    >
-                        <Icon size={11} color="#fff" />
-                    </motion.span>
-                </AnimatePresence>
-            </motion.span>
-
-            <span className="relative inline-grid">
-                <span
-                    aria-hidden="true"
-                    className="invisible col-start-1 row-start-1 text-[12px] font-semibold"
-                    style={{ fontFamily: FONT_UI }}
-                >
-                    {[...IDLE_MESSAGES.map((m) => m.text), `Arriving in ${etaMinutes ?? 99} min`].sort(
-                        (a, b) => b.length - a.length
-                    )[0]}
-                </span>
-                <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                        key={isLive ? "live-text" : `idle-text-${displayIndex}`}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.2 }}
-                        className="col-start-1 row-start-1 text-[12px] font-semibold"
-                        style={{ fontFamily: FONT_UI, color: textColor }}
-                    >
-                        {label}
-                    </motion.span>
-                </AnimatePresence>
-            </span>
-        </motion.div>
-    );
-}
-
-/* -------------------------------------------------------------------------- */
 /*  NotificationBell                                                          */
 /* -------------------------------------------------------------------------- */
 
@@ -749,6 +621,49 @@ function NotificationBell() {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  WalletButton                                                              */
+/* -------------------------------------------------------------------------- */
+
+function WalletButton() {
+    const { pathname } = useLocation();
+    const [balance, setBalance] = useState<number | null>(null);
+    const WALLET_PATH = "/customer/wallet";
+    const isActive = pathname === WALLET_PATH;
+
+    useEffect(() => {
+        api
+            .get("/customer/wallet")
+            .then(({ data }) => setBalance(data.balance ?? 0))
+            .catch(() => setBalance(null));
+    }, []);
+
+    return (
+        <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="flex-shrink-0">
+            <Link
+                to={WALLET_PATH}
+                aria-label={balance != null ? `Wallet, balance ₹${balance}` : "Wallet"}
+                aria-current={isActive ? "page" : undefined}
+                className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 sm:flex"
+                style={{ backgroundColor: isActive ? "rgba(31,77,61,0.1)" : "#E8EFEC" }}
+            >
+                <Wallet size={15} color="#145C43" />
+                <span className="text-[12px] font-semibold" style={{ fontFamily: FONT_UI, color: "#145C43" }}>
+                    {balance != null ? `₹${balance.toFixed(0)}` : "Wallet"}
+                </span>
+            </Link>
+            {/* Icon-only trigger below sm, where the balance pill is hidden */}
+            <Link
+                to={WALLET_PATH}
+                aria-label="Wallet"
+                className="flex items-center justify-center rounded-full p-1 sm:hidden"
+            >
+                <Wallet size={19} color="#145C43" />
+            </Link>
+        </motion.div>
+    );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  MobileMenu                                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -823,7 +738,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
 /*  NavBar                                                                    */
 /* -------------------------------------------------------------------------- */
 
-export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBarProps) {
+export default function NavBar({ cartCount: _cartCount }: NavBarProps) {
     const { pathname } = useLocation();
     const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -903,11 +818,6 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                     ))}
                 </nav>
 
-                {/* Delivery status pill — desktop only */}
-                <div className="hidden lg:block">
-                    <DeliveryStatusPill etaMinutes={activeOrderEta} />
-                </div>
-
                 {/* Action icons */}
                 <div className="ml-auto flex flex-shrink-0 items-center gap-2.5 sm:gap-4">
                     {/* Search trigger — opens the drawer below md, where the inline search bar is hidden */}
@@ -918,6 +828,8 @@ export default function NavBar({ cartCount: _cartCount, activeOrderEta }: NavBar
                     >
                         <Search size={19} color="#145C43" />
                     </button>
+
+                    <WalletButton />
 
                     <NotificationBell />
 

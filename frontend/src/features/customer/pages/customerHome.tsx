@@ -6,6 +6,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
     MapPin, ShoppingCart, Star, ChevronLeft, ChevronRight,
     Plus, Check, ArrowRight, Clock, Leaf, RotateCcw, History,
+    Gift, BadgeCheck, ImagePlus, type LucideIcon,
 } from "lucide-react";
 import LocationPickerModal from "../components/locationPickerModal";
 import api from "../../../api/axios";
@@ -73,11 +74,11 @@ interface OrderedProduct {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function Skeleton({ className = "" }: { className?: string }) {
+function Skeleton({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
     return (
         <div
             className={`rounded-lg animate-pulse ${className}`}
-            style={{ backgroundColor: "#F5F7F3" }}
+            style={{ backgroundColor: "#F5F7F3", ...style }}
         />
     );
 }
@@ -93,6 +94,23 @@ function ProductCardSkeleton() {
                 <div className="flex items-center justify-between pt-2">
                     <Skeleton className="h-5 w-16" />
                     <Skeleton className="h-9 w-28 rounded-lg" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function OrderAgainCardSkeleton() {
+    return (
+        <div className="rounded-xl border flex items-center gap-0" style={{ borderColor: "#E3E7E1" }}>
+            <Skeleton className="m-3 flex-shrink-0" style={{ width: 104, height: 104 }} />
+            <div className="flex-1 py-3 pr-3 space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-16" />
+                <div className="flex items-center justify-between pt-2">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-9 w-24 rounded-lg" />
                 </div>
             </div>
         </div>
@@ -300,6 +318,62 @@ function etaWindow(distanceKm: number | null): string {
     return "25–40";
 }
 
+// ─── Hero rotating badge (moved here from the navbar) ─────────────────────────
+// Cycles through a few reassurance messages every few seconds.
+
+interface HeroMessage {
+    icon: LucideIcon;
+    text: string;
+}
+
+const HERO_MESSAGES: HeroMessage[] = [
+    { icon: Clock, text: "Avg delivery: 20–30 min" },
+    { icon: Gift, text: "Free delivery over ₹300" },
+    { icon: BadgeCheck, text: "Fresh & quality assured" },
+];
+
+const HERO_ROTATE_MS = 3500;
+
+function HeroRotatingBadge() {
+    const [index, setIndex] = useState(0);
+
+    useEffect(() => {
+        const reducedMotion = typeof window !== "undefined"
+            && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (reducedMotion) return;
+        const id = window.setInterval(() => {
+            setIndex((i) => (i + 1) % HERO_MESSAGES.length);
+        }, HERO_ROTATE_MS);
+        return () => window.clearInterval(id);
+    }, []);
+
+    const { icon: Icon, text } = HERO_MESSAGES[index];
+
+    return (
+        <div className="flex items-center gap-2 rounded-full px-3 py-1.5 w-fit" style={{ backgroundColor: "#E8EFEC" }}>
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: "#145C43" }}>
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.span key={index} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+                        className="flex items-center justify-center">
+                        <Icon size={11} color="#fff" />
+                    </motion.span>
+                </AnimatePresence>
+            </span>
+            <span className="relative inline-grid">
+                <span aria-hidden="true" className="invisible col-start-1 row-start-1 text-xs font-semibold" style={{ fontFamily: "'Inter', sans-serif" }}>
+                    {[...HERO_MESSAGES].sort((a, b) => b.text.length - a.text.length)[0].text}
+                </span>
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.span key={index} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}
+                        className="col-start-1 row-start-1 text-xs font-semibold" style={{ fontFamily: "'Inter', sans-serif", color: "#145C43" }}>
+                        {text}
+                    </motion.span>
+                </AnimatePresence>
+            </span>
+        </div>
+    );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function CustomerHome() {
@@ -405,10 +479,10 @@ export default function CustomerHome() {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="relative rounded-2xl bg-white border"
+                    className="relative rounded-2xl bg-white border flex items-center gap-10 overflow-hidden"
                     style={{ borderColor: "#E3E7E1", padding: 56 }}
                 >
-                    <div className="flex flex-col gap-4" style={{ maxWidth: 420 }}>
+                    <div className="flex flex-col gap-4 flex-1" style={{ maxWidth: 420 }}>
                         <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
                             className="flex w-fit items-center gap-1.5 rounded-full px-3 py-1"
                             style={{ backgroundColor: "#E8EFEC" }}>
@@ -448,6 +522,33 @@ export default function CustomerHome() {
                                 <span className="text-xs italic" style={{ color: "#6E7C74" }}>*Limited time, new users only</span>
                             )}
                         </motion.div>
+
+                        {/* Rotating reassurance badge — previously lived as a pill in the navbar */}
+                        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
+                            className="pt-1">
+                            <HeroRotatingBadge />
+                        </motion.div>
+                    </div>
+
+                    {/* ── Hero image slot — placeholder until a real image is added ── */}
+                    <div
+                        className="hidden lg:flex flex-shrink-0 items-center justify-center rounded-xl"
+                        style={{
+                            width: 360,
+                            height: 320,
+                            border: "2px dashed #DCE3DC",
+                            backgroundColor: "#F5F7F3",
+                        }}
+                    >
+                        <div className="flex flex-col items-center gap-2 px-6 text-center">
+                            <ImagePlus size={28} color="#9BAAA1" />
+                            <span className="text-xs font-medium" style={{ color: "#9BAAA1", fontFamily: "'Inter', sans-serif" }}>
+                                Hero image goes here
+                            </span>
+                            <span className="text-[11px]" style={{ color: "#B7C2BC", fontFamily: "'Inter', sans-serif" }}>
+                                Swap this box for an &lt;img&gt; once you have one
+                            </span>
+                        </div>
                     </div>
                 </motion.section>
 
@@ -456,42 +557,40 @@ export default function CustomerHome() {
                     <section>
                         <SectionHeader title="Order It Again" action="View Order History" />
                         {loadingRecentOrders ? (
-                            <div className="grid grid-cols-4 gap-6">
-                                {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+                            <div className="grid grid-cols-2 gap-5">
+                                {Array.from({ length: 4 }).map((_, i) => <OrderAgainCardSkeleton key={i} />)}
                             </div>
                         ) : (
                             <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
-                                viewport={{ once: true, margin: "-40px" }} className="grid grid-cols-4 gap-6">
+                                viewport={{ once: true, margin: "-40px" }} className="grid grid-cols-2 gap-5">
                                 {recentlyOrdered.slice(0, 4).map((item) => {
                                     const catName = item.categoryId?.categoryName;
                                     const storeId = item.storeId?._id;
                                     return (
                                         <motion.div key={item._id} variants={scaleIn}>
-                                            <Card className="flex flex-col h-full">
-                                                <div className="p-[17px] pb-0">
-                                                    <motion.div
-                                                        whileHover={{ scale: 1.03 }} transition={{ duration: 0.3 }}
-                                                        onClick={() => storeId && goToProduct(storeId, item._id)}
-                                                        className="relative h-48 rounded-lg flex items-center justify-center text-6xl overflow-hidden cursor-pointer"
-                                                        style={{ backgroundColor: productBg(catName) }}>
-                                                        {item.images?.[0]
-                                                            ? <img src={item.images[0]} alt={item.productName} className="w-full h-full object-cover" />
-                                                            : <span className="select-none">{productEmoji(catName)}</span>
-                                                        }
-                                                        <BoughtBeforeBadge />
-                                                    </motion.div>
-                                                </div>
+                                            <Card className="flex items-center h-full">
+                                                <motion.div
+                                                    whileHover={{ scale: 1.03 }} transition={{ duration: 0.3 }}
+                                                    onClick={() => storeId && goToProduct(storeId, item._id)}
+                                                    className="relative flex-shrink-0 rounded-lg flex items-center justify-center text-4xl overflow-hidden cursor-pointer m-3"
+                                                    style={{ width: 104, height: 104, backgroundColor: productBg(catName) }}>
+                                                    {item.images?.[0]
+                                                        ? <img src={item.images[0]} alt={item.productName} className="w-full h-full object-cover" />
+                                                        : <span className="select-none">{productEmoji(catName)}</span>
+                                                    }
+                                                    <BoughtBeforeBadge />
+                                                </motion.div>
                                                 <div
                                                     onClick={() => storeId && goToProduct(storeId, item._id)}
-                                                    className="px-[17px] pt-[17px] flex-1 cursor-pointer"
+                                                    className="flex-1 min-w-0 py-3 pr-3 cursor-pointer"
                                                 >
                                                     <span className="text-xs font-medium block" style={{ color: "#145C43" }}>{item.storeId?.storeName}</span>
-                                                    <span className="font-semibold block" style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#16241D", lineHeight: "22px", marginTop: 3 }}>{item.productName}</span>
-                                                    <span className="text-sm block" style={{ color: "#9BAAA1" }}>{item.unit || catName}</span>
-                                                </div>
-                                                <div className="px-[17px] py-4 flex items-center justify-between">
-                                                    <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#145C43" }}>₹{item.price}</span>
-                                                    <AddToCartButton productId={item._id} label="Reorder" addedLabel="In Cart!" />
+                                                    <span className="font-semibold block truncate" style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, color: "#16241D", lineHeight: "20px", marginTop: 2 }}>{item.productName}</span>
+                                                    <span className="text-xs block" style={{ color: "#9BAAA1" }}>{item.unit || catName}</span>
+                                                    <div className="flex items-center justify-between pt-2.5">
+                                                        <span className="font-semibold" style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#145C43" }}>₹{item.price}</span>
+                                                        <AddToCartButton productId={item._id} label="Reorder" addedLabel="In Cart!" />
+                                                    </div>
                                                 </div>
                                             </Card>
                                         </motion.div>
