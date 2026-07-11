@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import {
   Heart,
   ShoppingCart,
@@ -357,9 +356,6 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = () => {
     addToCartAction(product._id, quantity);
-    toast.success("Added to cart", {
-      description: `${product.productName} · ${quantity} × ₹${product.price.toLocaleString("en-IN")}`,
-    });
   };
 
   const handleViewStore = (id: string) => navigate(`/customer/store/${id}`);

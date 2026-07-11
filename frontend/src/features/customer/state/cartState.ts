@@ -117,6 +117,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const { data } = await api.post(`${CART}/add`, { productId: resolvedProductId, quantity });
       const normalizedCart = data.cart ?? { products: [], totalAmount: 0 };
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isUpdating: null });
+      toast.success("Added to cart", { duration: 2000 });
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number; data?: { cartStoreName?: string; newStoreName?: string; productId?: string; quantity?: number; message?: string } } };
       // 409 = multi-store conflict — handle in UI, not as a generic error
