@@ -94,7 +94,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster position="top-right" richColors closeButton expand gap={10} visibleToasts={4} />
       <Routes>
 
         {/* ── Public routes ─────────────────────────────────────────── */}

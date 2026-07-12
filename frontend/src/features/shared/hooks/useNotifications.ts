@@ -4,6 +4,7 @@ import api from "../../../api/axios";
 import { getSocket } from "../../../lib/socket";
 import {
   useNotificationStore,
+  consumeOrderToastSuppression,
   type AppNotification,
 } from "../state/notificationState";
 
@@ -41,6 +42,7 @@ export function useNotificationsSync() {
 
     const handleNew = (n: AppNotification) => {
       prependNotification(n);
+      if (consumeOrderToastSuppression(n.orderId)) return;
       toast(n.title, {
         description: n.message,
         duration: 5000,

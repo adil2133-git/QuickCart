@@ -1,5 +1,29 @@
 import { create } from "zustand";
 
+// Some pages (e.g. checkout) show an instant toast right off the REST
+// response, before the backend's socket notification for the same event
+// arrives a moment later. Without this, both toasts land within the same
+// second and stack/collide. A page can call suppressNextOrderToast(orderId)
+// right after its own toast so the notification system skips just that one
+// toast — the notification itself still gets saved to the bell/list as normal.
+const suppressedOrderToastIds = new Set<string>();
+
+export function suppressNextOrderToast(orderId: string) {
+  suppressedOrderToastIds.add(orderId);
+  // Safety cleanup in case the matching notification never arrives (e.g. the
+  // socket event got lost) so we don't leak entries forever.
+  setTimeout(() => suppressedOrderToastIds.delete(orderId), 15000);
+}
+
+export function consumeOrderToastSuppression(orderId: string | null): boolean {
+  if (!orderId) return false;
+  if (suppressedOrderToastIds.has(orderId)) {
+    suppressedOrderToastIds.delete(orderId);
+    return true;
+  }
+  return false;
+}
+
 export interface AppNotification {
   _id: string;
   title: string;

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { suppressNextOrderToast } from "../../shared/state/notificationState";
 import { useCheckoutStore, LOCAL_COUPON_DISCOUNT } from "../state/checkoutState";
 import api from "../../../api/axios";
 import { loadRazorpayScript } from "../../../lib/loadRazorpay";
@@ -259,6 +260,7 @@ export function usePlaceOrder() {
         paymentMethod === "COD" ? await submitCOD(selectedAddressId) : await submitOnline(selectedAddressId);
       if (!order) return null; // e.g. Razorpay modal dismissed
       toast.success(`Order ${order.orderNumber} placed!`);
+      suppressNextOrderToast(order._id);
       resetAfterOrder();
       return order;
     } catch (err) {
