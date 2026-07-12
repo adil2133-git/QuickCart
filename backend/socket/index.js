@@ -8,6 +8,13 @@ const CustomerProfile = require("../models/customer/customerProfile");
 
 let io = null;
 
+// driverId (string) → setTimeout handle. A clean disconnect is a strong
+// offline signal, but a brief network blip shouldn't instantly kick a driver
+// offline — so we wait a short grace period, and cancel it if they reconnect
+// (e.g. a page refresh, or a second tab) before it fires.
+const driverOfflineTimers = new Map();
+const DRIVER_DISCONNECT_GRACE_MS = 75 * 1000; // 75 seconds
+
 // Resolves the room name(s) a connected socket should join, based on the
 // authenticated user's role. Mirrors the same role → profile lookup your
 // REST controllers already do via resolveStoreProfile / resolveCustomerProfile.
@@ -61,17 +68,54 @@ function initSocket(httpServer) {
 
   io.on("connection", async (socket) => {
     const { userID, role } = socket.user;
+    let driverId = null;
 
     try {
       const rooms = await resolveRoomsForUser(userID, role);
       rooms.forEach((room) => socket.join(room));
       console.log(`[socket] ${role} ${userID} connected, joined: ${rooms.join(", ")}`);
+
+      if (role === "DRIVER") {
+        const driverRoom = rooms.find((r) => r.startsWith("driver:"));
+        driverId = driverRoom ? driverRoom.split(":")[1] : null;
+
+        // Reconnected before the grace timer fired (refresh, second tab,
+        // brief network blip) — cancel the pending offline flip.
+        if (driverId && driverOfflineTimers.has(driverId)) {
+          clearTimeout(driverOfflineTimers.get(driverId));
+          driverOfflineTimers.delete(driverId);
+        }
+      }
     } catch (err) {
       console.error("[socket] room resolution failed:", err);
     }
 
     socket.on("disconnect", () => {
       console.log(`[socket] ${role} ${userID} disconnected`);
+
+      if (role === "DRIVER" && driverId) {
+        // Another tab/socket for the same driver may still be open — only
+        // start the grace timer if this was their last connected socket.
+        const stillConnected = io.sockets.adapter.rooms.get(`driver:${driverId}`);
+        if (stillConnected && stillConnected.size > 0) return;
+
+        const timer = setTimeout(async () => {
+          driverOfflineTimers.delete(driverId);
+          try {
+            const DriverProfile = require("../models/driver/driverProfile");
+            const driver = await DriverProfile.findById(driverId);
+            if (driver && driver.availabilityStatus === "ONLINE") {
+              driver.availabilityStatus = "OFFLINE";
+              await driver.save();
+              console.log(`[socket] Driver ${driverId} auto-flipped OFFLINE after disconnect grace period`);
+            }
+          } catch (err) {
+            console.error("[socket] Disconnect offline flip failed:", err.message);
+          }
+        }, DRIVER_DISCONNECT_GRACE_MS);
+
+        driverOfflineTimers.set(driverId, timer);
+      }
     });
   });
 
