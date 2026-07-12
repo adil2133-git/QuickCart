@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../api/axios"; // adjust to your real path, e.g. "../../../api/axiosInstance"
 import { useOrdersStore } from "../state/myOrdersState";
-import type { GetOrdersResponse, OrdersTab } from "../types/myOrders";
+import type { GetOrdersResponse, GetOrderDetailResponse, CustomerOrderDetail, OrdersTab } from "../types/myOrders";
 
 export function useOrdersTab() {
   const activeTab = useOrdersStore((s) => s.activeTab);
@@ -72,4 +72,40 @@ export function useCancelOrder() {
   };
 
   return { cancelOrder };
+}
+
+// Fetches full detail (line items, delivery address, payment status) for a
+// single order — used by the order tracking view's "Delivering To" and
+// "Order Summary" cards, which need more than the list endpoint returns.
+export function useOrderDetail(orderId: string | null) {
+  const [detail, setDetail] = useState<CustomerOrderDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!orderId) {
+      setDetail(null);
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+
+    api
+      .get<GetOrderDetailResponse>(`/customer/orders/${orderId}`)
+      .then(({ data }) => {
+        if (!cancelled) setDetail(data.order);
+      })
+      .catch(() => {
+        if (!cancelled) setDetail(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
+
+  return { detail, isLoading };
 }

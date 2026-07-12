@@ -6,8 +6,10 @@ import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 // Send a location ping if the driver moved more than this many metres,
 // OR if this many milliseconds have passed since the last ping — whichever
 // comes first.
-const MIN_DISTANCE_METRES = 50;
-const MAX_INTERVAL_MS = 15_000;
+const MIN_DISTANCE_METRES = 500;
+const MAX_INTERVAL_MS = 60_000;
+const HEARTBEAT_INTERVAL_MS = 60_000;
+const GEOCODE_INTERVAL_MS = 120_000;
 
 function haversineMetres(a: GeolocationCoordinates, b: { lat: number; lng: number }) {
     const R = 6_371_000;
@@ -32,6 +34,7 @@ export function useDriverLocationTracking() {
     const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastSentRef = useRef<{ lat: number; lng: number } | null>(null);
     const lastSentAtRef = useRef<number>(0);
+    const lastGeocodeAtRef = useRef<number>(0);
 
     useEffect(() => {
         if (!isOnline) {
@@ -57,6 +60,14 @@ export function useDriverLocationTracking() {
 
         setLocationStatus("acquiring");
 
+        // Detect mobile vs desktop for appropriate GPS settings
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+        const gpsOptions: PositionOptions = {
+            enableHighAccuracy: isMobile,
+            maximumAge: isMobile ? 10_000 : 30_000,
+            timeout: isMobile ? 10_000 : 15_000,
+        };
+
         watchIdRef.current = navigator.geolocation.watchPosition(
             async (position) => {
                 const { latitude: lat, longitude: lng } = position.coords;
@@ -80,8 +91,10 @@ export function useDriverLocationTracking() {
                     lastSentAtRef.current = now;
 
                     // Reverse geocode to get area name (Nominatim — free, no key needed)
-                    // Only do this on the first fix and when area is stale (every ~60s)
-                    if (!last || timeSinceLast > 60_000) {
+                    // Only do this on the first fix and when area is stale (every ~2 min)
+                    const timeSinceGeocode = now - lastGeocodeAtRef.current;
+                    if (!last || timeSinceGeocode > GEOCODE_INTERVAL_MS) {
+                        lastGeocodeAtRef.current = now;
                         fetch(
                             `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
                             { headers: { "Accept-Language": "en" } }
@@ -110,27 +123,23 @@ export function useDriverLocationTracking() {
                     setLocationStatus("unavailable");
                 }
             },
-            {
-                enableHighAccuracy: true,
-                maximumAge: 5_000,
-                timeout: 10_000,
-            }
+            gpsOptions
         );
 
-        // Heartbeat: send the last known location every 30s even if watchPosition
+        // Heartbeat: send the last known location every 60s even if watchPosition
         // stops firing (minimized tab, battery optimization, etc.)
         heartbeatRef.current = setInterval(async () => {
             const last = lastSentRef.current;
             if (!last) return;
             const staleSecs = (Date.now() - lastSentAtRef.current) / 1000;
-            if (staleSecs < 20) return; // watchPosition is still active, skip
+            if (staleSecs < 50) return; // watchPosition is still active, skip
             try {
                 await api.patch("/driver/location", last);
                 lastSentAtRef.current = Date.now();
             } catch {
                 // silent — don't crash on heartbeat failure
             }
-        }, 30_000);
+        }, HEARTBEAT_INTERVAL_MS);
 
         return () => {
             if (watchIdRef.current !== null) {

@@ -1,10 +1,12 @@
 // pages/CustomerProfilePage.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   User as UserIcon,
   ClipboardList,
   MapPin,
   Bell,
+  Wallet as WalletIcon,
   LogOut,
   Trash2,
   Star,
@@ -15,14 +17,42 @@ import { useCustomerProfile } from "../hooks/useCustomerProfile";
 import type { AddAddressPayload } from "../types/customerProfile";
 import { useLogout } from "../../auth/hooks/useLogout";
 import { OrdersContent } from "./myOrdersPage";
+import { OrderTrackingContent } from "./orderTrackingPage";
+import { WalletContent } from "./walletPage";
 
-type SidebarTab = "profile" | "orders" | "addresses" | "notifications";
+type SidebarTab = "profile" | "orders" | "wallet" | "addresses" | "notifications";
+
+const VALID_TABS: SidebarTab[] = ["profile", "orders", "wallet", "addresses", "notifications"];
 
 const CustomerProfilePage = () => {
   const { profile, user, isLoading, error, addNewAddress, setDefault, deleteAddress } =
     useCustomerProfile();
 
-  const [activeTab, setActiveTab] = useState<SidebarTab>("profile");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") as SidebarTab | null;
+
+  // The active tab is derived straight from the URL on every render — no
+  // separate state to keep in sync, so a click anywhere (sidebar, navbar
+  // Wallet button, a notification link) is reflected immediately on the
+  // very first render, not after a follow-up effect fires.
+  const activeTab: SidebarTab =
+    tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : "profile";
+
+  // Order being tracked inline, within the "My Orders" tab — set when a
+  // "Track Order" / "Call Rider" button is tapped. Swaps the tracking view
+  // in over the orders list without changing route.
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+
+  // Clear any in-progress order tracking whenever the tab itself changes
+  // (e.g. navigating to Wallet mid-tracking via the navbar).
+  useEffect(() => {
+    setTrackingOrderId(null);
+  }, [activeTab]);
+
+  const setActiveTab = (tab: SidebarTab) => {
+    setSearchParams(tab === "profile" ? {} : { tab }, { replace: true });
+  };
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [label, setLabel] = useState("Home");
   const [address, setAddress] = useState("");
@@ -83,6 +113,12 @@ const CustomerProfilePage = () => {
               label="My Orders"
               active={activeTab === "orders"}
               onClick={() => setActiveTab("orders")}
+            />
+            <SidebarItem
+              icon={<WalletIcon size={18} />}
+              label="Wallet"
+              active={activeTab === "wallet"}
+              onClick={() => setActiveTab("wallet")}
             />
             <SidebarItem
               icon={<MapPin size={18} />}
@@ -259,8 +295,24 @@ const CustomerProfilePage = () => {
 
           {activeTab === "orders" && (
             <section className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-8">
-              <h2 className="text-xl font-semibold text-[#145C43] mb-5">My Orders</h2>
-              <OrdersContent />
+              {trackingOrderId ? (
+                <OrderTrackingContent
+                  orderId={trackingOrderId}
+                  onBack={() => setTrackingOrderId(null)}
+                />
+              ) : (
+                <>
+                  <h2 className="text-xl font-semibold text-[#145C43] mb-5">My Orders</h2>
+                  <OrdersContent onTrackOrder={setTrackingOrderId} />
+                </>
+              )}
+            </section>
+          )}
+
+          {activeTab === "wallet" && (
+            <section className="bg-white rounded-2xl shadow-sm border border-[#E3E7E1] p-8">
+              <h2 className="text-xl font-semibold text-[#145C43] mb-5">Wallet</h2>
+              <WalletContent />
             </section>
           )}
 

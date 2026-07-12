@@ -251,7 +251,7 @@ function OrderSummary() {
   const handlePlaceOrder = async () => {
     const order = await submit();
     if (order) {
-      navigate("/customer/orders");
+      navigate("/customer/profile?tab=orders");
     }
   };
 

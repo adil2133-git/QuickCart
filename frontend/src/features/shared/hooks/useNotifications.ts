@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import api from "../../../api/axios";
 import { getSocket } from "../../../lib/socket";
@@ -20,6 +20,7 @@ import {
 export function useNotificationsSync() {
   const setNotifications = useNotificationStore((s) => s.setNotifications);
   const prependNotification = useNotificationStore((s) => s.prependNotification);
+  const mountedRef = useRef(false);
 
   // Fetch existing notifications on mount
   useEffect(() => {
@@ -33,6 +34,9 @@ export function useNotificationsSync() {
 
   // Listen for new notifications via socket
   useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+
     const socket = getSocket();
 
     const handleNew = (n: AppNotification) => {
@@ -45,7 +49,10 @@ export function useNotificationsSync() {
     };
 
     socket.on("notification:new", handleNew);
-    return () => { socket.off("notification:new", handleNew); };
+    return () => {
+      mountedRef.current = false;
+      socket.off("notification:new", handleNew);
+    };
   }, [prependNotification]);
 }
 

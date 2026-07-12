@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { getSocket } from "../../../lib/socket";
+import { getSocket, connectSocket } from "../../../lib/socket";
 import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 
 interface DeliveryRequestPayload {
@@ -29,9 +29,14 @@ interface RequestTakenPayload {
 export function useDriverDeliverySocket() {
     const addRequest = useDriverDeliveryStore((s) => s.addRequest);
     const removeRequestByOrderId = useDriverDeliveryStore((s) => s.removeRequestByOrderId);
+    const mountedRef = useRef(false);
 
     useEffect(() => {
+        if (mountedRef.current) return;
+        mountedRef.current = true;
+
         const socket = getSocket();
+        connectSocket();
 
         const handleNewRequest = (payload: DeliveryRequestPayload) => {
             addRequest({
@@ -69,6 +74,7 @@ export function useDriverDeliverySocket() {
         socket.on("delivery:request:taken", handleRequestTaken);
 
         return () => {
+            mountedRef.current = false;
             socket.off("delivery:request", handleNewRequest);
             socket.off("delivery:request:taken", handleRequestTaken);
         };

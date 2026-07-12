@@ -586,7 +586,7 @@ function NotificationBell() {
                                             onClick={() => {
                                                 if (!n.isRead) handleMarkRead(n._id);
                                                 setOpen(false);
-                                                if (n.orderId) navigate(`/customer/orders`);
+                                                if (n.orderId) navigate(`/customer/profile?tab=orders`);
                                             }}
                                             className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#ECF2F0]"
                                             style={{ background: !n.isRead ? "#E8EFEC" : undefined }}
@@ -625,10 +625,10 @@ function NotificationBell() {
 /* -------------------------------------------------------------------------- */
 
 function WalletButton() {
-    const { pathname } = useLocation();
+    const { pathname, search } = useLocation();
     const [balance, setBalance] = useState<number | null>(null);
-    const WALLET_PATH = "/customer/wallet";
-    const isActive = pathname === WALLET_PATH;
+    const WALLET_PATH = "/customer/profile?tab=wallet";
+    const isActive = pathname === "/customer/profile" && new URLSearchParams(search).get("tab") === "wallet";
 
     useEffect(() => {
         api

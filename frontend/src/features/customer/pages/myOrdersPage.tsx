@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Phone, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Phone, X } from "lucide-react";
 import { useCancelOrder, useOrdersList, useOrdersTab } from "../hooks/useMyOrders";
 import type { CustomerOrder, OrderStatus } from "../types/myOrders";
 import { stageIndexForStatus } from "../types/myOrders";
@@ -76,7 +76,13 @@ function ProgressTracker({ order }: { order: CustomerOrder }) {
 
 // ─── Order card ───────────────────────────────────────────────────────────────
 
-function OrderCard({ order }: { order: CustomerOrder }) {
+function OrderCard({
+  order,
+  onTrackOrder,
+}: {
+  order: CustomerOrder;
+  onTrackOrder?: (orderId: string) => void;
+}) {
   const extraCount = order.itemCount - order.previewItems.length;
   const isPast = order.status === "DELIVERED" || order.status === "CANCELLED";
   const showCallRider = order.status === "OUT_FOR_DELIVERY";
@@ -86,6 +92,14 @@ function OrderCard({ order }: { order: CustomerOrder }) {
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // When embedded inside the profile page's "My Orders" tab, tracking swaps
+  // the tab's content in place (no route change). When used standalone
+  // (MyOrdersPage), there's no callback, so it falls back to the full-page route.
+  const handleTrack = () => {
+    if (onTrackOrder) onTrackOrder(order.id);
+    else navigate(`/customer/track/${order.id}`);
+  };
 
   const handleConfirmCancel = async () => {
     setIsCancelling(true);
@@ -190,7 +204,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
               </button>
             ) : showCallRider ? (
               <button
-                onClick={() => navigate(`/customer/track/${order.id}`)}
+                onClick={handleTrack}
                 className="flex items-center gap-2 bg-[#145C43] hover:bg-[#114E39] text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors"
               >
                 <Phone size={14} />
@@ -198,7 +212,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
               </button>
             ) : (
               <button
-                onClick={() => navigate(`/customer/track/${order.id}`)}
+                onClick={handleTrack}
                 className="text-sm font-semibold text-[#145C43] hover:underline"
               >
                 Track Order
@@ -214,7 +228,11 @@ function OrderCard({ order }: { order: CustomerOrder }) {
 // ─── Orders content (reusable — standalone page below embeds it in full-page
 // chrome; CustomerProfilePage embeds it directly inside its own tab) ─────────
 
-export function OrdersContent() {
+export function OrdersContent({
+  onTrackOrder,
+}: {
+  onTrackOrder?: (orderId: string) => void;
+} = {}) {
   const { activeTab, setActiveTab } = useOrdersTab();
   const { orders, isLoading, error } = useOrdersList(activeTab);
 
@@ -260,7 +278,7 @@ export function OrdersContent() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} />
+            <OrderCard key={order.id} order={order} onTrackOrder={onTrackOrder} />
           ))}
         </div>
       )}
@@ -275,6 +293,13 @@ export default function MyOrdersPage() {
     <div className="min-h-screen bg-[#F7F8F5]" style={{ fontFamily: "'Inter', sans-serif" }}>
 
       <main className="max-w-6xl mx-auto px-6 py-10">
+        <Link
+          to="/customer/profile?tab=orders"
+          className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back to Profile
+        </Link>
         <h1
           className="text-4xl font-bold text-[#16241D] mb-2"
           style={{ fontFamily: "Georgia, serif" }}

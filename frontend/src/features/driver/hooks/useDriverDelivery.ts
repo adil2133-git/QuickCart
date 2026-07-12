@@ -44,21 +44,28 @@ export function orderStatusToStage(status: string): DeliveryStage {
 // ─── Hook: fetch new delivery requests ───────────────────────────────────────
 
 export function useDriverDeliveryActions() {
-  const store = useDriverDeliveryStore();
+  // IMPORTANT: do NOT call `useDriverDeliveryStore()` with no selector here.
+  // That subscribes this hook to the ENTIRE store and hands back a brand-new
+  // snapshot object on every state change, which would give every callback
+  // below a new identity on every render (via `[store]` deps) and blow up
+  // any effect that depends on them — an infinite render/fetch loop.
+  // Actions on a zustand store are stable references, so grab them via
+  // getState() (no subscription, no re-render) instead.
+  const store = useDriverDeliveryStore.getState;
 
   // ── Fetch new requests ──────────────────────────────────────────────────────
   const fetchRequests = useCallback(async () => {
-    store.setRequestsLoading(true);
-    store.setRequestsError(null);
+    store().setRequestsLoading(true);
+    store().setRequestsError(null);
     try {
       const { data } = await api.get<{ success: boolean; requests: DeliveryRequest[] }>(
         "/driver/deliveries/requests"
       );
-      store.setRequests(data.requests);
+      store().setRequests(data.requests);
     } catch {
-      store.setRequestsError("Failed to load delivery requests.");
+      store().setRequestsError("Failed to load delivery requests.");
     } finally {
-      store.setRequestsLoading(false);
+      store().setRequestsLoading(false);
     }
   }, [store]);
 
@@ -68,9 +75,9 @@ export function useDriverDeliveryActions() {
       const { data } = await api.post<{ success: boolean; activeDelivery: ActiveDelivery }>(
         `/driver/deliveries/requests/${requestId}/accept`
       );
-      store.removeRequest(requestId);
-      store.setActiveDelivery(data.activeDelivery);
-      store.setActiveTab("ACTIVE_DELIVERY");
+      store().removeRequest(requestId);
+      store().setActiveDelivery(data.activeDelivery);
+      store().setActiveTab("ACTIVE_DELIVERY");
     } catch {
       // surface via toast in component
       throw new Error("Failed to accept delivery request.");
@@ -81,7 +88,7 @@ export function useDriverDeliveryActions() {
   const declineRequest = useCallback(async (requestId: string) => {
     try {
       await api.post(`/driver/deliveries/requests/${requestId}/decline`);
-      store.removeRequest(requestId);
+      store().removeRequest(requestId);
     } catch {
       throw new Error("Failed to decline delivery request.");
     }
@@ -89,24 +96,24 @@ export function useDriverDeliveryActions() {
 
   // ── Fetch active delivery ───────────────────────────────────────────────────
   const fetchActiveDelivery = useCallback(async () => {
-    store.setActiveLoading(true);
-    store.setActiveError(null);
+    store().setActiveLoading(true);
+    store().setActiveError(null);
     try {
       const { data } = await api.get<{ success: boolean; activeDelivery: ActiveDelivery | null }>(
         "/driver/deliveries/active"
       );
-      store.setActiveDelivery(data.activeDelivery);
+      store().setActiveDelivery(data.activeDelivery);
     } catch {
-      store.setActiveError("Failed to load active delivery.");
+      store().setActiveError("Failed to load active delivery.");
     } finally {
-      store.setActiveLoading(false);
+      store().setActiveLoading(false);
     }
   }, [store]);
 
   // ── Fetch completed history ─────────────────────────────────────────────────
   const fetchCompleted = useCallback(async (page = 1) => {
-    store.setCompletedLoading(true);
-    store.setCompletedError(null);
+    store().setCompletedLoading(true);
+    store().setCompletedError(null);
     try {
       const { data } = await api.get<{
         success: boolean;
@@ -117,14 +124,14 @@ export function useDriverDeliveryActions() {
       }>(`/driver/deliveries/completed?page=${page}&limit=10`);
 
       if (page === 1) {
-        store.setCompleted(data);
+        store().setCompleted(data);
       } else {
-        store.appendCompleted(data.deliveries);
+        store().appendCompleted(data.deliveries);
       }
     } catch {
-      store.setCompletedError("Failed to load delivery history.");
+      store().setCompletedError("Failed to load delivery history.");
     } finally {
-      store.setCompletedLoading(false);
+      store().setCompletedLoading(false);
     }
   }, [store]);
 
@@ -137,13 +144,13 @@ export function useDriverDeliveryActions() {
         currentStage: DeliveryStage;
       }>(`/driver/deliveries/${orderId}/stage`, { stage: newStage });
 
-      store.advanceStage(data.currentStage, data.completedAt);
+      store().advanceStage(data.currentStage, data.completedAt);
 
       // If delivered — move to completed tab after a brief moment
       if (newStage === "DELIVERED") {
         setTimeout(() => {
-          store.clearActiveDelivery();
-          store.setActiveTab("COMPLETED_HISTORY");
+          store().clearActiveDelivery();
+          store().setActiveTab("COMPLETED_HISTORY");
           fetchCompleted(1);
         }, 2000);
       }
@@ -156,7 +163,7 @@ export function useDriverDeliveryActions() {
   const confirmCashCollected = useCallback(async (orderId: string) => {
     try {
       await api.post(`/driver/deliveries/${orderId}/cash-collected`);
-      store.markCashCollected();
+      store().markCashCollected();
     } catch {
       throw new Error("Failed to confirm cash collection.");
     }
@@ -164,16 +171,16 @@ export function useDriverDeliveryActions() {
 
   // ── Fetch today's stats ─────────────────────────────────────────────────────
   const fetchTodayStats = useCallback(async () => {
-    store.setStatsLoading(true);
+    store().setStatsLoading(true);
     try {
       const { data } = await api.get<{ success: boolean; stats: DriverTodayStats }>(
         "/driver/deliveries/stats/today"
       );
-      store.setTodayStats(data.stats);
+      store().setTodayStats(data.stats);
     } catch {
       // non-critical, swallow silently
     } finally {
-      store.setStatsLoading(false);
+      store().setStatsLoading(false);
     }
   }, [store]);
 
@@ -183,7 +190,7 @@ export function useDriverDeliveryActions() {
       await api.patch("/driver/availability", {
         status: goOnline ? "ONLINE" : "OFFLINE",
       });
-      store.setIsOnline(goOnline);
+      store().setIsOnline(goOnline);
     } catch {
       throw new Error("Failed to update availability.");
     }
@@ -199,7 +206,7 @@ export function useDriverDeliveryActions() {
 
       // BUSY counts as "online" for UI purposes — driver is mid-delivery,
       // not off-shift. Keeps location tracking alive too.
-      store.setIsOnline(data.driver.availabilityStatus !== "OFFLINE");
+      store().setIsOnline(data.driver.availabilityStatus !== "OFFLINE");
     } catch {
       // Non-critical — leave isOnline as-is if this fails
     }

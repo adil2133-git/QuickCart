@@ -15,9 +15,9 @@ import {
   MessageCircle,
   Navigation,
   Store,
-  ShoppingBag,
+  ClipboardList,
   Headphones,
-  Flag,
+  XCircle,
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useActiveDeliveryStore } from "../state/activeDeliveryState";
 import { useActiveDeliveryTracking } from "../hooks/useActiveDeliveryTracking";
+import { useOrderDetail, useCancelOrder } from "../hooks/useMyOrders";
 import { estimateEtaMinutes, haversineKm } from "../lib/deliveryEta";
 
 const STATUS_ORDER = [
@@ -39,11 +40,14 @@ const STATUS_ORDER = [
   "DELIVERED",
 ];
 
+const CANCELLABLE_RAW_STATUSES = ["PENDING", "ACCEPTED", "PACKING"];
+
+// Four stops shown on the "Tracking Details" timeline — deliberately fewer
+// than the full backend status list, to match the simpler, scannable design.
 const TIMELINE_STEPS = [
   { label: "Order Confirmed", threshold: "ACCEPTED" },
-  { label: "Store Preparing", threshold: "PACKING" },
   { label: "Picked Up", threshold: "PICKED_UP" },
-  { label: "On the way", threshold: "OUT_FOR_DELIVERY" },
+  { label: "On the Way", threshold: "OUT_FOR_DELIVERY" },
   { label: "Delivered", threshold: "DELIVERED" },
 ] as const;
 
@@ -89,10 +93,12 @@ function LiveMap({
   driverPos,
   destinationPos,
   storePos,
+  etaMinutes,
 }: {
   driverPos: { lat: number; lng: number };
   destinationPos: { lat: number; lng: number } | null;
   storePos: { lat: number; lng: number } | null;
+  etaMinutes: number | null;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -140,17 +146,17 @@ function LiveMap({
     // Route polyline
     if (destinationPos) {
       const routePoints: L.LatLngExpression[] = [
-  [driverPos.lat, driverPos.lng],
-  [destinationPos.lat, destinationPos.lng],
-];
+        [driverPos.lat, driverPos.lng],
+        [destinationPos.lat, destinationPos.lng],
+      ];
       const routeLine = L.polyline(routePoints, {
-  color: "#145C43",
-  weight: 4,
-  opacity: 0.7,
-  dashArray: "8, 8",
-  lineJoin: "round",
-  lineCap: "round",
-}).addTo(map);
+        color: "#145C43",
+        weight: 4,
+        opacity: 0.7,
+        dashArray: "8, 8",
+        lineJoin: "round",
+        lineCap: "round",
+      }).addTo(map);
       routeLayerRef.current = routeLine;
 
       // Animated dash offset
@@ -217,19 +223,19 @@ function LiveMap({
   };
 
   return (
-    <div className={`relative ${isMapFullscreen ? 'fixed inset-0 z-50' : 'w-full h-full'}`}>
+    <div className={`relative ${isMapFullscreen ? "fixed inset-0 z-50" : "w-full h-full"}`}>
       <div ref={containerRef} className="w-full h-full rounded-2xl" />
-      
-      {/* Floating ETA Badge */}
-      <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-4 py-3 rounded-xl shadow-lg border border-white/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
-            <Clock size={18} color="#145C43" />
-          </div>
-          <div>
-            <div className="text-xs font-medium text-gray-500">Estimated Arrival</div>
-            <div className="text-sm font-bold text-gray-900">4:32 PM</div>
-          </div>
+
+      {/* Floating live-tracking pill */}
+      <div className="absolute top-4 left-4 bg-white px-4 py-2.5 rounded-2xl shadow-lg border border-gray-100">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+            Live Tracking
+          </span>
+        </div>
+        <div className="text-lg font-bold text-gray-900">
+          {etaMinutes != null ? `${etaMinutes} min away` : "Calculating…"}
         </div>
       </div>
 
@@ -264,12 +270,25 @@ function LiveMap({
   );
 }
 
-export default function OrderTrackingPage() {
-  const { orderId } = useParams<{ orderId: string }>();
-  const navigate = useNavigate();
+// ─── Order Tracking Content ──────────────────────────────────────────────────
+// The reusable core of this page. CustomerProfilePage embeds this directly
+// inside its "My Orders" tab (swapped in when a "Track Order" is tapped, no
+// route change); the standalone route below wraps it in its own page chrome
+// for direct links / notifications.
+
+export function OrderTrackingContent({
+  orderId,
+  onBack,
+}: {
+  orderId: string;
+  onBack: () => void;
+}) {
   useActiveDeliveryTracking();
   const delivery = useActiveDeliveryStore((s) => s.delivery);
   const isLoading = useActiveDeliveryStore((s) => s.isLoading);
+  const { detail } = useOrderDetail(orderId);
+  const { cancelOrder } = useCancelOrder();
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const driverPos = delivery?.driver.currentLocation ?? null;
   const destinationPos = delivery?.deliveryCoordinates ?? null;
@@ -285,400 +304,361 @@ export default function OrderTrackingPage() {
     if (statusIdx >= STATUS_ORDER.indexOf(step.threshold)) currentStepIdx = i;
   });
 
-  const driverInitial =
-    delivery?.driver.name?.trim().charAt(0).toUpperCase() || "D";
+  const pickedIdx = STATUS_ORDER.indexOf("PICKED_UP");
+  const deliveredIdx = STATUS_ORDER.indexOf("DELIVERED");
+  const clampedIdx = Math.min(Math.max(statusIdx, pickedIdx), deliveredIdx);
+  const progressPct = ((clampedIdx - pickedIdx) / (deliveredIdx - pickedIdx)) * 100;
 
-  // Mock order items
-  const orderItems = [
-    { name: "Milk", quantity: 2 },
-    { name: "Bread", quantity: 1 },
-    { name: "Eggs", quantity: 12 },
-  ];
+  const driverInitial = delivery?.driver.name?.trim().charAt(0).toUpperCase() || "D";
+  const expectedByLabel =
+    eta != null ? new Date(Date.now() + eta * 60000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : null;
+
+  const canCancel = detail ? CANCELLABLE_RAW_STATUSES.includes(detail.rawStatus) : false;
+
+  const handleCancel = async () => {
+    setIsCancelling(true);
+    const ok = await cancelOrder(orderId);
+    setIsCancelling(false);
+    if (ok) onBack();
+  };
 
   return (
-    <div
-      className="min-h-screen bg-gray-50/50"
-      style={{ backgroundColor: "#F7F8F5" }}
-    >
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-gray-100/60 sticky top-0 z-30">
-        <div className="max-w-[1600px] mx-auto px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button
-                onClick={() => navigate(-1)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors border border-gray-100"
-                aria-label="Go back"
-              >
-                <ArrowLeft size={18} color="#16241D" />
-              </button>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">Track Order</h1>
-                <div className="flex items-center gap-3 text-sm text-gray-500">
-                  <span>#{delivery?.orderNumber || "QK1783582709147"}</span>
-                  <span className="w-1 h-1 rounded-full bg-gray-300" />
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    Live
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-100">
-                On the way
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Compact header — works both embedded and standalone */}
+      <div className="flex items-center justify-between mb-5">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back to Orders
+        </button>
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span className="font-mono">#{delivery?.orderNumber || detail?.orderNumber}</span>
+          {isMatchingOrder && (
+            <>
+              <span className="w-1 h-1 rounded-full bg-gray-300" />
+              <span className="flex items-center gap-1.5 text-green-600 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Live
               </span>
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      </header>
+      </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+        <div className="flex items-center justify-center py-24">
           <div className="flex flex-col items-center gap-4">
             <div
               className="w-12 h-12 rounded-full border-4 animate-spin"
-              style={{
-                borderColor: "#145C43",
-                borderTopColor: "transparent",
-              }}
+              style={{ borderColor: "#145C43", borderTopColor: "transparent" }}
             />
             <span className="text-sm text-gray-500">Loading tracking info…</span>
           </div>
         </div>
       ) : !isMatchingOrder || !driverPos ? (
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+        <div className="flex items-center justify-center py-24">
           <div className="flex flex-col items-center gap-4 px-8 text-center max-w-md">
-            <div
-              className="w-24 h-24 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: "#F5F7F3" }}
-            >
+            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: "#F5F7F3" }}>
               <PackageCheck size={40} color="#9BAAA1" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900">Nothing to track right now</h3>
             <p className="text-sm text-gray-500">
-              This order isn't out for delivery, or has already arrived. Check My
-              Orders for its full status.
+              This order isn't out for delivery, or has already arrived. Check My Orders for its full status.
             </p>
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={() => navigate("/customer/orders")}
+              onClick={onBack}
               className="rounded-xl px-6 py-3 text-sm font-semibold text-white border-none cursor-pointer mt-2"
               style={{ backgroundColor: "#145C43" }}
             >
-              Go to My Orders
+              Back to My Orders
             </motion.button>
           </div>
         </div>
       ) : (
-        <div className="max-w-[1600px] mx-auto px-8 py-6 h-[calc(100vh-80px)]">
-          <div className="grid grid-cols-[1fr_380px] gap-6 h-full">
-            {/* Left Column - Map */}
-            <div className="h-full">
-              <div className="h-full rounded-2xl overflow-hidden shadow-lg bg-white">
-                <LiveMap
-                  driverPos={driverPos}
-                  destinationPos={destinationPos}
-                  storePos={storePos}
-                />
-              </div>
+        <div className="space-y-6">
+          {/* Map + sidebar row */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6" style={{ height: 600 }}>
+            {/* Map */}
+            <div className="h-full rounded-2xl overflow-hidden shadow-lg bg-white">
+              <LiveMap driverPos={driverPos} destinationPos={destinationPos} storePos={storePos} etaMinutes={eta} />
             </div>
 
-            {/* Right Column - Information Panel */}
-            <div className="overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-              <div className="space-y-4 pb-6">
-                {/* ETA Hero Card */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="rounded-2xl p-6 relative overflow-hidden"
-                  style={{
-                    background: "linear-gradient(145deg, #145C43 0%, #1A7A5A 100%)",
-                    boxShadow: "0 8px 32px rgba(20,92,67,0.25)",
-                  }}
-                >
-                  <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/5 -mr-12 -mt-12" />
-                  <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 -ml-8 -mb-8" />
+            {/* Sidebar */}
+            <div className="overflow-y-auto pr-1 space-y-4">
+              {/* Estimated Arrival card */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="rounded-2xl p-6"
+                style={{ backgroundColor: "#145C43" }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-semibold tracking-wider text-white/70 uppercase">
+                    Estimated Arrival
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-white/15 rounded-full px-3 py-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                    On the way
+                  </span>
+                </div>
 
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                        <Truck size={22} color="white" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-white/80">On the way</div>
-                        <div className="text-xs text-white/60">Current status</div>
-                      </div>
-                    </div>
+                <div className="flex items-end gap-2 mb-6">
+                  <span className="text-5xl font-bold text-white leading-none">{eta ?? "—"}</span>
+                  <span className="text-lg font-semibold text-white/80 mb-1">MIN</span>
+                </div>
 
-                    <div className="mb-4">
-                      <div className="text-2xl font-medium text-white/80">Arriving in</div>
-                      <div className="flex items-end gap-2">
-                        <span className="text-5xl font-bold text-white tracking-tight">
-                          {eta != null ? eta : "—"}
-                        </span>
-                        <span className="text-xl font-semibold text-white/80 mb-1">min</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                      {distanceKm != null && (
-                        <div className="text-sm text-white/80">
-                          Driver is {distanceKm < 1
-                            ? `${Math.round(distanceKm * 1000)} m away`
-                            : `${distanceKm.toFixed(1)} km away`}
-                        </div>
-                      )}
-                      <div className="text-sm text-white/80">
-                        Estimated arrival <span className="font-semibold">4:32 PM</span>
-                      </div>
-                    </div>
+                <div className="relative h-1.5 rounded-full bg-white/20 mb-2.5">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-white"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                  <div
+                    className="absolute -top-2.5 flex items-center justify-center w-7 h-7 rounded-full bg-white shadow"
+                    style={{ left: `calc(${progressPct}% - 14px)` }}
+                  >
+                    <Truck size={14} color="#145C43" />
                   </div>
-                </motion.div>
+                </div>
+                <div className="flex items-center justify-between text-xs text-white/70">
+                  <span>Picked Up</span>
+                  <span>Delivered</span>
+                </div>
+              </motion.div>
 
-                {/* Driver Card */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                  className="rounded-2xl p-5 bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="relative">
-                      <div
-                        className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold"
-                        style={{ backgroundColor: "#E8EFEC", color: "#145C43" }}
-                      >
-                        {driverInitial}
-                      </div>
-                      <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white bg-green-500" />
+              {/* Driver card */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="rounded-2xl p-5 bg-white border border-gray-100 shadow-sm"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="relative">
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold"
+                      style={{ backgroundColor: "#E8EFEC", color: "#145C43" }}
+                    >
+                      {driverInitial}
                     </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-lg text-gray-900 truncate">
-                          {delivery!.driver.name}
-                        </span>
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
-                          <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                          <span className="text-xs font-medium text-amber-700">4.9</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                        <span className="flex items-center gap-1.5">
-                          <Bike size={14} />
-                          {delivery!.driver.vehicleType || "Scooter"}
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <span className="font-mono text-xs">
-                          {delivery!.driver.vehicleNumber || "HJ4534"}
-                        </span>
-                      </div>
-                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white bg-green-500" />
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    {delivery!.driver.phone && (
-                      <a
-                        href={`tel:${delivery!.driver.phone}`}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-50 text-green-700 font-medium text-sm hover:bg-green-100 transition-colors border border-green-100"
-                      >
-                        <Phone size={16} />
-                        Call
-                      </a>
-                    )}
-                    <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 text-gray-700 font-medium text-sm hover:bg-gray-100 transition-colors border border-gray-100">
-                      <MessageCircle size={16} />
-                      Chat
-                    </button>
-                  </div>
-                </motion.div>
-
-                {/* Delivery Progress Timeline */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
-                  className="rounded-2xl p-5 bg-white border border-gray-100 shadow-sm"
-                >
-                  <div className="flex items-center gap-2 mb-4">
-                    <Clock size={16} color="#6E7C74" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Delivery Progress
-                    </span>
-                  </div>
-                  <div>
-                    {TIMELINE_STEPS.map((step, i) => {
-                      const isDone = i < currentStepIdx;
-                      const isActive = i === currentStepIdx;
-                      const isLast = i === TIMELINE_STEPS.length - 1;
-                      return (
-                        <div key={step.label} className="flex gap-4">
-                          <div className="flex flex-col items-center flex-shrink-0">
-                            <motion.div
-                              initial={isActive ? { scale: 0.8 } : false}
-                              animate={isActive ? { scale: 1 } : false}
-                              transition={{ duration: 0.3, delay: 0.1 }}
-                              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 relative ${
-                                isDone || isActive
-                                  ? "bg-green-600 text-white"
-                                  : "bg-gray-100 text-gray-400"
-                              }`}
-                            >
-                              {isDone ? (
-                                <Check size={16} strokeWidth={3} />
-                              ) : isActive ? (
-                                <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
-                              ) : (
-                                <div className="w-2 h-2 rounded-full bg-gray-300" />
-                              )}
-                            </motion.div>
-                            {!isLast && (
-                              <div
-                                className="w-0.5 flex-1"
-                                style={{
-                                  minHeight: 32,
-                                  backgroundColor: isDone ? "#16A34A" : "#E5E7EB",
-                                }}
-                              />
-                            )}
-                          </div>
-                          <div className={`pb-5 ${isLast ? "pb-0" : ""}`}>
-                            <span
-                              className={`text-sm font-medium block ${
-                                isDone || isActive ? "text-gray-900" : "text-gray-400"
-                              }`}
-                            >
-                              {step.label}
-                            </span>
-                            {isActive && (
-                              <span className="text-xs text-green-600 mt-0.5 block">
-                                In progress...
-                              </span>
-                            )}
-                            {isDone && (
-                              <span className="text-xs text-gray-400 mt-0.5 block">
-                                Completed
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-
-                {/* Delivery Address Card */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.3 }}
-                  className="rounded-2xl p-5 bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <MapPin size={18} color="#145C43" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-semibold text-gray-900">
-                          Delivering To
-                        </span>
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                          Home
-                        </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-lg text-gray-900 truncate">{delivery!.driver.name}</span>
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
+                        <Star size={14} fill="#F59E0B" color="#F59E0B" />
+                        <span className="text-xs font-medium text-amber-700">4.9</span>
                       </div>
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {delivery!.deliveryAddress}
-                      </p>
-                      {distanceKm != null && (
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
-                          <Navigation size={12} />
-                          <span>Estimated distance: {distanceKm < 1
-                            ? `${Math.round(distanceKm * 1000)} m`
-                            : `${distanceKm.toFixed(1)} km`}</span>
-                        </div>
-                      )}
-                      {delivery!.store.storeName && (
-                        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400">
-                          <Store size={12} />
-                          <span>Picked up from {delivery!.store.storeName}</span>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </motion.div>
-
-                {/* Order Summary */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.35 }}
-                  className="rounded-2xl p-5 bg-white border border-gray-100 shadow-sm"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <ShoppingBag size={16} color="#6E7C74" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Order Summary
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Store</span>
-                      <span className="font-medium text-gray-900">{delivery!.store.storeName}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Items</span>
-                      <span className="font-medium text-gray-900">
-                        {orderItems.map((item, index) => (
-                          <span key={index}>
-                            {item.name} ×{item.quantity}
-                            {index < orderItems.length - 1 && ", "}
-                          </span>
-                        ))}
+                    <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                      <span className="flex items-center gap-1.5">
+                        <Bike size={14} />
+                        {delivery!.driver.vehicleType || "Scooter"}
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100">
-                      <span className="font-semibold text-gray-900">Total</span>
-                      <span className="text-lg font-bold text-gray-900">₹340</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300" />
+                      <span className="font-mono text-xs">{delivery!.driver.vehicleNumber || "—"}</span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
-                {/* Support Card */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.4 }}
-                  className="rounded-2xl p-5 bg-white border border-gray-100 shadow-sm"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <Headphones size={16} color="#6E7C74" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Need Help?
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-100">
-                      <Phone size={16} color="#145C43" />
-                      <span className="text-[10px] font-medium text-gray-600">Call</span>
+                <div className="flex items-center gap-3">
+                  {delivery!.driver.phone ? (
+                    <a
+                      href={`tel:${delivery!.driver.phone}`}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-50 text-green-700 font-medium text-sm hover:bg-green-100 transition-colors border border-green-100"
+                    >
+                      <Phone size={16} />
+                      Call
+                    </a>
+                  ) : (
+                    <button
+                      disabled
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 text-gray-400 font-medium text-sm border border-gray-100 cursor-not-allowed"
+                    >
+                      <Phone size={16} />
+                      Call
                     </button>
-                    <button className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-100">
-                      <MessageCircle size={16} color="#145C43" />
-                      <span className="text-[10px] font-medium text-gray-600">Chat</span>
-                    </button>
-                    <button className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-100">
-                      <Flag size={16} color="#145C43" />
-                      <span className="text-[10px] font-medium text-gray-600">Report</span>
-                    </button>
-                  </div>
-                </motion.div>
-              </div>
+                  )}
+                  <button
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-medium text-sm transition-colors"
+                    style={{ backgroundColor: "#145C43" }}
+                  >
+                    <MessageCircle size={16} />
+                    Chat
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* Tracking details timeline */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="rounded-2xl p-5 bg-white border border-gray-100 shadow-sm"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock size={16} color="#6E7C74" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Tracking Details
+                  </span>
+                </div>
+                <div>
+                  {TIMELINE_STEPS.map((step, i) => {
+                    const isDone = i < currentStepIdx;
+                    const isActive = i === currentStepIdx;
+                    const isLast = i === TIMELINE_STEPS.length - 1;
+                    return (
+                      <div key={step.label} className="flex gap-4">
+                        <div className="flex flex-col items-center flex-shrink-0">
+                          <motion.div
+                            initial={isActive ? { scale: 0.8 } : false}
+                            animate={isActive ? { scale: 1 } : false}
+                            transition={{ duration: 0.3, delay: 0.1 }}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 relative ${
+                              isDone || isActive ? "bg-green-600 text-white" : "bg-gray-100 text-gray-400"
+                            }`}
+                          >
+                            {isDone ? (
+                              <Check size={16} strokeWidth={3} />
+                            ) : isActive ? (
+                              <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
+                            ) : (
+                              <div className="w-2 h-2 rounded-full bg-gray-300" />
+                            )}
+                          </motion.div>
+                          {!isLast && (
+                            <div
+                              className="w-0.5 flex-1"
+                              style={{ minHeight: 32, backgroundColor: isDone ? "#16A34A" : "#E5E7EB" }}
+                            />
+                          )}
+                        </div>
+                        <div className={`pb-5 ${isLast ? "pb-0" : ""}`}>
+                          <span className={`text-sm font-medium block ${isDone || isActive ? "text-gray-900" : "text-gray-400"}`}>
+                            {step.label}
+                          </span>
+                          {isActive && step.label === "On the Way" && eta != null && (
+                            <span className="text-xs text-green-600 mt-0.5 block">Arriving in {eta} mins</span>
+                          )}
+                          {isActive && step.label !== "On the Way" && (
+                            <span className="text-xs text-green-600 mt-0.5 block">In progress…</span>
+                          )}
+                          {isDone && <span className="text-xs text-gray-400 mt-0.5 block">Completed</span>}
+                          {!isDone && !isActive && step.label === "Delivered" && expectedByLabel && (
+                            <span className="text-xs text-gray-400 mt-0.5 block">Expected by {expectedByLabel}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
             </div>
+          </div>
+
+          {/* Delivering To + Order Summary row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
+              className="rounded-2xl p-6 bg-white border border-gray-100 shadow-sm"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin size={16} color="#145C43" />
+                <span className="text-base font-semibold text-gray-900">Delivering To</span>
+              </div>
+              <p className="font-semibold text-gray-900">{detail?.recipientName || "—"}</p>
+              <p className="text-sm text-gray-500 leading-relaxed mt-1">
+                {detail?.deliveryAddress || delivery!.deliveryAddress}
+              </p>
+              {distanceKm != null && (
+                <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-500 pt-3 border-t border-gray-100">
+                  <Navigation size={12} />
+                  <span>
+                    Estimated distance: {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`}
+                  </span>
+                </div>
+              )}
+              {(detail?.store?.name || delivery!.store.storeName) && (
+                <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400">
+                  <Store size={12} />
+                  <span>Picked up from {detail?.store?.name || delivery!.store.storeName}</span>
+                </div>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="rounded-2xl p-6 bg-white border border-gray-100 shadow-sm"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ClipboardList size={16} color="#145C43" />
+                  <span className="text-base font-semibold text-gray-900">Order Summary</span>
+                </div>
+                {detail?.paymentStatus === "PAID" && (
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700">Paid</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 font-mono mb-3">ID: #{detail?.orderNumber || delivery?.orderNumber}</p>
+              <div className="flex items-start justify-between gap-4 text-sm mb-4">
+                <span className="text-gray-600">
+                  {detail?.products?.length
+                    ? detail.products.map((p) => `${p.productName} ×${p.quantity}`).join(", ")
+                    : "Loading items…"}
+                </span>
+                <span className="font-bold text-gray-900 whitespace-nowrap">
+                  {detail ? `₹${detail.totalAmount}` : ""}
+                </span>
+              </div>
+              <button className="w-full border border-gray-200 rounded-xl py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                View Digital Invoice
+              </button>
+            </motion.div>
+          </div>
+
+          {/* Support / cancel links */}
+          <div className="flex items-center justify-center gap-8 pt-2 pb-4">
+            <button className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">
+              <Headphones size={16} />
+              Contact Support
+            </button>
+            {canCancel && (
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling}
+                className="flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+              >
+                <XCircle size={16} />
+                {isCancelling ? "Cancelling…" : "Cancel Order"}
+              </button>
+            )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Standalone page (direct links / notifications) ────────────────────────
+
+export default function OrderTrackingPage() {
+  const { orderId } = useParams<{ orderId: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "#F7F8F5" }}>
+      <div className="max-w-[1600px] mx-auto px-8 py-6">
+        <OrderTrackingContent orderId={orderId!} onBack={() => navigate("/customer/profile?tab=orders")} />
+      </div>
     </div>
   );
 }
