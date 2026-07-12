@@ -118,6 +118,11 @@ const notifyStore = {
         title:   "Driver Assigned 🛵",
         message: `${driverName} accepted order #${orderNumber} and is heading to your store.`,
     }),
+    noDriversFound: (userId, orderNumber, orderId) => notify({
+        userId, role: "STORE", orderId, type: "DELIVERY",
+        title:   "No Drivers Available ⚠️",
+        message: `We couldn't find a driver for order #${orderNumber} after several attempts. Please check back or contact support.`,
+    }),
     driverArrived: (userId, orderNumber, driverName, orderId) => notify({
         userId, role: "STORE", orderId, type: "DELIVERY",
         title:   "Driver Arrived",
