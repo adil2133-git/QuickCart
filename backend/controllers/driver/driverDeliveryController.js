@@ -561,8 +561,18 @@ const updateAvailability = async (req, res) => {
             });
         }
 
-        driver.availabilityStatus = status;
+       driver.availabilityStatus = status;
         await driver.save();
+
+        // Catch-up: a broadcast round only reaches drivers who were online at
+        // that moment. If orders are already waiting, send them to this driver
+        // right now instead of making them wait for the next retry round.
+        if (status === "ONLINE") {
+            const { dispatchToOnlineDriver } = require("../../services/deliveryDispatchService");
+            dispatchToOnlineDriver(driver).catch((err) =>
+                console.error("[dispatchToOnlineDriver]", err)
+            );
+        }
 
         return res.status(200).json({ success: true, status: driver.availabilityStatus });
     } catch (err) {
