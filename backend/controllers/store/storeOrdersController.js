@@ -2,20 +2,24 @@ const Order = require("../../models/shared/order");
 const DriverProfile = require("../../models/driver/driverProfile");
 const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
-const { haversineKm } = require("../../utils/distance");
-const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const { resolveStoreProfile } = require("../../services/storeProfileService");
 const { sendOrderCancelledEmail } = require("../../services/mailService");
-const { emitToStore, emitToCustomer } = require("../../socket");
-const { notifyCustomer, notifyStore } = require("../../services/notificationService");
+const { emitToCustomer } = require("../../socket");
+const { notifyCustomer } = require("../../services/notificationService");
+const { dispatchRound } = require("../../services/deliveryDispatchService");
 
-// Resolves the logged-in store user to their StoreProfile ID.
+/**
+ * Returns the StoreProfile ID of the authenticated store user.
+ */
 const resolveStoreId = async (req) => {
     const store = await resolveStoreProfile(req.user.userID);
     return store._id;
 };
 
-// Valid order status transitions a store can trigger.
+/**
+ * Defines the valid order status transitions
+ * that a store is allowed to perform.
+ */
 const ALLOWED_TRANSITIONS = {
     PENDING: ["ACCEPTED", "CANCELLED"],
     ACCEPTED: ["PACKING"],
@@ -23,19 +27,31 @@ const ALLOWED_TRANSITIONS = {
     READY_FOR_PICKUP: [],
 };
 
-// Maps UI tab names to the order statuses they should display.
+/**
+ * Maps dashboard tabs to the
+ * corresponding order statuses.
+ */
 const TAB_STATUS_MAP = {
     PENDING: ["PENDING"],
     ACCEPTED: ["ACCEPTED"],
     READY: ["READY_FOR_PICKUP"],
     ALL: [
-        "PENDING", "ACCEPTED", "PACKING", "READY_FOR_PICKUP",
-        "DRIVER_ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY",
-        "DELIVERED", "CANCELLED",
+        "PENDING",
+        "ACCEPTED",
+        "PACKING",
+        "READY_FOR_PICKUP",
+        "DRIVER_ASSIGNED",
+        "PICKED_UP",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "CANCELLED",
     ],
 };
 
-// Shapes an Order document into the response format used by list/detail endpoints.
+/**
+ * Converts an Order document into
+ * the API response format.
+ */
 const toListShape = (order) => ({
     id: order._id.toString(),
     orderNumber: order.orderNumber,
@@ -46,146 +62,30 @@ const toListShape = (order) => ({
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     orderStatus: order.orderStatus,
-    itemCount: (order.products || []).reduce((sum, i) => sum + i.quantity, 0),
+    itemCount: (order.products || []).reduce((sum, item) => sum + item.quantity, 0),
     subtotal: order.subtotal,
     deliveryCharge: order.deliveryCharge,
     totalAmount: order.totalAmount,
     products: order.products || [],
 });
 
-// Prevents browsers/proxies from caching order data responses.
+/**
+ * Prevents browsers from caching
+ * order-related API responses.
+ */
 const setNoCacheHeaders = (res) => {
     res.set({
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0",
+        Pragma: "no-cache",
+        Expires: "0",
         "Surrogate-Control": "no-store",
     });
 };
 
-const DELIVERY_RADIUS_KM = 5;
-
-// Drivers whose location hasn't updated within this window are treated as offline.
-const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
-
-// Time a driver has to Accept/Decline before a delivery request auto-expires.
-const REQUEST_EXPIRY_SECONDS = 45;
-
-// Flat base fare plus a per-km rate covering both legs (driver→store, store→customer).
-const BASE_FARE = 15;
-const RATE_PER_KM = 6;
-
-const estimateEarnings = (pickupKm, deliveryKm) =>
-    Math.round((BASE_FARE + RATE_PER_KM * (pickupKm + deliveryKm)) * 100) / 100;
-
-// Notifies all eligible nearby online drivers that an order is ready for pickup.
-const broadcastDeliveryRequestToDrivers = async (orderId) => {
-    const { emitToDriver } = require("../../socket");
-
-    // Fetch the order with its store's coordinates so we can filter by distance.
-    const order = await Order.findById(orderId)
-        .populate({ path: "storeId", select: "storeName address coordinates" })
-        .select(
-            "orderNumber recipientName deliveryAddress deliveryCoordinates totalAmount paymentMethod products storeId"
-        );
-
-    if (!order) {
-        console.warn(`[broadcastDelivery] Order ${orderId} not found`);
-        return;
-    }
-
-    const storeCoords = order.storeId?.coordinates;
-    const hasStoreLocation = storeCoords?.lat && storeCoords?.lng;
-
-    const deliveryCoords = order.deliveryCoordinates;
-    const hasDeliveryLocation = deliveryCoords?.lat && deliveryCoords?.lng;
-
-    // Store → customer distance is the same for every driver, so compute it once.
-    const deliveryDistanceKm =
-        hasStoreLocation && hasDeliveryLocation
-            ? Math.round(haversineKm(storeCoords, deliveryCoords) * 10) / 10
-            : 0;
-
-    // Find all online drivers with a recent location update.
-    const cutoff = new Date(Date.now() - STALE_LOCATION_THRESHOLD_MS);
-    const onlineDrivers = await DriverProfile.find({
-        availabilityStatus: "ONLINE",
-        ...(hasStoreLocation && {
-            "currentLocation.lat": { $ne: null },
-            "currentLocation.lng": { $ne: null },
-            lastLocationUpdate: { $gte: cutoff },
-        }),
-    }).select("_id currentLocation");
-
-    // Keep only drivers within radius, caching each one's pickup-leg distance.
-    const nearbyDrivers = hasStoreLocation
-        ? onlineDrivers
-              .map((d) => {
-                  if (!d.currentLocation?.lat || !d.currentLocation?.lng) return null;
-                  const pickupDistanceKm =
-                      Math.round(haversineKm(storeCoords, d.currentLocation) * 10) / 10;
-                  return pickupDistanceKm <= DELIVERY_RADIUS_KM ? { driver: d, pickupDistanceKm } : null;
-              })
-              .filter(Boolean)
-        : onlineDrivers.map((d) => ({ driver: d, pickupDistanceKm: 0 })); // fallback: store has no coordinates yet
-
-    if (!nearbyDrivers.length) {
-        console.warn(`[broadcastDelivery] No nearby online drivers for order ${orderId}`);
-        return;
-    }
-
-    const expiresAt = new Date(Date.now() + REQUEST_EXPIRY_SECONDS * 1000);
-
-    // Create one delivery request per nearby driver, snapshotting distance/earnings/expiry.
-    const requests = await DriverDeliveryRequest.insertMany(
-        nearbyDrivers.map(({ driver, pickupDistanceKm }) => ({
-            orderId,
-            driverId: driver._id,
-            status: "PENDING",
-            pickupDistanceKm,
-            deliveryDistanceKm,
-            estimatedEarnings: estimateEarnings(pickupDistanceKm, deliveryDistanceKm),
-            expiresAt,
-        })),
-        { ordered: false }
-    );
-
-    // Map driverId → request doc so each driver gets their own requestId and numbers.
-    const driverToRequest = {};
-    requests.forEach((r) => {
-        driverToRequest[r.driverId.toString()] = r;
-    });
-
-    const basePayload = {
-        orderId: order._id.toString(),
-        orderNumber: order.orderNumber,
-        recipientName: order.recipientName,
-        deliveryAddress: order.deliveryAddress,
-        totalAmount: order.totalAmount,
-        paymentMethod: order.paymentMethod,
-        itemCount: (order.products || []).reduce((s, i) => s + i.quantity, 0),
-        storeName: order.storeId?.storeName ?? "Store",
-        storeAddress: order.storeId?.address ?? "",
-    };
-
-    nearbyDrivers.forEach(({ driver }) => {
-        const request = driverToRequest[driver._id.toString()];
-        if (!request) return;
-
-        emitToDriver(driver._id, "delivery:request", {
-            ...basePayload,
-            requestId: request._id.toString(),
-            pickupDistanceKm: request.pickupDistanceKm,
-            deliveryDistanceKm: request.deliveryDistanceKm,
-            estimatedEarnings: request.estimatedEarnings,
-            expiresInSeconds: REQUEST_EXPIRY_SECONDS,
-        });
-    });
-
-    console.log(`[broadcastDelivery] Sent to ${nearbyDrivers.length} nearby driver(s) for order ${orderId}`);
-};
-
-// ─── GET /api/store/orders ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// GET /api/store/orders
+// Returns paginated orders for the logged-in store.
+// ─────────────────────────────────────────────────────────────
 const getStoreOrders = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -197,19 +97,41 @@ const getStoreOrders = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const statusList = TAB_STATUS_MAP[tab] ?? TAB_STATUS_MAP.ALL;
-        const filter = { storeId, orderStatus: { $in: statusList } };
+        const filter = {
+            storeId,
+            orderStatus: { $in: statusList },
+        };
 
-        // Match search term against order number, recipient name, or phone.
+        // Search by order number, recipient name or phone.
         if (search.trim()) {
             filter.$or = [
-                { orderNumber: { $regex: search.trim(), $options: "i" } },
-                { recipientName: { $regex: search.trim(), $options: "i" } },
-                { recipientPhone: { $regex: search.trim(), $options: "i" } },
+                {
+                    orderNumber: {
+                        $regex: search.trim(),
+                        $options: "i",
+                    },
+                },
+                {
+                    recipientName: {
+                        $regex: search.trim(),
+                        $options: "i",
+                    },
+                },
+                {
+                    recipientPhone: {
+                        $regex: search.trim(),
+                        $options: "i",
+                    },
+                },
             ];
         }
 
         const [orders, total] = await Promise.all([
-            Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+            Order.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
             Order.countDocuments(filter),
         ]);
 
@@ -218,34 +140,64 @@ const getStoreOrders = async (req, res) => {
         return res.status(200).json({
             success: true,
             orders: orders.map(toListShape),
-            pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+            pagination: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit),
+            },
         });
     } catch (err) {
         console.error("GET STORE ORDERS ERROR:", err);
-        return res.status(500).json({ success: false, message: "Internal server error." });
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
     }
 };
 
-// ─── GET /api/store/orders/:id ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// GET /api/store/orders/:id
+// Returns a single order belonging to the store.
+// ─────────────────────────────────────────────────────────────
 const getStoreOrderDetail = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
         const { id } = req.params;
 
-        const order = await Order.findOne({ _id: id, storeId }).lean();
+        const order = await Order.findOne({
+            _id: id,
+            storeId,
+        }).lean();
+
         if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found." });
+            return res.status(404).json({
+                success: false,
+                message: "Order not found.",
+            });
         }
 
         setNoCacheHeaders(res);
-        return res.status(200).json({ success: true, order: toListShape(order) });
+
+        return res.status(200).json({
+            success: true,
+            order: toListShape(order),
+        });
     } catch (err) {
         console.error("GET STORE ORDER DETAIL ERROR:", err);
-        return res.status(500).json({ success: false, message: "Internal server error." });
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
     }
 };
 
-// ─── PATCH /api/store/orders/:id/status ─────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// PATCH /api/store/orders/:id/status
+// Updates order status and triggers related actions.
+// ─────────────────────────────────────────────────────────────
 const updateOrderStatus = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -253,15 +205,26 @@ const updateOrderStatus = async (req, res) => {
         const { status } = req.body;
 
         if (!status) {
-            return res.status(400).json({ success: false, message: "Status is required." });
+            return res.status(400).json({
+                success: false,
+                message: "Status is required.",
+            });
         }
 
-        const order = await Order.findOne({ _id: id, storeId });
+        const order = await Order.findOne({
+            _id: id,
+            storeId,
+        });
+
         if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found." });
+            return res.status(404).json({
+                success: false,
+                message: "Order not found.",
+            });
         }
 
         const allowed = ALLOWED_TRANSITIONS[order.orderStatus] ?? [];
+
         if (!allowed.includes(status)) {
             return res.status(400).json({
                 success: false,
@@ -272,48 +235,86 @@ const updateOrderStatus = async (req, res) => {
         order.orderStatus = status;
         await order.save();
 
-        // Live update + notification for the customer
+        /**
+         * Notify the customer in real time
+         * and store a persistent notification.
+         */
         CustomerProfile.findById(order.customerId)
             .populate("userId", "_id name")
             .lean()
             .then(async (cp) => {
                 if (!cp) return;
-                // Live socket update to customer's orders page
+
                 emitToCustomer(cp._id, "order:statusChanged", {
                     orderId: order._id.toString(),
                     orderStatus: status,
                     orderNumber: order.orderNumber,
                 });
-                // Persistent notification
+
                 const uid = cp.userId?._id;
                 if (!uid) return;
+
                 if (status === "ACCEPTED") {
-                    const store = await StoreProfile.findById(order.storeId).select("storeName").lean();
-                    notifyCustomer.accepted(uid, order.orderNumber, store?.storeName ?? "The store", order._id).catch(() => {});
+                    const store = await StoreProfile.findById(order.storeId)
+                        .select("storeName")
+                        .lean();
+
+                    notifyCustomer.accepted(
+                        uid,
+                        order.orderNumber,
+                        store?.storeName ?? "The store",
+                        order._id
+                    ).catch(() => {});
                 } else if (status === "PACKING") {
-                    notifyCustomer.packing(uid, order.orderNumber, order._id).catch(() => {});
+                    notifyCustomer.packing(
+                        uid,
+                        order.orderNumber,
+                        order._id
+                    ).catch(() => {});
                 } else if (status === "READY_FOR_PICKUP") {
-                    notifyCustomer.searchingDriver(uid, order.orderNumber, order._id).catch(() => {});
+                    notifyCustomer.searchingDriver(
+                        uid,
+                        order.orderNumber,
+                        order._id
+                    ).catch(() => {});
                 } else if (status === "CANCELLED") {
-                    notifyCustomer.cancelled(uid, order.orderNumber, order._id).catch(() => {});
+                    notifyCustomer.cancelled(
+                        uid,
+                        order.orderNumber,
+                        order._id
+                    ).catch(() => {});
                 }
             })
             .catch(() => {});
 
-        // Notify nearby drivers once the order is ready for pickup.
+        /**
+         * Broadcasts the order to nearby drivers.
+         * Additional rounds are handled by the retry job.
+         */
         if (status === "READY_FOR_PICKUP") {
-            broadcastDeliveryRequestToDrivers(order._id).catch((err) =>
-                console.error("[broadcastDelivery] Failed:", err)
+            dispatchRound(order._id).catch((err) =>
+                console.error("[dispatchRound] Failed:", err)
             );
         }
 
-        // Email the customer, store, and driver (if assigned) about the cancellation.
+        /**
+         * Sends cancellation emails to customer,
+         * store, and assigned driver.
+         */
         if (status === "CANCELLED") {
             Promise.all([
-                CustomerProfile.findById(order.customerId).populate("userId", "name email").lean(),
-                StoreProfile.findById(order.storeId).populate("userId", "name email").lean(),
+                CustomerProfile.findById(order.customerId)
+                    .populate("userId", "name email")
+                    .lean(),
+
+                StoreProfile.findById(order.storeId)
+                    .populate("userId", "name email")
+                    .lean(),
+
                 order.driverId
-                    ? DriverProfile.findById(order.driverId).populate("userId", "name email").lean()
+                    ? DriverProfile.findById(order.driverId)
+                          .populate("userId", "name email")
+                          .lean()
                     : null,
             ])
                 .then(([customerProfile, storeProfile, driverProfile]) => {
@@ -324,6 +325,7 @@ const updateOrderStatus = async (req, res) => {
                             order,
                         }).catch(() => {});
                     }
+
                     if (storeProfile?.userId?.email) {
                         sendOrderCancelledEmail({
                             toEmail: storeProfile.userId.email,
@@ -331,6 +333,7 @@ const updateOrderStatus = async (req, res) => {
                             order,
                         }).catch(() => {});
                     }
+
                     if (driverProfile?.userId?.email) {
                         sendOrderCancelledEmail({
                             toEmail: driverProfile.userId.email,
@@ -339,7 +342,9 @@ const updateOrderStatus = async (req, res) => {
                         }).catch(() => {});
                     }
                 })
-                .catch((err) => console.error("[order cancelled emails] Failed:", err));
+                .catch((err) =>
+                    console.error("[Order Cancellation Email] Failed:", err)
+                );
         }
 
         setNoCacheHeaders(res);
@@ -351,8 +356,16 @@ const updateOrderStatus = async (req, res) => {
         });
     } catch (err) {
         console.error("UPDATE ORDER STATUS ERROR:", err);
-        return res.status(500).json({ success: false, message: "Internal server error." });
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
     }
 };
 
-module.exports = { getStoreOrders, getStoreOrderDetail, updateOrderStatus };
+module.exports = {
+    getStoreOrders,
+    getStoreOrderDetail,
+    updateOrderStatus,
+};
