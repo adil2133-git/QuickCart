@@ -12,6 +12,7 @@ interface IncomingOrderPayload {
 
 export function useStoreDashboardSocket() {
   const addIncomingOrder = useDashboardStore((s) => s.addIncomingOrder);
+  const applyOrderStatusChange = useDashboardStore((s) => s.applyOrderStatusChange);
 
   useEffect(() => {
     const socket = getSocket();
@@ -26,10 +27,16 @@ export function useStoreDashboardSocket() {
       });
     };
 
+    const handleStatusChanged = (payload: { orderId: string; orderStatus: IncomingOrderPayload["orderStatus"] }) => {
+      applyOrderStatusChange(payload.orderId, payload.orderStatus);
+    };
+
     socket.on("order:new", handleNewOrder);
+    socket.on("order:statusChanged", handleStatusChanged);
 
     return () => {
       socket.off("order:new", handleNewOrder);
+      socket.off("order:statusChanged", handleStatusChanged);
     };
-  }, [addIncomingOrder]);
+  }, [addIncomingOrder, applyOrderStatusChange]);
 }

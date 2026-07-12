@@ -1,7 +1,3 @@
-/**
- * Handles driver dispatch by sending delivery requests
- * to eligible nearby drivers and managing dispatch retries.
- */
 const Order = require("../models/shared/order");
 const DriverProfile = require("../models/driver/driverProfile");
 const StoreProfile = require("../models/store/storeProfile");
