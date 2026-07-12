@@ -53,7 +53,7 @@ const getDashboardSummary = async (req, res) => {
                 Order.find({
                     storeId,
                     createdAt: { $gte: yesterdayStart, $lt: todayStart },
-                }).select("totalAmount"),
+                }).select("totalAmount orderStatus"),
                 Order.countDocuments({ storeId, orderStatus: { $in: PENDING_STATUSES } }),
                 Product.find({
                     storeId,
@@ -62,8 +62,16 @@ const getDashboardSummary = async (req, res) => {
                 }).select("productName stockQuantity"),
             ]);
 
-        const todaysRevenue = todaysOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-        const yesterdaysRevenue = yesterdaysOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+        // Cancelled orders were never actually earned, regardless of when
+        // they were placed or how far they got before cancellation — so
+        // they're excluded from revenue (but still counted in todaysOrders,
+        // which tracks order volume/activity, not money).
+        const todaysRevenue = todaysOrders
+            .filter((o) => o.orderStatus !== "CANCELLED")
+            .reduce((sum, o) => sum + o.totalAmount, 0);
+        const yesterdaysRevenue = yesterdaysOrders
+            .filter((o) => o.orderStatus !== "CANCELLED")
+            .reduce((sum, o) => sum + o.totalAmount, 0);
 
         // Best selling today — aggregate quantity sold per product
         const soldByProduct = new Map(); // productId -> { productName, unitsSold }
