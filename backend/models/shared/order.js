@@ -1,67 +1,165 @@
 const mongoose = require("mongoose");
 
+/**
+ * Stores product details at the time of ordering.
+ * Keeps a snapshot even if the original product changes later.
+ */
 const orderProductSchema = new mongoose.Schema({
     productId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
         required: true,
     },
-    productName: { type: String, required: true },
-    quantity: { type: Number, required: true },
-    price: { type: Number, required: true },
+    productName: {
+        type: String,
+        required: true,
+    },
+    quantity: {
+        type: Number,
+        required: true,
+    },
+    price: {
+        type: Number,
+        required: true,
+    },
 });
 
 const orderSchema = new mongoose.Schema(
     {
-        orderNumber: { type: String, required: true, unique: true },
+        // Unique order identifier (e.g., QK1751234567890)
+        orderNumber: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+
         customerId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "CustomerProfile",
             required: true,
         },
+
         storeId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "StoreProfile",
             required: true,
         },
+
         driverId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "DriverProfile",
             default: null,
         },
+
+        /**
+         * Tracks driver dispatch attempts.
+         * Stops retrying once the maximum dispatch rounds are exhausted.
+         */
+        deliveryRequestRound: {
+            type: Number,
+            default: 0,
+        },
+
+        deliveryRoundExpiresAt: {
+            type: Date,
+            default: null,
+        },
+
+        driverSearchFailed: {
+            type: Boolean,
+            default: false,
+        },
+
         products: [orderProductSchema],
-        subtotal: { type: Number, required: true },
-        deliveryCharge: { type: Number, required: true, default: 0 },
-        handlingFee: { type: Number, required: true, default: 0 },
-        totalAmount: { type: Number, required: true },
+
+        subtotal: {
+            type: Number,
+            required: true,
+        },
+
+        deliveryCharge: {
+            type: Number,
+            required: true,
+            default: 0,
+        },
+
+        handlingFee: {
+            type: Number,
+            required: true,
+            default: 0,
+        },
+
+        totalAmount: {
+            type: Number,
+            required: true,
+        },
+
         paymentMethod: {
             type: String,
             enum: ["ONLINE", "COD"],
             required: true,
         },
+
         paymentStatus: {
             type: String,
             enum: ["PENDING", "PAID", "FAILED", "REFUNDED"],
             default: "PENDING",
         },
-        // How much of totalAmount (if any) was paid from the customer's
-        // QuickKart wallet. For ONLINE orders, Razorpay only ever collects
-        // (totalAmount - walletAmountUsed) — this field is what makes that
-        // split auditable after the fact.
-        walletAmountUsed: { type: Number, default: 0 },
-        razorpayOrderId: { type: String, default: null },
-        razorpayPaymentId: { type: String, default: null },
-        razorpaySignature: { type: String, default: null },
-        deliveryAddress: { type: String, required: true },
-        // Captured from the customer's savedAddress at checkout time so
-        // delivery-leg distance can be calculated for drivers. Optional
-        // because older orders/addresses may not have coordinates set.
-        deliveryCoordinates: {
-            lat: { type: Number, default: null },
-            lng: { type: Number, default: null },
+
+        /**
+         * Amount paid using the customer's wallet.
+         * Helps track split payments with Razorpay.
+         */
+        walletAmountUsed: {
+            type: Number,
+            default: 0,
         },
-        recipientName: { type: String, required: true },
-        recipientPhone: { type: String, required: true },
+
+        razorpayOrderId: {
+            type: String,
+            default: null,
+        },
+
+        razorpayPaymentId: {
+            type: String,
+            default: null,
+        },
+
+        razorpaySignature: {
+            type: String,
+            default: null,
+        },
+
+        deliveryAddress: {
+            type: String,
+            required: true,
+        },
+
+        /**
+         * Delivery location coordinates.
+         * Used for distance calculation and driver navigation.
+         */
+        deliveryCoordinates: {
+            lat: {
+                type: Number,
+                default: null,
+            },
+            lng: {
+                type: Number,
+                default: null,
+            },
+        },
+
+        recipientName: {
+            type: String,
+            required: true,
+        },
+
+        recipientPhone: {
+            type: String,
+            required: true,
+        },
+
         orderStatus: {
             type: String,
             enum: [
@@ -78,10 +176,15 @@ const orderSchema = new mongoose.Schema(
             default: "PENDING",
         },
     },
-    { timestamps: { createdAt: "createdAt", updatedAt: false } }
+    {
+        timestamps: {
+            createdAt: "createdAt",
+            updatedAt: false,
+        },
+    }
 );
 
-
+// Auto-generate order number when not provided.
 orderSchema.path("orderNumber").default(function () {
     return "QK" + Date.now();
 });
