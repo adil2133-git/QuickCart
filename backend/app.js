@@ -4,7 +4,15 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-app.use(express.json());
+// The `verify` callback stashes the raw body on req.rawBody before it's
+// parsed — the Razorpay webhook needs the exact original bytes to check its
+// signature against, since re-serializing req.body wouldn't byte-for-byte
+// match what Razorpay actually signed.
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    },
+}));
 app.use(cookieParser());
 
 const AuthRoutes = require("./routes/auth/authRoutes");
@@ -14,6 +22,7 @@ const DriverApplicationRoutes = require("./routes/admin/driverApplicationRoutes"
 const StoreApplicationRoutes = require("./routes/admin/storeApplicationRoutes");
 const CustomerRoutes = require("./routes/customer/customerRoutes");
 const notificationRoutes = require("./routes/shared/notificationRoutes");
+const RazorpayWebhookRoutes = require("./routes/webhooks/razorpayWebhookRoutes");
 
 app.use(
     cors({
@@ -28,6 +37,10 @@ app.use("/api/customer", CustomerRoutes);
 app.use("/api/store", StoreRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+
+// Razorpay calls this directly (server-to-server) — no JWT/cookie auth,
+// verified instead via the X-Razorpay-Signature header inside the controller.
+app.use("/api/webhooks", RazorpayWebhookRoutes);
 
 app.use("/api/admin/driver", DriverApplicationRoutes);
 app.use("/api/admin/store", StoreApplicationRoutes);
