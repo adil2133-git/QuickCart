@@ -19,6 +19,7 @@ const customerWalletTransactionSchema = new mongoose.Schema(
                 "REFUND_CREDIT",   // cancellation refund credited to wallet
                 "ORDER_PAYMENT",   // wallet balance spent at checkout
                 "ADMIN_ADJUSTMENT", // manual correction by admin
+                "CANCELLATION_FEE", // COD order cancelled after packing started -- store compensation deducted from wallet
             ],
             required: true,
         },
