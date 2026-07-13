@@ -904,60 +904,78 @@ export default function CustomerHome() {
                     ) : (
                         <motion.div variants={staggerContainer} initial="hidden" whileInView="show"
                             viewport={{ once: true, margin: "-40px" }} className="grid grid-cols-2 gap-6">
-                            {nearbyStores.slice(0, 4).map((s, i) => (
+                            {nearbyStores.slice(0, 4).map((s, i) => {
+                                // Optional fields — not on the StoreProfileSummary type as originally
+                                // shared, so read defensively. Populate `tags` (e.g. category names the
+                                // store carries) and `reviewCount` on the backend/type to light these up;
+                                // they simply won't render if absent.
+                                const tags = (s as unknown as { tags?: string[] }).tags;
+                                const reviewCount = (s as unknown as { reviewCount?: number }).reviewCount;
+
+                                return (
                                 <motion.div key={s._id} variants={fadeUp} custom={i}>
                                     <Card>
-                                        <div
-                                            onClick={() => goToStore(s._id)}
-                                            className="relative h-56 flex items-center justify-center overflow-hidden cursor-pointer"
-                                            style={{ backgroundColor: storeCardColor(s.storeName) }}>
-
-                                            {s.logoUrl
-                                                ? <img src={s.logoUrl} alt={s.storeName} className="w-full h-full object-cover" />
-                                                : <span className="text-8xl opacity-20 select-none">🏪</span>
-                                            }
-
-                                            <StoreStatusBadge status={s.status} index={i} />
-
-                                            <div className="absolute bottom-4 left-4 rounded-full px-3 py-1 flex items-center gap-1.5"
-                                                style={{ backgroundColor: "rgba(0,0,0,0.35)", backdropFilter: "blur(6px)" }}>
-                                                <MapPin size={11} color="white" />
-                                                <span className="text-xs font-medium text-white">
-                                                    {s.distanceKm != null ? `${s.distanceKm.toFixed(1)} km` : "—"}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-start justify-between p-6">
+                                        <div className="flex items-center gap-4 p-4">
                                             <div
                                                 onClick={() => goToStore(s._id)}
-                                                className="cursor-pointer"
-                                            >
-                                                <span className="font-semibold text-lg block" style={{ fontFamily: "'Inter', sans-serif", color: "#16241D" }}>{s.storeName}</span>
-                                                <div className="flex items-center gap-2 mt-1.5">
-                                                    {s.averageRating > 0 && (
-                                                        <StarRating rating={s.averageRating} />
-                                                    )}
-                                                    <span style={{ color: "#9BAAA1" }}>·</span>
-                                                    <Clock size={12} color="#16241D" />
-                                                    <span className="text-sm" style={{ color: "#16241D" }}>
-                                                        {etaWindow(s.distanceKm)} mins
-                                                    </span>
-                                                </div>
+                                                className="relative flex-shrink-0 w-36 h-36 rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
+                                                style={{ backgroundColor: storeCardColor(s.storeName) }}>
+
+                                                {s.logoUrl
+                                                    ? <img src={s.logoUrl} alt={s.storeName} className="w-full h-full object-cover" />
+                                                    : <span className="text-6xl opacity-20 select-none">🏪</span>
+                                                }
+
+                                                <StoreStatusBadge status={s.status} index={i} />
                                             </div>
-                                            <motion.button
-                                                whileHover={{ backgroundColor: "#DCE8E0" }}
-                                                whileTap={{ scale: 0.94 }}
-                                                disabled={s.status === "CLOSED"}
-                                                onClick={() => goToStore(s._id)}
-                                                className="flex-shrink-0 rounded-lg border-none cursor-pointer text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                style={{ backgroundColor: "#E8EFEC", padding: "8px 18px", color: "#145C43", fontFamily: "'Inter', sans-serif" }}>
-                                                {s.status === "CLOSED" ? "Closed" : "View Menu"}
-                                            </motion.button>
+
+                                            <div className="flex-1 min-w-0">
+                                                <div
+                                                    onClick={() => goToStore(s._id)}
+                                                    className="cursor-pointer"
+                                                >
+                                                    <span className="font-semibold text-lg block truncate" style={{ fontFamily: "'Inter', sans-serif", color: "#16241D" }}>{s.storeName}</span>
+
+                                                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                        {tags && tags.length > 0 && (
+                                                            <span className="text-xs truncate" style={{ color: "#6E7C74" }}>{tags.join(", ")}</span>
+                                                        )}
+                                                        {tags && tags.length > 0 && s.distanceKm != null && <span className="text-xs" style={{ color: "#9BAAA1" }}>·</span>}
+                                                        {s.distanceKm != null && (
+                                                            <span className="text-xs flex items-center gap-1" style={{ color: "#6E7C74" }}>
+                                                                <MapPin size={10} /> {s.distanceKm.toFixed(1)} km
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                                        {s.averageRating > 0 && <StarRating rating={s.averageRating} />}
+                                                        {reviewCount != null && (
+                                                            <span className="text-xs" style={{ color: "#9BAAA1" }}>({reviewCount.toLocaleString()} reviews)</span>
+                                                        )}
+                                                        <span style={{ color: "#9BAAA1" }}>·</span>
+                                                        <Clock size={12} color="#16241D" />
+                                                        <span className="text-sm" style={{ color: "#16241D" }}>
+                                                            {etaWindow(s.distanceKm)} mins
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <motion.button
+                                                    whileHover={{ backgroundColor: "#0F4A36" }}
+                                                    whileTap={{ scale: 0.97 }}
+                                                    disabled={s.status === "CLOSED"}
+                                                    onClick={() => goToStore(s._id)}
+                                                    className="w-full mt-3 rounded-lg border-none cursor-pointer text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    style={{ backgroundColor: "#145C43", padding: "10px 0", color: "#FFFFFF", fontFamily: "'Inter', sans-serif" }}>
+                                                    {s.status === "CLOSED" ? "Closed" : "View Menu"}
+                                                </motion.button>
+                                            </div>
                                         </div>
                                     </Card>
                                 </motion.div>
-                            ))}
+                                );
+                            })}
                         </motion.div>
                     )}
                 </section>
