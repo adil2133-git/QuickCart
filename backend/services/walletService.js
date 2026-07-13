@@ -1,5 +1,6 @@
 const CustomerWallet = require("../models/customer/customerWallet");
 const CustomerWalletTransaction = require("../models/customer/customerWalletTransaction");
+const { emitToCustomer } = require("../socket");
 
 // ─── Get or create a customer's wallet ───────────────────────────────────────
 // Wallets are created lazily on first use (first refund or first checkout
@@ -73,6 +74,19 @@ const creditRefund = async ({ customerId, amount, orderId, description, session 
         ],
         { session }
     );
+
+    // Push the new balance live so the navbar wallet pill (and wallet page,
+    // if open) update instantly instead of only on next page load/refresh.
+    // Skipped mid-transaction (session present) — if the transaction later
+    // rolls back we don't want to have already told the client it worked.
+    if (!session) {
+        emitToCustomer(customerId, "wallet:updated", {
+            balance: wallet.balance,
+            change: amount,
+            reason: "REFUND_CREDIT",
+            orderId: orderId ? orderId.toString() : null,
+        });
+    }
 };
 
 // ─── Debit wallet for a COD cancellation fee ─────────────────────────────────
