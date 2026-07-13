@@ -21,6 +21,7 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import api from "../../../api/axios";
+import { getSocket } from "../../../lib/socket";
 import LocationPickerModal from "./locationPickerModal";
 import { useAuthStore } from "../../auth/state/authState";
 import { useCartStore } from "../state/cartState";
@@ -630,11 +631,24 @@ function WalletButton() {
     const WALLET_PATH = "/customer/profile?tab=wallet";
     const isActive = pathname === "/customer/profile" && new URLSearchParams(search).get("tab") === "wallet";
 
-    useEffect(() => {
+   useEffect(() => {
         api
             .get("/customer/wallet")
             .then(({ data }) => setBalance(data.balance ?? 0))
             .catch(() => setBalance(null));
+    }, []);
+
+    // Live updates (e.g. a cancellation refund landing) so the pill reflects
+    // the new balance instantly instead of only after a manual page refresh.
+    useEffect(() => {
+        const socket = getSocket();
+        const handleWalletUpdated = (payload: { balance: number }) => {
+            setBalance(payload.balance);
+        };
+        socket.on("wallet:updated", handleWalletUpdated);
+        return () => {
+            socket.off("wallet:updated", handleWalletUpdated);
+        };
     }, []);
 
     return (
