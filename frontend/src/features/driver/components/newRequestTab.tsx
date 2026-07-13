@@ -199,7 +199,7 @@ function RequestCard({ request }: { request: DeliveryRequest }) {
           <h3 className="text-base font-bold text-[#2B1B0E]">{request.storeName}</h3>
         </div>
         <CountdownRing
-          totalSeconds={45}
+          totalSeconds={request.expiresInSeconds}
           initialRemaining={request.expiresInSeconds}
           onExpire={() => removeRequest(request.requestId)}
         />
