@@ -7,7 +7,7 @@ const notificationSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
-        title:   { type: String, required: true },
+        title: { type: String, required: true },
         message: { type: String, required: true },
         type: {
             type: String,
@@ -23,7 +23,7 @@ const notificationSchema = new mongoose.Schema(
         // Used by the weekly cron cleanup job
         expiresAt: {
             type: Date,
-            default: () => new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
     },
     { timestamps: { createdAt: "createdAt", updatedAt: false } }
