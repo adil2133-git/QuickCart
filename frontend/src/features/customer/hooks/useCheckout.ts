@@ -14,6 +14,20 @@ import type {
   VerifyPaymentResponse,
 } from "../types/checkout";
 
+// -- Payment succeeded, but createOrderFromCart failed after verify-payment --
+// (e.g. stock ran out in the seconds between paying and verifying). Money is
+// already captured on Razorpay's side at this point, so this needs to surface
+// the actual payment ID to the customer -- a generic toast that vanishes in a
+// few seconds isn't enough for something that may require a support ticket.
+export class PaymentCapturedOrderFailedError extends Error {
+  paymentId: string;
+  constructor(message: string, paymentId: string) {
+    super(message);
+    this.name = "PaymentCapturedOrderFailedError";
+    this.paymentId = paymentId;
+  }
+}
+
 // -- Load summary on mount, and again whenever the selected address changes --
 // Delivery charge is distance-based (store -> address), so totals can only be
 // computed once an address is known -- every address change needs a fresh
@@ -222,8 +236,14 @@ export function usePlaceOrder() {
             );
             resolve(verifyResult.order);
           } catch (err) {
-            const message =
-              (err as any)?.response?.data?.message ?? "Payment verification failed.";
+            const responseData = (err as any)?.response?.data;
+            const message = responseData?.message ?? "Payment verification failed.";
+
+            if (responseData?.paymentCapturedButOrderFailed) {
+              reject(new PaymentCapturedOrderFailedError(message, response.razorpay_payment_id));
+              return;
+            }
+
             reject(new Error(message));
           }
         },
@@ -264,6 +284,16 @@ export function usePlaceOrder() {
       resetAfterOrder();
       return order;
     } catch (err) {
+      if (err instanceof PaymentCapturedOrderFailedError) {
+        // This one doesn't auto-dismiss -- the customer needs time to actually
+        // read and note down the payment ID, not have it vanish in 4 seconds.
+        toast.error(`${err.message} Payment ID: ${err.paymentId}`, {
+          id: "payment-captured-error",
+          duration: Infinity,
+        });
+        return null;
+      }
+
       const message =
         (err as any)?.response?.data?.message ??
         (err instanceof Error ? err.message : "Couldn't place your order. Please try again.");
