@@ -10,15 +10,15 @@ const { notifyStore } = require("./notificationService");
 // Driver location is considered stale after 5 minutes
 const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000;
 
-// Driver has 45 seconds to accept or reject
-const REQUEST_EXPIRY_SECONDS = 45;
+// Driver has 30 seconds to accept or reject
+const REQUEST_EXPIRY_SECONDS = 30;
 
 // Search radius for each dispatch round
 const RADIUS_KM_BY_ROUND = [5, 8, 10];
 const MAX_DISPATCH_ROUNDS = RADIUS_KM_BY_ROUND.length;
 
 // Fallback settings
-const FALLBACK_COOLDOWN_MS = 5 * 60 * 1000;
+const FALLBACK_COOLDOWN_MS = 2 * 60 * 1000;
 const FALLBACK_ATTEMPTS = 2;
 const TOTAL_DISPATCH_ROUNDS =
     MAX_DISPATCH_ROUNDS + FALLBACK_ATTEMPTS;
@@ -161,6 +161,38 @@ const dispatchRound = async (orderId) => {
             dispatched: false,
             exhausted: true,
         };
+    }
+
+    // Fail fast: if there isn't a single online driver anywhere right now,
+    // there's no point burning through the remaining rounds/fallback cooldowns —
+    // nothing about widening the radius will help when nobody is online at all.
+    const onlineDriverCount = await DriverProfile.countDocuments({
+        availabilityStatus: "ONLINE",
+    });
+
+    if (onlineDriverCount === 0) {
+        order.driverSearchFailed = true;
+        await order.save();
+
+        StoreProfile.findById(order.storeId._id ?? order.storeId)
+            .populate("userId", "_id")
+            .lean()
+            .then((store) => {
+                if (store?.userId?._id) {
+                    notifyStore.noDriversFound?.(
+                        store.userId._id,
+                        order.orderNumber,
+                        order._id
+                    ).catch(() => {});
+                }
+            })
+            .catch(() => {});
+
+        console.warn(
+            `[dispatch] Order ${orderId}: no online drivers at all — failing search early instead of waiting out remaining rounds`
+        );
+
+        return { dispatched: false, exhausted: true };
     }
 
     // Select search radius
