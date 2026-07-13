@@ -20,6 +20,7 @@ const DriverRoutes = require("./routes/driver/driverRoutes");
 const StoreRoutes = require("./routes/store/storeRoutes");
 const DriverApplicationRoutes = require("./routes/admin/driverApplicationRoutes");
 const StoreApplicationRoutes = require("./routes/admin/storeApplicationRoutes");
+const AdminDashboardRoutes = require("./routes/admin/dashboardRoutes");
 const CustomerRoutes = require("./routes/customer/customerRoutes");
 const notificationRoutes = require("./routes/shared/notificationRoutes");
 const RazorpayWebhookRoutes = require("./routes/webhooks/razorpayWebhookRoutes");
@@ -44,6 +45,7 @@ app.use("/api/webhooks", RazorpayWebhookRoutes);
 
 app.use("/api/admin/driver", DriverApplicationRoutes);
 app.use("/api/admin/store", StoreApplicationRoutes);
+app.use("/api/admin/dashboard", AdminDashboardRoutes);
 
 // Global error handler — catches anything passed to next(err)
 app.use((err, req, res, next) => {
