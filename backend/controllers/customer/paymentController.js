@@ -86,10 +86,19 @@ const createRazorpayOrder = async (req, res) => {
             });
         }
 
-        const razorpayOrder = await razorpay.orders.create({
+       const razorpayOrder = await razorpay.orders.create({
             amount: Math.round(amountToPay * 100), // paise
             currency: "INR",
             receipt: `receipt_${Date.now()}`,
+            // The webhook (see razorpayWebhookController.js) only fires with
+            // a payment/order id — it has no idea which cart or address this
+            // was for. Stashing them here is how it reconstructs enough
+            // context to safety-net an order if verify-payment never runs.
+            notes: {
+                userId: req.user.userID,
+                addressId,
+                useWallet: useWallet ? "true" : "false",
+            },
         });
 
         return res.status(200).json({
