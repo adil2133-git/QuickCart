@@ -37,7 +37,7 @@ function RequestCard({
     };
   }, [request.expiresInSeconds]);
 
-  const pct = Math.max(0, (remaining / 45) * 100);
+  const pct = Math.max(0, (remaining / request.expiresInSeconds) * 100);
   const urgency = remaining <= 10;
 
   return (
