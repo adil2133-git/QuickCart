@@ -19,6 +19,16 @@ const REFUND_DEDUCTION_BY_STATUS = {
     PACKING: 20, // store has started packing -- keeps ₹20 of the handling fee
 };
 
+// KNOWN GAP (documented in Money Handling & Business Rules, Section 15):
+// both paths below now correctly *collect* ₹20 from the customer once packing
+// has started -- reduced from their refund (PAID) or deducted from their
+// wallet (COD, via debitCancellationFee). What's still missing is the other
+// side: that ₹20 is never actually credited to the store anywhere
+// (StoreTransaction is never written to by any controller). So today the
+// money is taken from the customer correctly, but it doesn't yet land
+// anywhere -- it should end up as store income once the store wallet/
+// settlement system exists.
+
 const resolveCustomerId = async (req) => {
     const profile = await resolveCustomerProfile(req.user.userID);
     return profile._id;
@@ -206,10 +216,10 @@ const cancelOrder = async (req, res) => {
         const previousStatus = order.orderStatus;
         order.orderStatus = "CANCELLED";
 
-        // Only orders that were actually charged get a refund — COD orders
-        // (still PENDING payment at this point) never took the customer's
-        // money in the first place, so there's nothing to give back.
-        let refundAmount = 0;
+        // Two mutually exclusive money-movement paths, depending on whether
+        // the order was actually paid for yet:
+        let refundAmount = 0; // online/PAID orders: refunded, minus any store-compensation deduction
+        let feeCharged = 0;   // COD orders: nothing was ever charged, so compensation is a direct wallet debit instead
         if (order.paymentStatus === "PAID") {
             const deduction = REFUND_DEDUCTION_BY_STATUS[previousStatus] ?? 0;
             refundAmount = Math.max(order.totalAmount - deduction, 0);
@@ -222,21 +232,39 @@ const cancelOrder = async (req, res) => {
             });
 
             order.paymentStatus = "REFUNDED";
+        } else {
+            // COD order — never charged, so there's no refund to reduce. If the
+            // store had already started packing, the same compensation amount
+            // is instead deducted directly from the customer's wallet (clamped
+            // to whatever balance they actually have — see debitCancellationFee).
+            const deduction = REFUND_DEDUCTION_BY_STATUS[previousStatus] ?? 0;
+            if (deduction > 0) {
+                feeCharged = await walletService.debitCancellationFee({
+                    customerId: order.customerId,
+                    amount: deduction,
+                    orderId: order._id,
+                    description: `Cancellation fee for order #${order.orderNumber} (packing had started)`,
+                });
+            }
         }
 
         await order.save();
 
-        if (refundAmount > 0) {
-            CustomerProfile.findById(order.customerId)
-                .populate("userId", "_id")
-                .lean()
-                .then((cp) => {
-                    if (cp?.userId?._id) {
-                        notifyCustomer.cancelled(cp.userId._id, order.orderNumber, order._id).catch(() => {});
-                    }
-                })
-                .catch(() => {});
-        }
+        // Always let the customer know their cancellation went through — the
+        // message itself (built in notificationService) already distinguishes
+        // "refunded to wallet" (online payment), "fee deducted" (COD, packing
+        // had started), and "nothing to refund" (COD, cancelled before packing).
+        CustomerProfile.findById(order.customerId)
+            .populate("userId", "_id")
+            .lean()
+            .then((cp) => {
+                if (cp?.userId?._id) {
+                    notifyCustomer
+                        .cancelled(cp.userId._id, order.orderNumber, order._id, refundAmount, feeCharged)
+                        .catch(() => {});
+                }
+            })
+            .catch(() => {});
 
         // Live update to the customer's own orders page (same event the
         // store-driven status changes use, so useCustomerOrderSocket just works).
