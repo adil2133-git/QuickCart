@@ -1,52 +1,63 @@
-import { useState } from "react";
-import { Search, SlidersHorizontal, Download } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Download } from "lucide-react";
+import { useDashboardState, type OrderStatusLabel, type PaymentLabel } from "../../state/dashboardState";
 
 /**
  * QuickOps Admin — Recent Orders Table
  * Stack: React + TypeScript + Tailwind CSS + lucide-react
+ *
+ * Live data via GET /admin/dashboard/recent-orders. Search is debounced
+ * and sent to the server rather than filtered client-side, since the
+ * server only returns a capped recent slice.
+ *
+ * "Filters" from the old mock was dropped — payment method here is only
+ * ever Online/COD (that's all the schema tracks), so a dedicated filter
+ * button didn't add anything real to filter by yet.
  */
 
-type OrderStatus = "Delivered" | "Processing" | "Out for Delivery" | "Cancelled";
-
-interface Order {
-  id: string;
-  customer: string;
-  store: string;
-  amount: string;
-  payment: "UPI" | "COD" | "Card";
-  status: OrderStatus;
-}
-
-const ORDERS: Order[] = [
-  { id: "#QK-9842", customer: "Amit Sharma", store: "Bikanervala", amount: "₹1,240", payment: "UPI", status: "Out for Delivery" },
-  { id: "#QK-9841", customer: "Priya Verma", store: "Fresh Mart", amount: "₹850", payment: "COD", status: "Processing" },
-  { id: "#QK-9840", customer: "Rahul Jain", store: "The Baker's", amount: "₹3,420", payment: "Card", status: "Delivered" },
-  { id: "#QK-9839", customer: "Siddharth R.", store: "Spice Route", amount: "₹2,100", payment: "UPI", status: "Delivered" },
-  { id: "#QK-9838", customer: "Neha Kapoor", store: "Daily Greens", amount: "₹640", payment: "COD", status: "Cancelled" },
-];
-
-const STATUS_STYLES: Record<OrderStatus, string> = {
+const STATUS_STYLES: Record<OrderStatusLabel, string> = {
   Delivered: "bg-[#E6F4EC] text-[#2E8B57]",
   Processing: "bg-[#FBF1DD] text-[#B8860B]",
   "Out for Delivery": "bg-[#E8EFFB] text-[#3D6FD1]",
   Cancelled: "bg-[#FBEAEA] text-[#D94F4F]",
 };
 
-const PAYMENT_STYLES: Record<Order["payment"], string> = {
-  UPI: "bg-[#E6F4EC] text-[#2E8B57] border-[#CDE9D7]",
+const PAYMENT_STYLES: Record<PaymentLabel, string> = {
+  Online: "bg-[#E6F4EC] text-[#2E8B57] border-[#CDE9D7]",
   COD: "bg-[#FBF1DD] text-[#B8860B] border-[#F3E2B5]",
-  Card: "bg-[#F0EAFB] text-[#7B5FC2] border-[#E0D4F5]",
 };
+
+function formatAmount(value: number): string {
+  return `₹${value.toLocaleString("en-IN")}`;
+}
+
+function exportCsv(orders: { id: string; customer: string; store: string; amount: number; payment: string; status: string }[]) {
+  const header = ["Order ID", "Customer", "Store", "Amount", "Payment", "Status"];
+  const rows = orders.map((o) => [o.id, o.customer, o.store, o.amount, o.payment, o.status]);
+  const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `recent-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function RecentOrdersTable() {
   const [query, setQuery] = useState("");
+  const { recentOrders, recentOrdersLoading, recentOrdersError, fetchRecentOrders } = useDashboardState();
 
-  const filteredOrders = ORDERS.filter(
-    (o) =>
-      o.customer.toLowerCase().includes(query.toLowerCase()) ||
-      o.id.toLowerCase().includes(query.toLowerCase()) ||
-      o.store.toLowerCase().includes(query.toLowerCase())
-  );
+  useEffect(() => {
+    fetchRecentOrders();
+  }, [fetchRecentOrders]);
+
+  // Debounce server-side search so we're not firing a request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => fetchRecentOrders(query), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   return (
     <div className="rounded-2xl border border-[#EBE1D2] bg-white">
@@ -63,11 +74,11 @@ export default function RecentOrdersTable() {
               className="w-28 bg-transparent text-[12.5px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
             />
           </div>
-          <button className="flex items-center gap-1.5 rounded-lg border border-[#EBE1D2] px-3 py-1.5 text-[12.5px] font-medium text-[#5A4A3A] transition-colors hover:bg-[#FBF6EE]">
-            <SlidersHorizontal size={13} />
-            Filters
-          </button>
-          <button className="flex items-center gap-1.5 rounded-lg bg-[#8B6F47] px-3 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-[#7A5F3C]">
+          <button
+            onClick={() => exportCsv(recentOrders)}
+            disabled={recentOrders.length === 0}
+            className="flex items-center gap-1.5 rounded-lg bg-[#8B6F47] px-3 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-[#7A5F3C] disabled:opacity-40"
+          >
             <Download size={13} />
             Export CSV
           </button>
@@ -87,32 +98,50 @@ export default function RecentOrdersTable() {
           </tr>
         </thead>
         <tbody>
-          {filteredOrders.map((order) => (
-            <tr
-              key={order.id}
-              className="border-t border-[#F2EBDD] text-[13.5px] text-[#3A2C20] transition-colors hover:bg-[#FBF6EE]"
-            >
-              <td className="px-6 py-3.5 font-medium text-[#8B6F47]">{order.id}</td>
-              <td className="px-3 py-3.5">{order.customer}</td>
-              <td className="px-3 py-3.5 text-[#5A4A3A]">{order.store}</td>
-              <td className="px-3 py-3.5 font-semibold">{order.amount}</td>
-              <td className="px-3 py-3.5">
-                <span
-                  className={`rounded-full border px-2.5 py-1 text-[11.5px] font-medium ${PAYMENT_STYLES[order.payment]}`}
-                >
-                  {order.payment}
-                </span>
-              </td>
-              <td className="px-6 py-3.5">
-                <span
-                  className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium ${STATUS_STYLES[order.status]}`}
-                >
-                  {order.status}
-                </span>
+          {recentOrdersError && (
+            <tr>
+              <td colSpan={6} className="px-6 py-8 text-center text-[13px] text-[#D94F4F]">
+                {recentOrdersError}
               </td>
             </tr>
-          ))}
-          {filteredOrders.length === 0 && (
+          )}
+
+          {!recentOrdersError && recentOrdersLoading && recentOrders.length === 0 && (
+            <tr>
+              <td colSpan={6} className="px-6 py-8 text-center text-[13px] text-[#A2937F]">
+                Loading…
+              </td>
+            </tr>
+          )}
+
+          {!recentOrdersError &&
+            recentOrders.map((order) => (
+              <tr
+                key={order.id}
+                className="border-t border-[#F2EBDD] text-[13.5px] text-[#3A2C20] transition-colors hover:bg-[#FBF6EE]"
+              >
+                <td className="px-6 py-3.5 font-medium text-[#8B6F47]">{order.id}</td>
+                <td className="px-3 py-3.5">{order.customer}</td>
+                <td className="px-3 py-3.5 text-[#5A4A3A]">{order.store}</td>
+                <td className="px-3 py-3.5 font-semibold">{formatAmount(order.amount)}</td>
+                <td className="px-3 py-3.5">
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[11.5px] font-medium ${PAYMENT_STYLES[order.payment]}`}
+                  >
+                    {order.payment}
+                  </span>
+                </td>
+                <td className="px-6 py-3.5">
+                  <span
+                    className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium ${STATUS_STYLES[order.status]}`}
+                  >
+                    {order.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+
+          {!recentOrdersError && !recentOrdersLoading && recentOrders.length === 0 && (
             <tr>
               <td colSpan={6} className="px-6 py-8 text-center text-[13px] text-[#A2937F]">
                 No orders match your search.
