@@ -195,6 +195,45 @@ const dispatchRound = async (orderId) => {
         return { dispatched: false, exhausted: true };
     }
 
+    // Fail fast — but only once we're already in the fallback phase (i.e. all
+    // 3 normal radius rounds already ran with no luck). We deliberately don't
+    // do this on the very first rounds: a driver could log on moments after
+    // this check runs, and dispatchToOnlineDriver's catch-up logic only looks
+    // at orders that aren't already marked driverSearchFailed — so failing too
+    // early here would permanently miss that driver instead of just delaying
+    // the match by a few seconds. Skipping straight from "no drivers online"
+    // to "give up" only makes sense once the cheap, real attempts are spent.
+    if (isFallbackRound) {
+        const onlineDriverCount = await DriverProfile.countDocuments({
+            availabilityStatus: "ONLINE",
+        });
+
+        if (onlineDriverCount === 0) {
+            order.driverSearchFailed = true;
+            await order.save();
+
+            StoreProfile.findById(order.storeId._id ?? order.storeId)
+                .populate("userId", "_id")
+                .lean()
+                .then((store) => {
+                    if (store?.userId?._id) {
+                        notifyStore.noDriversFound?.(
+                            store.userId._id,
+                            order.orderNumber,
+                            order._id
+                        ).catch(() => {});
+                    }
+                })
+                .catch(() => {});
+
+            console.warn(
+                `[dispatch] Order ${orderId}: no online drivers at all during fallback phase — failing search early instead of waiting out remaining fallback cooldowns`
+            );
+
+            return { dispatched: false, exhausted: true };
+        }
+    }
+
     // Select search radius
     const radiusKm = isFallbackRound
         ? RADIUS_KM_BY_ROUND[RADIUS_KM_BY_ROUND.length - 1]
