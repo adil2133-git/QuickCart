@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Search, Calendar, Truck, Clock, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { useStoreOrdersStore } from "../state/storeOrdersState";
 import { useFetchStoreOrders, useUpdateOrderStatus } from "../hooks/useStoreOrders";
-import { useStoreOrderSocket } from "../hooks/useStoreOrderSocket";
 import type { OrderFilterTab, StoreOrder } from "../types/storeOrders";
 
 function getInitials(name: string): string {
@@ -92,8 +91,6 @@ export default function OrdersPage() {
     const navigate = useNavigate();
     const fetchOrders = useFetchStoreOrders();
     const updateStatus = useUpdateOrderStatus();
-    useStoreOrderSocket();
-
 
     const { orders, isLoadingOrders, ordersError, activeTab, setActiveTab, pagination } =
         useStoreOrdersStore();
