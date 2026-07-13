@@ -84,10 +84,14 @@ const notifyCustomer = {
         title:   "Order Delivered 🎉",
         message: `Your order #${orderNumber} has been delivered. Enjoy!`,
     }),
-    cancelled: (userId, orderNumber, orderId) => notify({
+    cancelled: (userId, orderNumber, orderId, refundAmount = 0, feeCharged = 0) => notify({
         userId, role: "CUSTOMER", orderId, type: "ORDER",
         title:   "Order Cancelled ❌",
-        message: `Your order #${orderNumber} has been cancelled.`,
+        message: refundAmount > 0
+            ? `Your order #${orderNumber} has been cancelled. ₹${refundAmount} has been refunded to your QuickKart wallet.`
+            : feeCharged > 0
+            ? `Your order #${orderNumber} has been cancelled. Since the store had already started packing it, a ₹${feeCharged} cancellation fee was deducted from your wallet.`
+            : `Your order #${orderNumber} has been cancelled. No payment was made for this order, so there's nothing to refund.`,
     }),
 };
 
