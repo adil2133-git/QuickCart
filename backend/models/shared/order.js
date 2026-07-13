@@ -117,7 +117,6 @@ const orderSchema = new mongoose.Schema(
 
         razorpayOrderId: {
             type: String,
-            default: null,
             unique: true,
             sparse: true,
         },

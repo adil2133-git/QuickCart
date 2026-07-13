@@ -42,9 +42,9 @@ const createOrderFromCart = async ({
     paymentMethod,
     paymentStatus,
     useWallet = false,
-    razorpayOrderId = null,
-    razorpayPaymentId = null,
-    razorpaySignature = null,
+    razorpayOrderId = undefined,
+    razorpayPaymentId = undefined,
+    razorpaySignature = undefined,
 }) => {
     const profile = await resolveCustomerProfile(userId);
 
