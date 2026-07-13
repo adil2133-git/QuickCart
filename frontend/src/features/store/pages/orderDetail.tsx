@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useStoreOrdersStore } from "../state/storeOrdersState";
 import { useFetchOrderDetail, useUpdateOrderStatus } from "../hooks/useStoreOrders";
+import { useOrderCancelledWatcher } from "../hooks/useOrderCancelledWatcher";
+import { OrderCancelledModal } from "../components/orderCancelledModal";
 import type { OrderStatus } from "../types/storeOrders";
 
 // ─── Order progress steps ─────────────────────────────────────────────────────
@@ -99,6 +101,9 @@ export default function OrderDetailPage() {
 
   const order = selectedOrder;
 
+  // Live-detect the customer cancelling this exact order while it's open here.
+  const { justCancelled, dismiss } = useOrderCancelledWatcher(order?.orderStatus);
+
   // ── Action handlers ───────────────────────────────────────────────────────────
   const handleStartPacking = async () => {
     if (!order) return;
@@ -137,6 +142,16 @@ export default function OrderDetailPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-[#FBF1E9] font-['Inter',sans-serif]">
+      {justCancelled && (
+        <OrderCancelledModal
+          orderNumber={order.orderNumber}
+          onAcknowledge={() => {
+            dismiss();
+            navigate("/store/orders");
+          }}
+        />
+      )}
+
       {/* ── Progress tracker ───────────────────────────────────────────────────── */}
       <div className="border-b border-[#EADFD3] bg-white px-8 py-5">
         <div className="flex items-center">

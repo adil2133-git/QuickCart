@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Check, Package } from "lucide-react";
 import { useStoreOrdersStore } from "../state/storeOrdersState";
 import { useFetchOrderDetail, useUpdateOrderStatus } from "../hooks/useStoreOrders";
+import { useOrderCancelledWatcher } from "../hooks/useOrderCancelledWatcher";
+import { OrderCancelledModal } from "../components/orderCancelledModal";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -25,6 +27,9 @@ export default function PackingChecklistPage() {
     if (id) fetchDetail(id);
   }, [id, fetchDetail]);
 
+  // Live-detect the customer cancelling this exact order mid-pack.
+  const { justCancelled, dismiss } = useOrderCancelledWatcher(selectedOrder?.orderStatus);
+
   const packedCount = packingItems.filter((i) => i.isPacked).length;
   const totalCount = packingItems.length;
   const progressPercent = totalCount > 0 ? Math.round((packedCount / totalCount) * 100) : 0;
@@ -46,6 +51,16 @@ export default function PackingChecklistPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-[#FBF1E9] font-['Inter',sans-serif]">
+      {justCancelled && selectedOrder && (
+        <OrderCancelledModal
+          orderNumber={selectedOrder.orderNumber}
+          onAcknowledge={() => {
+            dismiss();
+            navigate("/store/orders");
+          }}
+        />
+      )}
+
       {/* ── Progress bar card ──────────────────────────────────────────────────── */}
       <div className="m-8 mb-0 rounded-2xl border border-[#EADFD3] bg-white px-6 py-5">
         <div className="flex items-center justify-between">
@@ -155,7 +170,7 @@ export default function PackingChecklistPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={markAllPacked}
-              disabled={allPacked}
+              disabled={allPacked || selectedOrder?.orderStatus === "CANCELLED"}
               className="rounded-full border border-[#EADFD3] px-6 py-2.5 text-sm font-medium text-[#5C4A37] transition-colors hover:bg-[#FBF1E9] disabled:opacity-40"
             >
               Mark All Packed
@@ -163,7 +178,7 @@ export default function PackingChecklistPage() {
 
             <button
               onClick={handleReadyForPickup}
-              disabled={!allPacked || isUpdatingStatus}
+              disabled={!allPacked || isUpdatingStatus || selectedOrder?.orderStatus === "CANCELLED"}
               className={`flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
                 allPacked
                   ? "bg-[#2B1B0E] text-white hover:opacity-90"
