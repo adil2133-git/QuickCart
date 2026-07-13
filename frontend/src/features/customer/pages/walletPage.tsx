@@ -11,11 +11,12 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import api from "../../../api/axios";
+import { getSocket } from "../../../lib/socket";
 
 interface WalletTransaction {
     id: string;
     amount: number;
-    type: "REFUND_CREDIT" | "ORDER_PAYMENT" | "ADMIN_ADJUSTMENT";
+    type: "REFUND_CREDIT" | "ORDER_PAYMENT" | "ADMIN_ADJUSTMENT" | "CANCELLATION_FEE";
     description?: string;
     orderNumber?: string | null;
     createdAt: string;
@@ -40,6 +41,7 @@ const TX_META: Record<
     REFUND_CREDIT: { label: "Refund credited", icon: ArrowDownLeft, credit: true },
     ORDER_PAYMENT: { label: "Order payment", icon: ArrowUpRight, credit: false },
     ADMIN_ADJUSTMENT: { label: "Adjustment", icon: Settings2, credit: true },
+    CANCELLATION_FEE: { label: "Cancellation fee", icon: ArrowUpRight, credit: false },
 };
 
 function TransactionSkeletonRow() {
@@ -103,19 +105,31 @@ export function WalletContent() {
 
     useEffect(() => {
         let cancelled = false;
-        api
-            .get("/customer/wallet")
-            .then(({ data }) => {
-                if (cancelled) return;
-                setBalance(data.balance ?? 0);
-                setTransactions(data.transactions ?? []);
-            })
-            .catch(console.error)
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
+        const fetchWallet = () =>
+            api
+                .get("/customer/wallet")
+                .then(({ data }) => {
+                    if (cancelled) return;
+                    setBalance(data.balance ?? 0);
+                    setTransactions(data.transactions ?? []);
+                })
+                .catch(console.error)
+                .finally(() => {
+                    if (!cancelled) setLoading(false);
+                });
+
+        fetchWallet();
+
+        // A refund (or any other wallet credit) landing while this page is
+        // open — re-pull so the new transaction and balance show up without
+        // a manual refresh.
+        const socket = getSocket();
+        const handleWalletUpdated = () => fetchWallet();
+        socket.on("wallet:updated", handleWalletUpdated);
+
         return () => {
             cancelled = true;
+            socket.off("wallet:updated", handleWalletUpdated);
         };
     }, []);
 
