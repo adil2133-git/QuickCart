@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { getSocket, connectSocket } from "../../../lib/socket";
+import { getSocket } from "../../../lib/socket";
 import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 
 interface DeliveryRequestPayload {
@@ -36,7 +36,6 @@ export function useDriverDeliverySocket() {
         mountedRef.current = true;
 
         const socket = getSocket();
-        connectSocket();
 
         const handleNewRequest = (payload: DeliveryRequestPayload) => {
             addRequest({
