@@ -51,6 +51,8 @@ export function useActiveDeliveryTracking() {
     };
 
     const handleStatusChanged = (p: OrderStatusChangedPayload) => {
+      // driver assignment happens right before this status, so refetch to
+      // pick up the driver details instead of just patching the status in place
       if (p.orderStatus === "OUT_FOR_DELIVERY") {
         api
           .get<GetActiveDeliveryResponse>("/customer/orders/active-delivery")

@@ -7,10 +7,7 @@ const { computeBill, PricingError } = require("../../services/pricingService");
 const walletService = require("../../services/walletService");
 const { createOrderFromCart } = require("../../services/orderCreationService");
 
-// ─── Shared: recompute the bill for a given address, server-side ────────────
-// Never trust an amount the client sends — this is the single place both
-// createRazorpayOrder and verifyPayment go to find out what the order
-// actually costs right now.
+// recomputes the bill server-side — never trust an amount the client sends
 const computeCurrentBill = async (profile, addressId) => {
     const address = profile.savedAddresses.id(addressId);
     if (!address) {
@@ -47,13 +44,9 @@ const computeCurrentBill = async (profile, addressId) => {
     return bill;
 };
 
-// ─── POST /api/customer/payment/create-order ─────────────────────────────────
-// Body: { addressId, useWallet? }
-// Computes the real bill, optionally applies wallet balance, and either:
-//   - the wallet fully covers it -> places the order immediately, no Razorpay
-//     involved at all
-//   - otherwise -> creates a Razorpay order for the remaining amount and
-//     returns it for the frontend to open Checkout.js with
+// POST /api/customer/payment/create-order
+// if wallet balance covers the bill, places the order right away with no
+// Razorpay involved; otherwise creates a Razorpay order for the remainder
 const createRazorpayOrder = async (req, res) => {
     try {
         const { addressId, useWallet } = req.body;
@@ -68,7 +61,7 @@ const createRazorpayOrder = async (req, res) => {
         const walletAmountUsed = useWallet ? Math.min(walletBalance, bill.totalAmount) : 0;
         const amountToPay = bill.totalAmount - walletAmountUsed;
 
-        // Wallet alone covers the order -- place it now, skip Razorpay entirely.
+        // wallet alone covers it — skip Razorpay entirely
         if (amountToPay <= 0) {
             const { order } = await createOrderFromCart({
                 userId: req.user.userID,
@@ -86,14 +79,13 @@ const createRazorpayOrder = async (req, res) => {
             });
         }
 
-       const razorpayOrder = await razorpay.orders.create({
+        const razorpayOrder = await razorpay.orders.create({
             amount: Math.round(amountToPay * 100), // paise
             currency: "INR",
             receipt: `receipt_${Date.now()}`,
-            // The webhook (see razorpayWebhookController.js) only fires with
-            // a payment/order id — it has no idea which cart or address this
-            // was for. Stashing them here is how it reconstructs enough
-            // context to safety-net an order if verify-payment never runs.
+            // the webhook only gets a payment/order id, no idea which cart this
+            // was for — stashing these here lets it reconstruct enough context
+            // to safety-net an order if verify-payment never runs
             notes: {
                 userId: req.user.userID,
                 addressId,
@@ -120,11 +112,9 @@ const createRazorpayOrder = async (req, res) => {
     }
 };
 
-// ─── POST /api/customer/payment/verify-payment ───────────────────────────────
-// Body: { razorpay_order_id, razorpay_payment_id, razorpay_signature, addressId, useWallet? }
-// Verifies the signature, then places the order via the same shared path COD
-// uses -- stock/price/bill are all re-validated fresh, nothing here trusts
-// what the client sent earlier at create-order time.
+// POST /api/customer/payment/verify-payment
+// verifies the signature, then places the order through the same shared path
+// COD uses — stock/price/bill get re-validated fresh either way
 const verifyPayment = async (req, res) => {
     try {
         const {
@@ -173,11 +163,9 @@ const verifyPayment = async (req, res) => {
         });
     } catch (err) {
         console.error("VERIFY PAYMENT ERROR:", err);
-        // Payment was already captured by Razorpay at this point, but the order
-        // failed to place (e.g. stock ran out between create-order and verify).
-        // This needs a human to look at it, not a silent 500 -- flagging clearly
-        // in the response so the frontend can show "contact support" rather
-        // than a generic retry, since retrying won't re-attempt the same payment.
+        // payment was already captured by Razorpay here, but the order failed
+        // to place (e.g. stock ran out in between) — this needs a human to
+        // look at it, so flag it clearly instead of a generic retry
         const status = err.status || 500;
         return res.status(status).json({
             success: false,

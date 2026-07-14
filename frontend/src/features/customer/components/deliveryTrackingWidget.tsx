@@ -31,6 +31,7 @@ const destinationIcon = L.divIcon({
     iconAnchor: [13, 26],
 });
 
+// small, non-interactive preview map — full map lives on the tracking page
 function MiniMap({
     driverPos, destinationPos,
 }: {
@@ -41,6 +42,8 @@ function MiniMap({
     const mapRef = useRef<L.Map | null>(null);
     const driverMarkerRef = useRef<L.Marker | null>(null);
 
+    // map instance is created once and never rebuilt on prop changes —
+    // the marker position effect below handles updates instead
     useEffect(() => {
         if (!containerRef.current || mapRef.current) return;
 
@@ -98,6 +101,7 @@ export default function DeliveryTrackingWidget() {
     return (
         <AnimatePresence>
             {isMinimized ? (
+                // collapsed state — a small side tab that expands the card back out
                 <motion.button
                     key="tab"
                     initial={{ x: 40, opacity: 0 }}

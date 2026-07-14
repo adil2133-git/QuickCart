@@ -4,8 +4,6 @@ const User = require("../../models/shared/user");
 const DriverProfile = require("../../models/driver/driverProfile");
 const StoreProfile = require("../../models/store/storeProfile");
 
-// ---------- helpers ----------
-
 function startOfDay(date = new Date()) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -18,8 +16,7 @@ function daysAgo(n, from = new Date()) {
     return d;
 }
 
-// Percentage change helper — returns a UI-ready trend object.
-// Guards against divide-by-zero (previous === 0) which would otherwise be Infinity/NaN.
+// returns a UI-ready trend object, guarding against divide-by-zero
 function trend(current, previous) {
     if (previous === 0) {
         if (current === 0) return { direction: "neutral", label: "No change" };
@@ -30,8 +27,7 @@ function trend(current, previous) {
     return { direction, label: `${Math.abs(Math.round(pct))}%` };
 }
 
-// Collapses the real 9-value orderStatus enum down to the 4 buckets
-// the dashboard UI is designed around.
+// collapses the 9-value orderStatus enum into the 4 buckets the dashboard UI uses
 function bucketOrderStatus(status) {
     if (status === "DELIVERED") return "Delivered";
     if (status === "CANCELLED") return "Cancelled";
@@ -39,13 +35,11 @@ function bucketOrderStatus(status) {
     return "Processing"; // PENDING, ACCEPTED, PACKING, READY_FOR_PICKUP, DRIVER_ASSIGNED
 }
 
-// paymentMethod is only ever ONLINE or COD in the schema — there is no
-// separate UPI/Card distinction being tracked anywhere yet.
 function mapPayment(method) {
     return method === "ONLINE" ? "Online" : "COD";
 }
 
-// ---------- GET /admin/dashboard/kpis ----------
+// GET /admin/dashboard/kpis
 const getDashboardKpis = async (req, res) => {
     try {
         const todayStart = startOfDay();
@@ -89,8 +83,7 @@ const getDashboardKpis = async (req, res) => {
                 storesActive: { value: storesActive },
                 avgDeliveryMinutes: {
                     value: deliveredToday,
-                    // For delivery time, a "down" trend (faster) is the good direction —
-                    // handled purely in the UI layer, this just reports the raw change.
+                    // whether "down" is good or bad is decided in the UI — this just reports the raw change
                     ...trend(deliveredToday, deliveredYesterday),
                 },
             },
@@ -101,8 +94,7 @@ const getDashboardKpis = async (req, res) => {
     }
 };
 
-// Average minutes between order creation and DELIVERED status, for orders
-// delivered within [from, to). Returns null if nothing delivered in range.
+// average minutes between order creation and DELIVERED status, in [from, to)
 async function avgDeliveryMinutes(from, to) {
     const delivered = await OrderStatusHistory.aggregate([
         { $match: { status: "DELIVERED", timestamp: { $gte: from, $lt: to } } },
@@ -127,7 +119,7 @@ async function avgDeliveryMinutes(from, to) {
     return delivered[0]?.avg ? Math.round(delivered[0].avg) : 0;
 }
 
-// ---------- GET /admin/dashboard/operations ----------
+// GET /admin/dashboard/operations
 const getOperationsIntelligence = async (req, res) => {
     try {
         const sevenDaysAgo = daysAgo(6); // today + 6 previous = 7 days
@@ -155,7 +147,7 @@ const getOperationsIntelligence = async (req, res) => {
             ]),
         ]);
 
-        // Build a full 7-day series (including days with ₹0 revenue), oldest → newest.
+        // full 7-day series including days with ₹0 revenue, oldest -> newest
         const revenueMap = new Map(revenueByDay.map((r) => [r._id, r.total]));
         const revenueTrend = [];
         for (let i = 6; i >= 0; i--) {
@@ -168,7 +160,6 @@ const getOperationsIntelligence = async (req, res) => {
             });
         }
 
-        // Collapse the 9-value enum into the 4 UI buckets.
         const orderStatusBuckets = { Delivered: 0, Processing: 0, "Out for Delivery": 0, Cancelled: 0 };
         statusCounts.forEach((s) => {
             orderStatusBuckets[bucketOrderStatus(s._id)] += s.count;
@@ -197,7 +188,7 @@ const getOperationsIntelligence = async (req, res) => {
     }
 };
 
-// ---------- GET /admin/dashboard/recent-orders ----------
+// GET /admin/dashboard/recent-orders
 const getRecentOrders = async (req, res) => {
     try {
         const { search = "", limit = 8 } = req.query;
@@ -269,11 +260,10 @@ const getRecentOrders = async (req, res) => {
     }
 };
 
-// ---------- GET /admin/dashboard/action-rail ----------
-// "Needs Attention" here only surfaces signals we can actually compute today:
-// stale pending approvals and orders stuck past a reasonable window. COD
-// reconciliation and SLA tracking aren't implemented anywhere yet, so those
-// cards from the old mock have been dropped rather than faked.
+// GET /admin/dashboard/action-rail
+// only surfaces signals we can actually compute today — stale pending
+// approvals and stuck orders. COD reconciliation/SLA tracking aren't
+// implemented yet, so those cards are left out rather than faked.
 const getActionRail = async (req, res) => {
     try {
         const staleThreshold = new Date(Date.now() - 48 * 60 * 60 * 1000);
@@ -304,7 +294,6 @@ const getActionRail = async (req, res) => {
                 .lean(),
         ]);
 
-        // Pull the store/driver-specific display fields for the approval queue preview cards.
         const storeIds = pendingStoreUsers.map((u) => u._id);
         const driverIds = pendingDriverUsers.map((u) => u._id);
 

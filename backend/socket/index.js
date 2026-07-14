@@ -8,18 +8,16 @@ const CustomerProfile = require("../models/customer/customerProfile");
 
 let io = null;
 
-// driverId (string) → setTimeout handle. A clean disconnect is a strong
-// offline signal, but a brief network blip shouldn't instantly kick a driver
-// offline — so we wait a short grace period, and cancel it if they reconnect
-// (e.g. a page refresh, or a second tab) before it fires.
+// driverId -> pending setTimeout. A clean disconnect could just be a page
+// refresh or a brief network blip, so we don't flip the driver offline right
+// away — we wait out a grace period, and cancel it if they reconnect first.
 const driverOfflineTimers = new Map();
 const DRIVER_DISCONNECT_GRACE_MS = 75 * 1000; // 75 seconds
 
-// Resolves the room name(s) a connected socket should join, based on the
-// authenticated user's role. Mirrors the same role → profile lookup your
-// REST controllers already do via resolveStoreProfile / resolveCustomerProfile.
+// figures out which rooms a connected socket should join, based on role —
+// mirrors the same role -> profile lookup the REST controllers already do
 async function resolveRoomsForUser(userId, role) {
-  const rooms = [`user:${userId}`]; // always join a personal room too
+  const rooms = [`user:${userId}`]; // everyone gets a personal room too
 
   if (role === "STORE") {
     const store = await StoreProfile.findOne({ userId }).select("_id");
@@ -43,9 +41,8 @@ function initSocket(httpServer) {
     },
   });
 
-  // ── Auth middleware: same JWT verification as protectRoute.js, reused
-  //    here instead of duplicated, just adapted for the handshake's
-  //    cookie header instead of Express's parsed req.cookies. ───────────────
+  // same JWT verification as protectRoute.js, just adapted for the
+  // handshake's raw cookie header instead of Express's parsed req.cookies
   io.use(async (socket, next) => {
     try {
       const rawCookie = socket.handshake.headers.cookie;
@@ -79,8 +76,7 @@ function initSocket(httpServer) {
         const driverRoom = rooms.find((r) => r.startsWith("driver:"));
         driverId = driverRoom ? driverRoom.split(":")[1] : null;
 
-        // Reconnected before the grace timer fired (refresh, second tab,
-        // brief network blip) — cancel the pending offline flip.
+        // reconnected before the grace timer fired — cancel the pending offline flip
         if (driverId && driverOfflineTimers.has(driverId)) {
           clearTimeout(driverOfflineTimers.get(driverId));
           driverOfflineTimers.delete(driverId);
@@ -94,8 +90,8 @@ function initSocket(httpServer) {
       console.log(`[socket] ${role} ${userID} disconnected`);
 
       if (role === "DRIVER" && driverId) {
-        // Another tab/socket for the same driver may still be open — only
-        // start the grace timer if this was their last connected socket.
+        // another tab for the same driver might still be connected —
+        // only start the grace timer if this was the last one
         const stillConnected = io.sockets.adapter.rooms.get(`driver:${driverId}`);
         if (stillConnected && stillConnected.size > 0) return;
 
@@ -122,7 +118,7 @@ function initSocket(httpServer) {
   return io;
 }
 
-// ─── Emit helpers — controllers call these, never touch `io` directly ────────
+// controllers call these — nothing else should touch `io` directly
 function emitToStore(storeId, event, payload) {
   if (!io) return;
   io.to(`store:${storeId}`).emit(event, payload);

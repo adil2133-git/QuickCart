@@ -15,16 +15,16 @@ const driverProfileSchema = new mongoose.Schema(
         currentLevel: { type: String, default: "BRONZE" },
         availabilityStatus: { type: String, enum: ["ONLINE", "OFFLINE", "BUSY"], default: "OFFLINE" },
 
-        // Live location — updated by the driver app while ONLINE
-        // Stored as { lat, lng } to match StoreProfile's coordinate format.
-        // lastLocationUpdate lets us detect stale/disconnected drivers.
+        // live location, updated by the driver app while ONLINE — { lat, lng }
+        // matches StoreProfile's coordinate format. lastLocationUpdate is what
+        // lets the offline sweep detect stale/disconnected drivers.
         currentLocation: {
             lat: { type: Number, default: null },
             lng: { type: Number, default: null },
         },
         lastLocationUpdate: { type: Date, default: null },
 
-        // NEW — for admin review
+        // admin review trail for driver applications
         reviewNotes: [
             {
                 note: { type: String, required: true },

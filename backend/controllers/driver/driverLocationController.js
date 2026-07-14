@@ -2,14 +2,10 @@ const DriverProfile = require("../../models/driver/driverProfile");
 const Order = require("../../models/shared/order");
 const { emitToCustomer } = require("../../socket");
 
-// Statuses during which the driver already has an assigned order and the
-// customer may be watching a live map — location updates are only worth
-// broadcasting during this window.
+// statuses where a customer might be watching the live map
 const TRACKABLE_STATUSES = ["DRIVER_ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY"];
 
-// ─── PATCH /api/driver/location ───────────────────────────────────────────────
-// Called by the driver app every ~15 seconds while ONLINE. OFFLINE/BUSY pings
-// are silently ignored (BUSY drivers keep the location from when they went BUSY).
+// PATCH /api/driver/location — driver app pings this every ~15s while ONLINE
 const updateLocation = async (req, res) => {
     try {
         const { lat, lng } = req.body;
@@ -26,7 +22,7 @@ const updateLocation = async (req, res) => {
             return res.status(404).json({ success: false, message: "Driver profile not found." });
         }
 
-        // Ignore stale pings that arrive after the driver went offline/busy
+        // ignore pings that slip in after the driver went offline/busy
         if (driver.availabilityStatus !== "ONLINE") {
             return res.status(200).json({ success: true, ignored: true });
         }
@@ -35,8 +31,7 @@ const updateLocation = async (req, res) => {
         driver.lastLocationUpdate = new Date();
         await driver.save();
 
-        // Fire-and-forget: if this driver currently has an order out for
-        // delivery, push the new position straight to that customer.
+        // if this driver has an active delivery, push the position to that customer
         Order.findOne({ driverId: driver._id, orderStatus: { $in: TRACKABLE_STATUSES } })
             .select("_id customerId orderStatus")
             .lean()

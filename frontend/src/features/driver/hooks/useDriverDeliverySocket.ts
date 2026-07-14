@@ -48,9 +48,8 @@ export function useDriverDeliverySocket() {
                 deliveryDistanceKm: payload.deliveryDistanceKm,
                 estimatedEarnings: payload.estimatedEarnings,
                 expiresInSeconds: payload.expiresInSeconds,
-                // Absolute deadline computed once, here, at the moment we know
-                // "expiresInSeconds from now". Every countdown UI reads off this
-                // instead of re-deriving/restarting from expiresInSeconds later.
+                // compute the deadline once here — countdown UI reads this
+                // instead of restarting from expiresInSeconds later
                 expiresAt: Date.now() + payload.expiresInSeconds * 1000,
                 createdAt: new Date().toISOString(),
             });
@@ -61,9 +60,8 @@ export function useDriverDeliverySocket() {
         };
 
         const handleRequestTaken = (payload: RequestTakenPayload) => {
-            // Just remove the card — the toast/notification-bell entry for
-            // this comes from the persisted notification (notifyDriver.requestTaken)
-            // via useNotificationsSync, so we don't show it twice here.
+            // the toast for this comes from the persisted notification instead,
+            // so just remove the card without showing anything here
             removeRequestByOrderId(payload.orderId);
         };
 

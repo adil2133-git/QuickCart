@@ -1,4 +1,3 @@
-// src/features/auth/state/authState.ts
 import { create } from "zustand";
 import { persist, subscribeWithSelector } from "zustand/middleware";
 
@@ -37,19 +36,20 @@ export const useAuthStore = create<AuthState>()(
             const { default: api } = await import("../../../api/axios");
             await api.post("/auth/logout");
           } catch {
-            // Server call failed — still clear local state
+            // server call failed — clear local state anyway
           } finally {
             set({ user: null, isAuthenticated: false });
             window.location.href = "/login";
           }
         },
 
+        // called on app load to check whether the session is still valid
         hydrate: async () => {
           const existing = get().user;
           try {
             const { default: api } = await import("../../../api/axios");
 
-            // Step 1: try /auth/me with the current access token
+            // try /auth/me with the current access token first
             try {
               const { data } = await api.get<{ user: AuthUser }>("/auth/me", {
                 _skipRefresh: true,
@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthState>()(
             } catch (firstErr: unknown) {
               const status = (firstErr as { response?: { status?: number } })?.response?.status;
 
-              // Step 2: if access token expired (401), try silent refresh then retry
+              // access token expired — try a silent refresh, then retry once
               if (status === 401) {
                 try {
                   await api.post("/auth/refresh", {}, { _skipAuthRedirect: true } as never);
@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthState>()(
                   set({ user: data.user, isAuthenticated: true });
                   return true;
                 } catch {
-                  // Refresh token also expired/missing — genuine logged-out state
+                  // refresh token also expired/missing — genuinely logged out
                   if (existing) {
                     set({ user: null, isAuthenticated: false });
                   }
@@ -77,8 +77,7 @@ export const useAuthStore = create<AuthState>()(
                 }
               }
 
-              // Non-401 error (network down, server error) — don't log out
-              // Keep existing session if we have one, just return false
+              // network/server error, not an auth failure — keep any existing session
               return false;
             }
           } catch {

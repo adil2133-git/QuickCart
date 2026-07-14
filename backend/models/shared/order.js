@@ -1,9 +1,6 @@
 const mongoose = require("mongoose");
 
-/**
- * Stores product details at the time of ordering.
- * Keeps a snapshot even if the original product changes later.
- */
+// snapshot of a product at order time, so later price/name changes don't affect past orders
 const orderProductSchema = new mongoose.Schema({
     productId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -26,7 +23,7 @@ const orderProductSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema(
     {
-        // Unique order identifier (e.g., QK1751234567890)
+        // e.g. QK1751234567890
         orderNumber: {
             type: String,
             required: true,
@@ -51,10 +48,7 @@ const orderSchema = new mongoose.Schema(
             default: null,
         },
 
-        /**
-         * Tracks driver dispatch attempts.
-         * Stops retrying once the maximum dispatch rounds are exhausted.
-         */
+        // tracks how many dispatch rounds have run for this order
         deliveryRequestRound: {
             type: Number,
             default: 0,
@@ -106,10 +100,7 @@ const orderSchema = new mongoose.Schema(
             default: "PENDING",
         },
 
-        /**
-         * Amount paid using the customer's wallet.
-         * Helps track split payments with Razorpay.
-         */
+        // portion of the total paid from wallet balance, rest via Razorpay
         walletAmountUsed: {
             type: Number,
             default: 0,
@@ -136,10 +127,6 @@ const orderSchema = new mongoose.Schema(
             required: true,
         },
 
-        /**
-         * Delivery location coordinates.
-         * Used for distance calculation and driver navigation.
-         */
         deliveryCoordinates: {
             lat: {
                 type: Number,
@@ -185,7 +172,6 @@ const orderSchema = new mongoose.Schema(
     }
 );
 
-// Auto-generate order number when not provided.
 orderSchema.path("orderNumber").default(function () {
     return "QK" + Date.now();
 });

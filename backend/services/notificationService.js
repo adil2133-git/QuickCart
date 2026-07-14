@@ -4,8 +4,7 @@ const StoreProfile = require("../models/store/storeProfile");
 const DriverProfile = require("../models/driver/driverProfile");
 const { emitToCustomer, emitToStore, emitToDriver } = require("../socket");
 
-// ─── Room resolver ────────────────────────────────────────────────────────────
-// Rooms are keyed by Profile._id, not userId. This maps userId → profileId.
+// rooms are keyed by profile._id, not userId — this maps userId -> profileId
 async function resolveProfileId(userId, role) {
     const Model = role === "CUSTOMER" ? CustomerProfile
                 : role === "STORE"    ? StoreProfile
@@ -16,7 +15,7 @@ async function resolveProfileId(userId, role) {
     return p?._id ?? null;
 }
 
-// ─── Core: save to DB + emit via socket ──────────────────────────────────────
+// saves the notification to the DB, then pushes it live over socket
 async function notify({ userId, role, title, message, type = "ORDER", orderId = null }) {
     try {
         const saved = await Notification.create({ userId, title, message, type, orderId });
@@ -42,7 +41,7 @@ async function notify({ userId, role, title, message, type = "ORDER", orderId = 
     }
 }
 
-// ─── Order lifecycle — customer ───────────────────────────────────────────────
+// customer-facing notifications, one per order-lifecycle event
 const notifyCustomer = {
     orderPlaced: (userId, orderNumber, orderId) => notify({
         userId, role: "CUSTOMER", orderId, type: "ORDER",
@@ -107,7 +106,7 @@ const notifyCustomer = {
     }),
 };
 
-// ─── Order lifecycle — store ──────────────────────────────────────────────────
+// store-facing notifications
 const notifyStore = {
     newOrder: (userId, orderNumber, orderId) => notify({
         userId, role: "STORE", orderId, type: "ORDER",
@@ -151,7 +150,7 @@ const notifyStore = {
     }),
 };
 
-// ─── Order lifecycle — driver ─────────────────────────────────────────────────
+// driver-facing notifications
 const notifyDriver = {
     assigned: (userId, orderNumber, storeName, orderId) => notify({
         userId, role: "DRIVER", orderId, type: "DELIVERY",

@@ -2,13 +2,12 @@ const cron = require("node-cron");
 const DriverProfile = require("../models/driver/driverProfile");
 const { emitToDriver } = require("../socket");
 
-// Same 5-minute window used to filter dispatch candidates — but here we
-// actually flip the DB status instead of just excluding them from one query,
-// so availabilityStatus stops silently drifting from reality.
+// same window used to filter dispatch candidates, but here we actually
+// flip the DB status so availabilityStatus doesn't silently drift from reality
 const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 
-// Runs every minute — finds drivers still marked ONLINE whose last location
-// ping is older than the stale threshold and forces them OFFLINE.
+// runs every minute — forces any driver still marked ONLINE with a stale
+// location ping to OFFLINE
 function startDriverOfflineSweep() {
     cron.schedule("*/1 * * * *", async () => {
         try {

@@ -28,7 +28,7 @@ const Login = async (req, res) => {
             return res.status(403).json({ message: "Your account has been blocked" });
         }
 
-        // Drivers go through an approval process, so they need extra status checks other roles don't
+        // drivers go through an approval process, so they need extra status checks
         if (user.role === "DRIVER") {
             if (user.status === "REJECTED") {
                 return res.status(403).json({
@@ -70,7 +70,7 @@ const Login = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     try {
-        // Force driver availability to OFFLINE so the next login doesn't restore a stale ONLINE status
+        // force the driver back offline so the next login doesn't restore a stale ONLINE status
         if (req.user?.role === "DRIVER") {
             await DriverProfile.findOneAndUpdate(
                 { userId: req.user.userID },

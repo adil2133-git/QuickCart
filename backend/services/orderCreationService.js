@@ -11,8 +11,7 @@ const { notifyCustomer, notifyStore } = require("./notificationService");
 const { computeBill, PricingError } = require("./pricingService");
 const walletService = require("./walletService");
 
-// Matches LOW_STOCK_THRESHOLD in storeDashboardController.js — keep in sync
-// until this becomes a real per-store config value.
+// keep in sync with LOW_STOCK_THRESHOLD in storeDashboardController.js
 const LOW_STOCK_THRESHOLD = 10;
 
 const formatAddress = (addr) => {
@@ -20,22 +19,9 @@ const formatAddress = (addr) => {
     return addr.address;
 };
 
-// ─── Shared order creation ────────────────────────────────────────────────────
-// Used by both the COD path (checkoutController.placeOrder) and the online
-// payment path (paymentController.verifyPayment / fully-wallet-covered
-// checkout). Re-validates stock, re-derives the store, and recomputes the
-// bill server-side every time — nothing here ever trusts a client-supplied
-// amount.
-//
-// Options:
-//   userId              — req.user.userID
-//   addressId            — selected saved address id
-//   paymentMethod        — "COD" | "ONLINE"
-//   paymentStatus        — "PENDING" | "PAID"
-//   useWallet            — boolean, whether to apply wallet balance toward this order.
-//                          Ignored for COD.
-//   razorpayOrderId / razorpayPaymentId / razorpaySignature — set only when
-//                          this order is being created after a verified Razorpay payment
+// Shared by both COD checkout and the online/wallet payment flow.
+// Re-validates stock and recomputes the bill server-side every time —
+// nothing here trusts a client-supplied amount.
 const createOrderFromCart = async ({
     userId,
     addressId,
@@ -69,7 +55,7 @@ const createOrderFromCart = async ({
         throw err;
     }
 
-    // Re-fetch products fresh — never trust the price/quantity cached on the cart
+    // re-fetch products fresh — never trust price/quantity cached on the cart
     const productIds = cart.products.map((p) => p.productId);
     const products = await Product.find({ _id: { $in: productIds } })
         .select("productName price availabilityStatus stockQuantity storeId")
@@ -101,11 +87,11 @@ const createOrderFromCart = async ({
             productId: product._id,
             productName: product.productName,
             quantity: item.quantity,
-            price: product.price, // always the current price, not the cart's cached price
+            price: product.price, // current price, not the cart's cached price
         });
     }
 
-    // All items must belong to a single store — re-derived here rather than trusted
+    // all items must belong to one store — re-derived here, not trusted from the client
     const storeId = products[0].storeId;
     const mismatched = products.some((p) => p.storeId.toString() !== storeId.toString());
     if (mismatched) {
@@ -137,10 +123,8 @@ const createOrderFromCart = async ({
         throw err;
     }
 
-    // Wallet only applies to ONLINE orders — COD stays a simple pay-on-delivery
-    // flow, and combining wallet-credit with cash-on-delivery adds a
-    // reconciliation case (driver collecting less cash than the order total)
-    // that isn't worth the complexity right now.
+    // wallet only applies to ONLINE orders — mixing it with COD would mean the
+    // driver collects less cash than the order total, which isn't worth handling yet
     let walletAmountUsed = 0;
     if (paymentMethod === "ONLINE" && useWallet) {
         const balance = await walletService.getBalance(profile._id);
@@ -149,11 +133,10 @@ const createOrderFromCart = async ({
 
     const session = await mongoose.startSession();
     let createdOrder;
-    const stockAlerts = []; // { productName, stockQuantity } — filled during the decrement loop below
+    const stockAlerts = []; // { productName, stockQuantity }, filled in during the decrement loop below
 
     try {
         await session.withTransaction(async () => {
-            // Decrement stock for each product
             for (const item of orderProducts) {
                 const updated = await Product.findOneAndUpdate(
                     { _id: item.productId, stockQuantity: { $gte: item.quantity } },
@@ -164,9 +147,8 @@ const createOrderFromCart = async ({
                     throw new Error(`Insufficient stock for ${item.productName}.`);
                 }
 
-                // Only alert the moment stock *crosses* into low/out-of-stock —
-                // not on every order placed after it's already below threshold,
-                // otherwise the store gets spammed with the same alert repeatedly.
+                // only alert the moment stock crosses into low/out-of-stock,
+                // not on every order after that — otherwise the store gets spammed
                 const preStock = productMap.get(item.productId.toString())?.stockQuantity ?? 0;
                 if (preStock > LOW_STOCK_THRESHOLD && updated.stockQuantity <= LOW_STOCK_THRESHOLD) {
                     stockAlerts.push({ productName: item.productName, stockQuantity: updated.stockQuantity });
@@ -239,7 +221,6 @@ const createOrderFromCart = async ({
         placedAt: order.createdAt,
     });
 
-    // Notify customer their order was received
     CustomerProfile.findById(order.customerId)
         .populate("userId", "_id")
         .lean()
@@ -249,7 +230,7 @@ const createOrderFromCart = async ({
             }
         }).catch(() => {});
 
-    // Fire-and-forget order emails — don't hold up the customer's response.
+    // fire-and-forget — don't hold up the response for emails
     StoreProfile.findById(storeId)
         .populate("userId", "name email")
         .lean()

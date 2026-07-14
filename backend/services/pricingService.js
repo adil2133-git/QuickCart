@@ -1,8 +1,7 @@
 const { haversineKm } = require("../utils/distance");
 
-// All values here per "Money Handling & Business Rules" Section 14 —
-// keep this the single place these numbers live. If these ever move to a
-// settings table, this is the only file that needs to change.
+// pricing config lives here as the single source of truth —
+// if these ever move to a settings table, this is the only file that changes
 const HANDLING_FEE = 15;
 const MIN_ORDER_VALUE = 150;
 const FREE_DELIVERY_THRESHOLD = 499; // subtotal strictly above this waives delivery charge
@@ -21,9 +20,8 @@ class PricingError extends Error {
     }
 }
 
-// ─── Store → Customer distance ───────────────────────────────────────────────
-// Always store → customer, never the driver's location — the driver isn't
-// assigned yet at checkout time anyway.
+// always store -> customer distance, never the driver's — no driver is
+// assigned yet at checkout time anyway
 const resolveDistanceKm = (storeCoordinates, addressCoordinates) => {
     if (
         !addressCoordinates ||
@@ -56,9 +54,7 @@ const deliveryChargeForDistance = (distanceKm) => {
     return tier.charge;
 };
 
-// ─── Full bill breakdown ──────────────────────────────────────────────────────
-// subtotal: sum of product prices × quantity (server-recomputed, never trusted from client)
-// storeCoordinates / addressCoordinates: { lat, lng }
+// subtotal is always server-recomputed, never trusted from the client
 const computeBill = ({ subtotal, storeCoordinates, addressCoordinates }) => {
     if (subtotal < MIN_ORDER_VALUE) {
         throw new PricingError(`Minimum order value is ₹${MIN_ORDER_VALUE}. Add a few more items to continue.`);

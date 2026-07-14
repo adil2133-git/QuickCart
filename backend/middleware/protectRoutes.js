@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/shared/user");
 require("dotenv").config();
 
+// checks the access token (cookie, header, or query param) and attaches req.user
 const protectRoutes = async (req, res, next) => {
     try {
         let token =

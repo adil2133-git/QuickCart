@@ -8,26 +8,19 @@ const { notifyStore, notifyCustomer } = require("../../services/notificationServ
 const { sendOrderCancelledEmail } = require("../../services/mailService");
 const walletService = require("../../services/walletService");
 
-// Cancellation compensation, per "Money Handling & Business Rules" Section 12.
-// Only the two stages a customer can self-cancel from apply here -- store
-// keeps a slice of the handling fee as compensation for work already done,
-// and the customer gets the rest back automatically, credited to their
-// wallet (never a real-money gateway refund, so this can safely be instant).
+// cancellation compensation — only the two stages a customer can self-cancel
+// from apply here. Store keeps a slice of the handling fee for work already
+// done, customer gets the rest back to their wallet (never a gateway refund,
+// so it's safe to credit instantly).
 const REFUND_DEDUCTION_BY_STATUS = {
     PENDING: 0,
     ACCEPTED: 0,
-    PACKING: 20, // store has started packing -- keeps ₹20 of the handling fee
+    PACKING: 20, // packing already started — store keeps ₹20 of the handling fee
 };
 
-// KNOWN GAP (documented in Money Handling & Business Rules, Section 15):
-// both paths below now correctly *collect* ₹20 from the customer once packing
-// has started -- reduced from their refund (PAID) or deducted from their
-// wallet (COD, via debitCancellationFee). What's still missing is the other
-// side: that ₹20 is never actually credited to the store anywhere
-// (StoreTransaction is never written to by any controller). So today the
-// money is taken from the customer correctly, but it doesn't yet land
-// anywhere -- it should end up as store income once the store wallet/
-// settlement system exists.
+// known gap: both cancellation paths correctly collect this ₹20 from the
+// customer, but it's never credited anywhere on the store side yet — there's
+// no store wallet/settlement system in place to receive it
 
 const resolveCustomerId = async (req) => {
     const profile = await resolveCustomerProfile(req.user.userID);
@@ -46,7 +39,7 @@ const STAGE_FOR_STATUS = {
     CANCELLED: "CANCELLED",
 };
 
-// Percent shown on the progress bar — a judgment call, not derived from stored data
+// progress bar percentage — a judgment call, not derived from stored data
 const PROGRESS_FOR_STATUS = {
     PENDING: 10,
     ACCEPTED: 20,
@@ -70,9 +63,9 @@ const ACTIVE_STATUSES = [
 ];
 const PAST_STATUSES = ["DELIVERED", "CANCELLED"];
 
-// ─── Helper: shape one Order doc into what the frontend card expects ─────────
-// The order only snapshots productName/quantity/price, not an image, so the
-// thumbnail is looked up live via productImageMap (built by the callers below).
+// shapes one order doc into what the frontend order card expects.
+// only productName/quantity/price get snapshotted on the order, so the
+// thumbnail is looked up live via productImageMap (built by the callers below)
 const toCardShape = (order, productImageMap = {}) => {
     const items = order.products || [];
     const firstItem = items[0];
@@ -90,7 +83,7 @@ const toCardShape = (order, productImageMap = {}) => {
         placedAt: order.createdAt,
         storeName: order.storeId?.storeName ?? "Store",
         status: STAGE_FOR_STATUS[order.orderStatus] ?? "PROCESSING",
-        rawStatus: order.orderStatus, // exposed in case the UI ever needs the precise state
+        rawStatus: order.orderStatus,
         driverSearchFailed: order.driverSearchFailed ?? false,
         itemSummary: firstItem?.productName ?? "Order items",
         itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
@@ -100,9 +93,7 @@ const toCardShape = (order, productImageMap = {}) => {
     };
 };
 
-// ─── GET /api/customer/orders?tab=active|past ────────────────────────────────
-// Returns the customer's orders, newest first. ?tab filters by status group;
-// omit it to get everything.
+// GET /api/customer/orders?tab=active|past
 const getOrders = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -120,7 +111,7 @@ const getOrders = async (req, res) => {
             .populate({ path: "storeId", select: "storeName logoUrl" })
             .lean();
 
-        // Batch the image lookups for each order's first item instead of N+1 queries
+        // batch the thumbnail lookups instead of one query per order
         const firstProductIds = orders
             .map((o) => o.products?.[0]?.productId)
             .filter(Boolean);
@@ -142,8 +133,7 @@ const getOrders = async (req, res) => {
     }
 };
 
-// ─── GET /api/customer/orders/:id ─────────────────────────────────────────────
-// Full detail for a single order — used by "View Details" / "Track Order".
+// GET /api/customer/orders/:id — full detail for "View Details" / "Track Order"
 const getOrderDetail = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -157,7 +147,6 @@ const getOrderDetail = async (req, res) => {
             return res.status(404).json({ success: false, message: "Order not found." });
         }
 
-        // driver stays null until delivery assignment is built (see driverId note above)
         const productIds = (order.products || []).map((p) => p.productId);
         const products = await Product.find({ _id: { $in: productIds } })
             .select("images")
@@ -191,12 +180,11 @@ const getOrderDetail = async (req, res) => {
     }
 };
 
-// Statuses a customer may still self-cancel from — anything up through
-// "being packed", but not once the store has marked it ready for pickup
-// (a driver search/assignment may already be underway at that point).
+// statuses a customer can still self-cancel from — up through packing,
+// but not once it's ready for pickup (a driver search may already be underway)
 const CUSTOMER_CANCELLABLE_STATUSES = ["PENDING", "ACCEPTED", "PACKING"];
 
-// ─── PATCH /api/customer/orders/:id/cancel ───────────────────────────────────
+// PATCH /api/customer/orders/:id/cancel
 const cancelOrder = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -217,10 +205,9 @@ const cancelOrder = async (req, res) => {
         const previousStatus = order.orderStatus;
         order.orderStatus = "CANCELLED";
 
-        // Two mutually exclusive money-movement paths, depending on whether
-        // the order was actually paid for yet:
-        let refundAmount = 0; // online/PAID orders: refunded, minus any store-compensation deduction
-        let feeCharged = 0;   // COD orders: nothing was ever charged, so compensation is a direct wallet debit instead
+        // two separate money paths depending on whether the order was paid for yet
+        let refundAmount = 0; // PAID orders: refunded, minus any store-compensation deduction
+        let feeCharged = 0;   // COD orders: nothing was charged, so compensation comes out of the wallet instead
         if (order.paymentStatus === "PAID") {
             const deduction = REFUND_DEDUCTION_BY_STATUS[previousStatus] ?? 0;
             refundAmount = Math.max(order.totalAmount - deduction, 0);
@@ -234,10 +221,8 @@ const cancelOrder = async (req, res) => {
 
             order.paymentStatus = "REFUNDED";
         } else {
-            // COD order — never charged, so there's no refund to reduce. If the
-            // store had already started packing, the same compensation amount
-            // is instead deducted directly from the customer's wallet (clamped
-            // to whatever balance they actually have — see debitCancellationFee).
+            // COD — nothing to refund, so if packing had already started, deduct
+            // the same compensation directly from the wallet (clamped to balance)
             const deduction = REFUND_DEDUCTION_BY_STATUS[previousStatus] ?? 0;
             if (deduction > 0) {
                 feeCharged = await walletService.debitCancellationFee({
@@ -251,10 +236,6 @@ const cancelOrder = async (req, res) => {
 
         await order.save();
 
-        // Always let the customer know their cancellation went through — the
-        // message itself (built in notificationService) already distinguishes
-        // "refunded to wallet" (online payment), "fee deducted" (COD, packing
-        // had started), and "nothing to refund" (COD, cancelled before packing).
         CustomerProfile.findById(order.customerId)
             .populate("userId", "_id")
             .lean()
@@ -267,8 +248,6 @@ const cancelOrder = async (req, res) => {
             })
             .catch(() => {});
 
-        // Live update to the customer's own orders page (same event the
-        // store-driven status changes use, so useCustomerOrderSocket just works).
         emitToCustomer(customerId, "order:statusChanged", {
             orderId: order._id.toString(),
             orderStatus: "CANCELLED",
@@ -276,7 +255,6 @@ const cancelOrder = async (req, res) => {
             refundAmount,
         });
 
-        // Live update + notification for the store
         emitToStore(order.storeId, "order:statusChanged", {
             orderId: order._id.toString(),
             orderStatus: "CANCELLED",
@@ -309,11 +287,8 @@ const cancelOrder = async (req, res) => {
     }
 };
 
-// ─── GET /api/customer/orders/active-delivery ───────────────────────────────
-// Powers the floating tracking widget — returns the customer's current
-// OUT_FOR_DELIVERY order (driver already has it, en route) with everything
-// the widget/tracking screen need in one call, or activeDelivery: null if
-// nothing is currently out for delivery.
+// GET /api/customer/orders/active-delivery — powers the floating tracking
+// widget, returns the customer's current out-for-delivery order (or null)
 const getActiveDelivery = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);

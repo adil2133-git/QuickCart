@@ -1,5 +1,7 @@
+// average two-wheeler city speed, used for rough ETA estimates
 const AVERAGE_SPEED_KMH = 22;
 
+// straight-line distance in km between two coordinates
 export function haversineKm(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number }

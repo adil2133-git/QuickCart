@@ -5,20 +5,16 @@ const { computeBill, PricingError, MIN_ORDER_VALUE } = require("../../services/p
 const walletService = require("../../services/walletService");
 const { createOrderFromCart } = require("../../services/orderCreationService");
 
-// resolveCustomerProfile returns the full profile doc (not just the id) —
-// callers below rely on savedAddresses/defaultAddress/codAllowed too.
+// resolveCustomerProfile returns the full profile doc, not just the id —
+// callers below need savedAddresses/defaultAddress/codAllowed too
 const resolveCustomerProfileDoc = async (req) => {
     return await resolveCustomerProfile(req.user.userID);
 };
 
-// ─── GET /api/customer/checkout/summary?addressId=... ────────────────────────
-// Returns everything the checkout page needs in one call: cart contents,
-// the resolved addresses, the customer's wallet balance, and computed totals
-// for whichever address is selected (defaults to the customer's default
-// address, or the first saved one). No writes happen here.
-//
-// Delivery charge depends on store -> address distance, so totals can only be
-// computed once an address is known -- that's why this now takes ?addressId.
+// GET /api/customer/checkout/summary?addressId=...
+// returns cart contents, addresses, wallet balance, and computed totals for
+// whichever address is selected. Delivery charge depends on store -> address
+// distance, so totals can only be computed once an address is known.
 const getCheckoutSummary = async (req, res) => {
     try {
         const profile = await resolveCustomerProfileDoc(req);
@@ -48,7 +44,6 @@ const getCheckoutSummary = async (req, res) => {
 
         const subtotal = cart.totalAmount;
 
-        // Resolve which address totals are computed against
         const resolvedAddressId = addressId || profile.defaultAddress || profile.savedAddresses[0]?._id;
         const address = resolvedAddressId ? profile.savedAddresses.id(resolvedAddressId) : null;
 
@@ -56,8 +51,8 @@ const getCheckoutSummary = async (req, res) => {
         let pricingError = null;
 
         if (address) {
-            // All cart items are expected to share one store (enforced at
-            // add-to-cart time) -- grab it from the first populated product.
+            // all cart items share one store (enforced at add-to-cart time) —
+            // grab it from the first populated product
             const storeId = cart.products[0]?.productId?.storeId?._id;
             const storeProfile = storeId
                 ? await StoreProfile.findById(storeId).select("coordinates").lean()
@@ -103,11 +98,9 @@ const getCheckoutSummary = async (req, res) => {
     }
 };
 
-// --- POST /api/customer/checkout/place-order -----------------------------
-// Body: { addressId, paymentMethod }
-// COD only -- ONLINE orders are created by paymentController.verifyPayment
-// after a Razorpay payment is verified (or immediately, if wallet balance
-// fully covers the total; see paymentController.createRazorpayOrder).
+// POST /api/customer/checkout/place-order — COD only.
+// ONLINE orders go through paymentController.verifyPayment instead (or get
+// created immediately if the wallet fully covers the total).
 const placeOrder = async (req, res) => {
     try {
         const { addressId, paymentMethod } = req.body;

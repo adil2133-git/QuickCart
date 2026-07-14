@@ -2,11 +2,10 @@ const cron = require("node-cron");
 const Order = require("../models/shared/order");
 const { dispatchRound } = require("../services/deliveryDispatchService");
 
-// Runs every 15 seconds — finds orders stuck at READY_FOR_PICKUP whose
-// current dispatch round has expired with no driver accepting, and sends
-// the next round (wider radius, previously-declined drivers excluded).
-// dispatchRound itself marks driverSearchFailed once MAX_DISPATCH_ROUNDS is
-// exhausted, so this job just keeps sweeping — it doesn't need round limits.
+// runs every 15s — finds orders whose current dispatch round expired
+// with no driver accepting, and kicks off the next round.
+// dispatchRound handles marking driverSearchFailed once rounds run out,
+// so this job doesn't need to track round limits itself.
 function startDeliveryRequestRetry() {
     cron.schedule("*/15 * * * * *", async () => {
         try {

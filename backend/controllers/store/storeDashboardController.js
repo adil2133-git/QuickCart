@@ -3,8 +3,7 @@ const Product = require("../../models/store/product");
 const { resolveStoreProfile } = require("../../services/storeProfileService");
 const { getLiveStoreStatus } = require("../../utils/storeStatus");
 
-// Matches LOW_STOCK_THRESHOLD on the frontend (components/store/lib/dashboardUtils.ts) —
-// keep these two in sync until this becomes a real per-store config value.
+// keep in sync with LOW_STOCK_THRESHOLD on the frontend (store/lib/dashboardUtils.ts)
 const LOW_STOCK_THRESHOLD = 10;
 
 const PENDING_STATUSES = ["PENDING", "ACCEPTED", "PACKING", "READY_FOR_PICKUP"];
@@ -26,7 +25,7 @@ function pctChange(today, yesterday) {
     return Math.round(((today - yesterday) / yesterday) * 1000) / 10;
 }
 
-// Builds a "HH:mm – HH:mm" label for today, or "Closed today" / "Hours not set".
+// builds a "HH:mm – HH:mm" label for today, or "Closed today" / "Hours not set"
 function formatTodaysHours(operatingHours = []) {
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const today = dayNames[new Date().getDay()];
@@ -36,7 +35,7 @@ function formatTodaysHours(operatingHours = []) {
     return `${entry.openTime} – ${entry.closeTime}`;
 }
 
-// ─── GET /api/store/dashboard/summary ─────────────────────────────────────────
+// GET /api/store/dashboard/summary
 const getDashboardSummary = async (req, res) => {
     try {
         const store = await resolveStoreProfile(req.user.userID);
@@ -62,10 +61,8 @@ const getDashboardSummary = async (req, res) => {
                 }).select("productName stockQuantity"),
             ]);
 
-        // Cancelled orders were never actually earned, regardless of when
-        // they were placed or how far they got before cancellation — so
-        // they're excluded from revenue (but still counted in todaysOrders,
-        // which tracks order volume/activity, not money).
+        // cancelled orders were never actually earned — excluded from revenue,
+        // but still counted in todaysOrders, which tracks order volume, not money
         const todaysRevenue = todaysOrders
             .filter((o) => o.orderStatus !== "CANCELLED")
             .reduce((sum, o) => sum + o.totalAmount, 0);
@@ -73,7 +70,7 @@ const getDashboardSummary = async (req, res) => {
             .filter((o) => o.orderStatus !== "CANCELLED")
             .reduce((sum, o) => sum + o.totalAmount, 0);
 
-        // Best selling today — aggregate quantity sold per product
+        // aggregate quantity sold per product, today only
         const soldByProduct = new Map(); // productId -> { productName, unitsSold }
         for (const order of todaysOrders) {
             for (const item of order.products || []) {

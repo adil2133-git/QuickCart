@@ -8,36 +8,27 @@ const { haversineKm } = require("../utils/distance");
 const { emitToDriver, emitToCustomer } = require("../socket");
 const { notifyStore, notifyCustomer } = require("./notificationService");
 
-// Driver location is considered stale after 5 minutes
+// driver location older than this is treated as stale
 const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000;
 
-// Driver has 30 seconds to accept or reject
+// time a driver gets to accept/reject a request
 const REQUEST_EXPIRY_SECONDS = 30;
 
-// Search radius for each dispatch round
+// radius grows with each round
 const RADIUS_KM_BY_ROUND = [5, 8, 10];
 const MAX_DISPATCH_ROUNDS = RADIUS_KM_BY_ROUND.length;
 
-// Fallback settings
+// after normal rounds are exhausted, retry at max radius a couple more times
 const FALLBACK_COOLDOWN_MS = 2 * 60 * 1000;
 const FALLBACK_ATTEMPTS = 2;
-const TOTAL_DISPATCH_ROUNDS =
-    MAX_DISPATCH_ROUNDS + FALLBACK_ATTEMPTS;
+const TOTAL_DISPATCH_ROUNDS = MAX_DISPATCH_ROUNDS + FALLBACK_ATTEMPTS;
 
-// Driver earning settings
 const BASE_FARE = 15;
 const RATE_PER_KM = 6;
 
-// Calculate estimated earnings
 const estimateEarnings = (pickupKm, deliveryKm) =>
-    Math.round(
-        (
-            BASE_FARE +
-            RATE_PER_KM * (pickupKm + deliveryKm)
-        ) * 100
-    ) / 100;
+    Math.round((BASE_FARE + RATE_PER_KM * (pickupKm + deliveryKm)) * 100) / 100;
 
-// Load required order details for dispatch
 const loadOrderForDispatch = (orderId) =>
     Order.findById(orderId)
         .populate({
@@ -48,7 +39,6 @@ const loadOrderForDispatch = (orderId) =>
             "orderNumber recipientName deliveryAddress deliveryCoordinates totalAmount paymentMethod products storeId customerId orderStatus driverId deliveryRequestRound driverSearchFailed"
         );
 
-// Get drivers who already rejected this order
 const getExcludedDriverIds = async (orderId) => {
     const rejected = await DriverDeliveryRequest.find({
         orderId,
@@ -60,7 +50,7 @@ const getExcludedDriverIds = async (orderId) => {
     return rejected.map((r) => r.driverId.toString());
 };
 
-// Create delivery request documents and emit socket events
+// creates the request docs for this round and pushes them to drivers over socket
 const createAndEmitRequests = async (
     order,
     driverDistancePairs,
@@ -68,20 +58,15 @@ const createAndEmitRequests = async (
     deliveryDistanceKm
 ) => {
     const requests = await DriverDeliveryRequest.insertMany(
-        driverDistancePairs.map(
-            ({ driverId, pickupDistanceKm }) => ({
-                orderId: order._id,
-                driverId,
-                status: "PENDING",
-                pickupDistanceKm,
-                deliveryDistanceKm,
-                estimatedEarnings: estimateEarnings(
-                    pickupDistanceKm,
-                    deliveryDistanceKm
-                ),
-                expiresAt,
-            })
-        ),
+        driverDistancePairs.map(({ driverId, pickupDistanceKm }) => ({
+            orderId: order._id,
+            driverId,
+            status: "PENDING",
+            pickupDistanceKm,
+            deliveryDistanceKm,
+            estimatedEarnings: estimateEarnings(pickupDistanceKm, deliveryDistanceKm),
+            expiresAt,
+        })),
         { ordered: false }
     );
 
@@ -92,10 +77,7 @@ const createAndEmitRequests = async (
         deliveryAddress: order.deliveryAddress,
         totalAmount: order.totalAmount,
         paymentMethod: order.paymentMethod,
-        itemCount: (order.products || []).reduce(
-            (sum, item) => sum + item.quantity,
-            0
-        ),
+        itemCount: (order.products || []).reduce((sum, item) => sum + item.quantity, 0),
         storeName: order.storeId?.storeName ?? "Store",
         storeAddress: order.storeId?.address ?? "",
     };
@@ -114,10 +96,7 @@ const createAndEmitRequests = async (
     return requests;
 };
 
-// Mark an order's driver search as failed and notify both sides.
-// Previously this only notified the store — the customer was never told,
-// leaving them staring at "Finding Your Driver" indefinitely. Now both get
-// a notification the moment the search is given up on.
+// gives up on finding a driver and notifies both the store and the customer
 const markSearchFailed = async (order, logMessage) => {
     order.driverSearchFailed = true;
     await order.save();
@@ -159,7 +138,7 @@ const markSearchFailed = async (order, logMessage) => {
         .catch(() => {});
 };
 
-// Send the current dispatch round to nearby drivers
+// runs one round of the driver search for an order
 const dispatchRound = async (orderId) => {
     const order = await loadOrderForDispatch(orderId);
 
@@ -168,7 +147,7 @@ const dispatchRound = async (orderId) => {
         return { dispatched: false, exhausted: false };
     }
 
-    // Stop if order is no longer eligible for dispatch
+    // order might have already got a driver or failed between scheduling and running
     if (
         order.orderStatus !== "READY_FOR_PICKUP" ||
         order.driverId ||
@@ -180,22 +159,16 @@ const dispatchRound = async (orderId) => {
     const nextRound = order.deliveryRequestRound + 1;
     const isFallbackRound = nextRound > MAX_DISPATCH_ROUNDS;
 
-    // Stop searching if all rounds are completed
-   if (nextRound > TOTAL_DISPATCH_ROUNDS) {
+    if (nextRound > TOTAL_DISPATCH_ROUNDS) {
         await markSearchFailed(
             order,
             `[dispatch] Order ${orderId} exhausted all ${MAX_DISPATCH_ROUNDS} rounds + ${FALLBACK_ATTEMPTS} fallback attempts — no driver found`
         );
 
-        return {
-            dispatched: false,
-            exhausted: true,
-        };
+        return { dispatched: false, exhausted: true };
     }
 
-    // Fail fast: if there isn't a single online driver anywhere right now,
-    // there's no point burning through the remaining rounds/fallback cooldowns —
-    // nothing about widening the radius will help when nobody is online at all.
+    // if nobody is online at all, widening the radius won't help — fail fast
     const onlineDriverCount = await DriverProfile.countDocuments({
         availabilityStatus: "ONLINE",
     });
@@ -208,21 +181,16 @@ const dispatchRound = async (orderId) => {
 
         return { dispatched: false, exhausted: true };
     }
-}
-    // Fail fast — but only once we're already in the fallback phase (i.e. all
-    // 3 normal radius rounds already ran with no luck). We deliberately don't
-    // do this on the very first rounds: a driver could log on moments after
-    // this check runs, and dispatchToOnlineDriver's catch-up logic only looks
-    // at orders that aren't already marked driverSearchFailed — so failing too
-    // early here would permanently miss that driver instead of just delaying
-    // the match by a few seconds. Skipping straight from "no drivers online"
-    // to "give up" only makes sense once the cheap, real attempts are spent.
+
+    // only fail-fast on the fallback phase, not the normal rounds — a driver
+    // could still log on any second during the real rounds, and we don't
+    // want to give up on them early
     if (isFallbackRound) {
-        const onlineDriverCount = await DriverProfile.countDocuments({
+        const onlineNow = await DriverProfile.countDocuments({
             availabilityStatus: "ONLINE",
         });
 
-        if (onlineDriverCount === 0) {
+        if (onlineNow === 0) {
             await markSearchFailed(
                 order,
                 `[dispatch] Order ${orderId}: no online drivers at all during fallback phase — failing search early instead of waiting out remaining fallback cooldowns`
@@ -230,148 +198,95 @@ const dispatchRound = async (orderId) => {
 
             return { dispatched: false, exhausted: true };
         }
+    }
 
-    // Select search radius
     const radiusKm = isFallbackRound
         ? RADIUS_KM_BY_ROUND[RADIUS_KM_BY_ROUND.length - 1]
         : RADIUS_KM_BY_ROUND[nextRound - 1];
 
     const storeCoords = order.storeId?.coordinates;
-    const hasStoreLocation =
-        storeCoords?.lat && storeCoords?.lng;
+    const hasStoreLocation = storeCoords?.lat && storeCoords?.lng;
 
     const deliveryCoords = order.deliveryCoordinates;
-    const hasDeliveryLocation =
-        deliveryCoords?.lat && deliveryCoords?.lng;
+    const hasDeliveryLocation = deliveryCoords?.lat && deliveryCoords?.lng;
 
     const deliveryDistanceKm =
         hasStoreLocation && hasDeliveryLocation
-            ? Math.round(
-                  haversineKm(storeCoords, deliveryCoords) * 10
-              ) / 10
+            ? Math.round(haversineKm(storeCoords, deliveryCoords) * 10) / 10
             : 0;
 
-    // Expire pending requests from previous round
+    // last round's unanswered requests don't carry over
     await DriverDeliveryRequest.updateMany(
-        {
-            orderId: order._id,
-            status: "PENDING",
-        },
-        {
-            status: "EXPIRED",
-        }
+        { orderId: order._id, status: "PENDING" },
+        { status: "EXPIRED" }
     );
 
-    // Ignore rejected drivers during normal rounds
-    const excludedDriverIds = isFallbackRound
-        ? []
-        : await getExcludedDriverIds(order._id);
+    // fallback round re-includes drivers who rejected earlier — better than nothing
+    const excludedDriverIds = isFallbackRound ? [] : await getExcludedDriverIds(order._id);
 
-    const cutoff = new Date(
-        Date.now() - STALE_LOCATION_THRESHOLD_MS
-    );
+    const cutoff = new Date(Date.now() - STALE_LOCATION_THRESHOLD_MS);
 
-    // Find online drivers
     const onlineDrivers = await DriverProfile.find({
         availabilityStatus: "ONLINE",
-        _id: {
-            $nin: excludedDriverIds,
-        },
+        _id: { $nin: excludedDriverIds },
         ...(hasStoreLocation && {
             "currentLocation.lat": { $ne: null },
             "currentLocation.lng": { $ne: null },
-            lastLocationUpdate: {
-                $gte: cutoff,
-            },
+            lastLocationUpdate: { $gte: cutoff },
         }),
     }).select("_id currentLocation");
 
-    // Filter drivers inside current search radius
     const nearbyDrivers = hasStoreLocation
         ? onlineDrivers
               .map((driver) => {
-                  if (
-                      !driver.currentLocation?.lat ||
-                      !driver.currentLocation?.lng
-                  ) {
+                  if (!driver.currentLocation?.lat || !driver.currentLocation?.lng) {
                       return null;
                   }
 
                   const pickupDistanceKm =
-                      Math.round(
-                          haversineKm(
-                              storeCoords,
-                              driver.currentLocation
-                          ) * 10
-                      ) / 10;
+                      Math.round(haversineKm(storeCoords, driver.currentLocation) * 10) / 10;
 
                   return pickupDistanceKm <= radiusKm
-                      ? {
-                            driverId: driver._id,
-                            pickupDistanceKm,
-                        }
+                      ? { driverId: driver._id, pickupDistanceKm }
                       : null;
               })
               .filter(Boolean)
-        : onlineDrivers.map((driver) => ({
-              driverId: driver._id,
-              pickupDistanceKm: 0,
-          }));
+        : onlineDrivers.map((driver) => ({ driverId: driver._id, pickupDistanceKm: 0 }));
 
-    const requestExpiresAt = new Date(
-        Date.now() + REQUEST_EXPIRY_SECONDS * 1000
-    );
+    const requestExpiresAt = new Date(Date.now() + REQUEST_EXPIRY_SECONDS * 1000);
 
     const nextRoundDelayMs = isFallbackRound
         ? FALLBACK_COOLDOWN_MS
         : REQUEST_EXPIRY_SECONDS * 1000;
 
     order.deliveryRequestRound = nextRound;
-    order.deliveryRoundExpiresAt = new Date(
-        Date.now() + nextRoundDelayMs
-    );
+    order.deliveryRoundExpiresAt = new Date(Date.now() + nextRoundDelayMs);
 
     await order.save();
 
     if (!nearbyDrivers.length) {
         console.warn(
-            `[dispatch] Round ${nextRound}${
-                isFallbackRound ? " (fallback)" : ""
-            } for order ${orderId}: no eligible drivers within ${radiusKm}km`
+            `[dispatch] Round ${nextRound}${isFallbackRound ? " (fallback)" : ""} for order ${orderId}: no eligible drivers within ${radiusKm}km`
         );
 
-        return {
-            dispatched: false,
-            exhausted: false,
-        };
+        return { dispatched: false, exhausted: false };
     }
 
-    await createAndEmitRequests(
-        order,
-        nearbyDrivers,
-        requestExpiresAt,
-        deliveryDistanceKm
-    );
+    await createAndEmitRequests(order, nearbyDrivers, requestExpiresAt, deliveryDistanceKm);
 
     console.log(
-        `[dispatch] Round ${nextRound}${
-            isFallbackRound ? " (fallback)" : ""
-        } for order ${orderId}: sent to ${nearbyDrivers.length} driver(s) within ${radiusKm}km`
+        `[dispatch] Round ${nextRound}${isFallbackRound ? " (fallback)" : ""} for order ${orderId}: sent to ${nearbyDrivers.length} driver(s) within ${radiusKm}km`
     );
 
-    return {
-        dispatched: true,
-        exhausted: false,
-    };
+    return { dispatched: true, exhausted: false };
 };
 
-// Send waiting orders to a driver who just came online
+// when a driver comes back online, check if any waiting orders are within reach
 const dispatchToOnlineDriver = async (driver) => {
     if (!driver?.currentLocation?.lat || !driver?.currentLocation?.lng) {
         return;
     }
 
-    // Get pending requests for this driver
     const pendingRequests = await DriverDeliveryRequest.find({
         driverId: driver._id,
         status: "PENDING",
@@ -379,11 +294,8 @@ const dispatchToOnlineDriver = async (driver) => {
         .select("orderId")
         .lean();
 
-    const pendingOrderIds = pendingRequests.map(
-        (request) => request.orderId
-    );
+    const pendingOrderIds = pendingRequests.map((r) => r.orderId);
 
-    // Get rejected orders for this driver
     const rejectedRequests = await DriverDeliveryRequest.find({
         driverId: driver._id,
         status: "REJECTED",
@@ -391,20 +303,13 @@ const dispatchToOnlineDriver = async (driver) => {
         .select("orderId")
         .lean();
 
-    const rejectedOrderIdSet = new Set(
-        rejectedRequests.map((request) =>
-            request.orderId.toString()
-        )
-    );
+    const rejectedOrderIdSet = new Set(rejectedRequests.map((r) => r.orderId.toString()));
 
-    // Find orders waiting for a driver
     const candidateOrders = await Order.find({
         orderStatus: "READY_FOR_PICKUP",
         driverId: null,
         driverSearchFailed: false,
-        _id: {
-            $nin: pendingOrderIds,
-        },
+        _id: { $nin: pendingOrderIds },
     })
         .populate({
             path: "storeId",
@@ -414,18 +319,12 @@ const dispatchToOnlineDriver = async (driver) => {
             "orderNumber recipientName deliveryAddress deliveryCoordinates totalAmount paymentMethod products storeId deliveryRequestRound"
         );
 
-    const widestRadiusKm =
-        RADIUS_KM_BY_ROUND[RADIUS_KM_BY_ROUND.length - 1];
+    const widestRadiusKm = RADIUS_KM_BY_ROUND[RADIUS_KM_BY_ROUND.length - 1];
 
     for (const order of candidateOrders) {
-        const isFallbackPhase =
-            order.deliveryRequestRound > MAX_DISPATCH_ROUNDS;
+        const isFallbackPhase = order.deliveryRequestRound > MAX_DISPATCH_ROUNDS;
 
-        // Skip rejected orders during normal rounds
-        if (
-            !isFallbackPhase &&
-            rejectedOrderIdSet.has(order._id.toString())
-        ) {
+        if (!isFallbackPhase && rejectedOrderIdSet.has(order._id.toString())) {
             continue;
         }
 
@@ -436,51 +335,29 @@ const dispatchToOnlineDriver = async (driver) => {
         }
 
         const pickupDistanceKm =
-            Math.round(
-                haversineKm(
-                    storeCoords,
-                    driver.currentLocation
-                ) * 10
-            ) / 10;
+            Math.round(haversineKm(storeCoords, driver.currentLocation) * 10) / 10;
 
         if (pickupDistanceKm > widestRadiusKm) {
             continue;
         }
 
         const deliveryCoords = order.deliveryCoordinates;
-
-        const hasDeliveryLocation =
-            deliveryCoords?.lat &&
-            deliveryCoords?.lng;
+        const hasDeliveryLocation = deliveryCoords?.lat && deliveryCoords?.lng;
 
         const deliveryDistanceKm = hasDeliveryLocation
-            ? Math.round(
-                  haversineKm(
-                      storeCoords,
-                      deliveryCoords
-                  ) * 10
-              ) / 10
+            ? Math.round(haversineKm(storeCoords, deliveryCoords) * 10) / 10
             : 0;
 
-        const expiresAt = new Date(
-            Date.now() + REQUEST_EXPIRY_SECONDS * 1000
-        );
+        const expiresAt = new Date(Date.now() + REQUEST_EXPIRY_SECONDS * 1000);
 
         await createAndEmitRequests(
             order,
-            [
-                {
-                    driverId: driver._id,
-                    pickupDistanceKm,
-                },
-            ],
+            [{ driverId: driver._id, pickupDistanceKm }],
             expiresAt,
             deliveryDistanceKm
         );
 
-        console.log(
-            `[dispatch] Catch-up: order ${order._id} sent to newly-online driver ${driver._id}`
-        );
+        console.log(`[dispatch] Catch-up: order ${order._id} sent to newly-online driver ${driver._id}`);
     }
 };
 

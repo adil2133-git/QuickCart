@@ -12,6 +12,8 @@ const {
     sendAdminNewDriverApplicationEmail,
 } = require("../../services/mailService");
 
+// verifies the OTP and finishes registration — the actual user record isn't
+// created until this point, everything up to now just lives in Redis
 const verifyOtpController = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -66,7 +68,6 @@ const verifyOtpController = async (req, res) => {
             ...(["DRIVER", "STORE"].includes(role) && { status: "PENDING_APPROVAL" }),
         });
 
-        // If driver, also create DriverProfile
         if (role === "DRIVER") {
             await DriverProfile.create({
                 userId: newUser._id,
@@ -77,7 +78,6 @@ const verifyOtpController = async (req, res) => {
             });
         }
 
-        // If store, also create StoreProfile
         if (role === "STORE") {
             await StoreProfile.create({
                 userId: newUser._id,
@@ -86,7 +86,7 @@ const verifyOtpController = async (req, res) => {
                 address,
                 pincode,
                 documentUrls,
-                // The 2dsphere index on coordinates powers nearby-store queries
+                // the 2dsphere index on coordinates powers nearby-store queries
                 coordinates: {
                     lat: lat ?? 0,
                     lng: lng ?? 0,
@@ -96,8 +96,7 @@ const verifyOtpController = async (req, res) => {
 
         await client.del(`register:${lowerEmail}`);
 
-        // Fire-and-forget confirmation + admin-notification emails — never
-        // block the registration response on email delivery.
+        // fire-and-forget — never block the registration response on email delivery
         if (role === "DRIVER") {
             sendDriverApplicationReceivedEmail(newUser).catch(() => {});
             sendAdminNewDriverApplicationEmail({

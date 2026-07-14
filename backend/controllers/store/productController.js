@@ -9,7 +9,7 @@ const resolveStoreId = async (req) => {
     return storeProfile._id;
 };
 
-// ─── Create Product  (POST /api/store/addProduct) ────────────────────────────
+// POST /api/store/addProduct
 const createProduct = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -62,7 +62,7 @@ const createProduct = async (req, res) => {
     }
 };
 
-// ─── Get All Products for the logged-in store  (GET /api/store/getProductsByStore) ───
+// GET /api/store/getProductsByStore
 const getProductsByStore = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -116,8 +116,8 @@ const getProductsByStore = async (req, res) => {
     }
 };
 
-// ─── Get Single Product  (GET /api/store/getSingleProduct/:id) ──────────────
-// Scoped to the logged-in store — a store can't fetch another store's product by guessing an ID.
+// GET /api/store/getSingleProduct/:id
+// scoped to the logged-in store — can't fetch another store's product by guessing an id
 const getProductById = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -147,7 +147,7 @@ const getProductById = async (req, res) => {
     }
 };
 
-// ─── Update Product  (PUT /api/store/updateProduct/:id) ─────────────────────
+// PUT /api/store/updateProduct/:id
 const updateProduct = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -214,7 +214,7 @@ const updateProduct = async (req, res) => {
     }
 };
 
-// ─── Toggle Availability  (PATCH /api/store/toggleAvailability/:id) ─────────
+// PATCH /api/store/toggleAvailability/:id
 const toggleAvailability = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -249,8 +249,7 @@ const toggleAvailability = async (req, res) => {
     }
 };
 
-// ─── Toggle Bestseller  (PATCH /api/store/toggleBestseller/:id) ─────────────
-// Manual flag for now — may be replaced by an auto-derived calculation later.
+// PATCH /api/store/toggleBestseller/:id — manual flag for now
 const toggleBestseller = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -283,7 +282,7 @@ const toggleBestseller = async (req, res) => {
     }
 };
 
-// ─── Update Stock Count  (PATCH /api/store/updateStock/:id) ─────────────────
+// PATCH /api/store/updateStock/:id
 const updateStock = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -324,7 +323,7 @@ const updateStock = async (req, res) => {
     }
 };
 
-// ─── Delete Product  (DELETE /api/store/deleteProduct/:id) ──────────────────
+// DELETE /api/store/deleteProduct/:id
 const deleteProduct = async (req, res) => {
     try {
         const storeId = await resolveStoreId(req);
@@ -351,12 +350,9 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
-//  Public / customer-facing endpoints — no store JWT, storeId from the URL
-// ════════════════════════════════════════════════════════════════════════════
+// ---- public / customer-facing endpoints below — no store JWT, storeId comes from the URL ----
 
-// ─── Public Product Catalogue  (GET /api/stores/:storeId/products) ─────────
-// Always excludes HIDDEN products, regardless of any status filter passed in.
+// GET /api/stores/:storeId/products — always excludes HIDDEN products
 const getPublicStoreProducts = async (req, res) => {
     try {
         const { storeId } = req.params;
@@ -409,7 +405,7 @@ const getPublicStoreProducts = async (req, res) => {
     }
 };
 
-// ─── Public Bestsellers  (GET /api/stores/:storeId/bestsellers) ────────────
+// GET /api/stores/:storeId/bestsellers
 const getStoreBestsellers = async (req, res) => {
     try {
         const { storeId } = req.params;
@@ -435,7 +431,7 @@ const getStoreBestsellers = async (req, res) => {
     }
 };
 
-// ─── Public Product Detail  (GET /api/customer/:storeId/products/:productId) ───
+// GET /api/customer/:storeId/products/:productId
 const getPublicProductDetail = async (req, res) => {
     try {
         const { storeId, productId } = req.params;
