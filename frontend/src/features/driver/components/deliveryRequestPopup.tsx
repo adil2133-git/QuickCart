@@ -1,43 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, IndianRupee, Package, X, Navigation } from "lucide-react";
 import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 import { useDriverDeliveryActions } from "../hooks/useDriverDelivery";
+import { useCountdown } from "../hooks/useCountdown";
 import type { DeliveryRequest } from "../types/driverDelivery";
+
+// Matches backend's REQUEST_EXPIRY_SECONDS (deliveryDispatchService.js) — only
+// used here to size the progress bar, not for the countdown itself.
+const REQUEST_WINDOW_SECONDS = 30;
 
 function RequestCard({
   request,
   onAccept,
   onDecline,
+  onExpire,
   isAccepting,
 }: {
   request: DeliveryRequest;
   onAccept: () => void;
   onDecline: () => void;
+  onExpire: () => void;
   isAccepting: boolean;
 }) {
-  const [remaining, setRemaining] = useState(request.expiresInSeconds);
+  // Derived from the fixed deadline, so it's correct however many times this
+  // popup mounts/remounts, and it auto-dismisses itself once time's up.
+  const remaining = useCountdown(request.expiresAt, onExpire);
 
-  useEffect(() => {
-    const resetTimer = window.setTimeout(() => {
-      setRemaining(request.expiresInSeconds);
-    }, 0);
-    const t = window.setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          window.clearInterval(t);
-          return 0;
-        }
-        return r - 1;
-      });
-    }, 1000);
-    return () => {
-      window.clearTimeout(resetTimer);
-      window.clearInterval(t);
-    };
-  }, [request.expiresInSeconds]);
-
-  const pct = Math.max(0, (remaining / request.expiresInSeconds) * 100);
+  const pct = Math.max(0, (remaining / REQUEST_WINDOW_SECONDS) * 100);
   const urgency = remaining <= 10;
 
   return (
@@ -175,6 +165,7 @@ export default function DeliveryRequestPopup() {
               request={latest}
               onAccept={() => handleAccept(latest.requestId)}
               onDecline={() => handleDecline(latest.requestId)}
+              onExpire={() => removeRequest(latest.requestId)}
               isAccepting={acceptingId === latest.requestId}
             />
           </div>

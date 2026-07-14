@@ -61,7 +61,14 @@ export function useDriverDeliveryActions() {
       const { data } = await api.get<{ success: boolean; requests: DeliveryRequest[] }>(
         "/driver/deliveries/requests"
       );
-      store().setRequests(data.requests);
+      // The backend recomputes expiresInSeconds live (real remaining time as of
+      // this response), so we derive the absolute deadline from it the same way
+      // the socket handler does — keeps both entry points consistent.
+      const withDeadline = data.requests.map((r) => ({
+        ...r,
+        expiresAt: Date.now() + r.expiresInSeconds * 1000,
+      }));
+      store().setRequests(withDeadline);
     } catch {
       store().setRequestsError("Failed to load delivery requests.");
     } finally {

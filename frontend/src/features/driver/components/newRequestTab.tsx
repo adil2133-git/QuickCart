@@ -1,10 +1,15 @@
 // src/features/driver/components/NewRequestsTab.tsx
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { MapPin, Navigation, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import type { DeliveryRequest } from "../types/driverDelivery";
 import { useDriverDeliveryActions } from "../hooks/useDriverDelivery";
 import { useDriverDeliveryStore } from "../state/driverDeliveryState";
+import { useCountdown } from "../hooks/useCountdown";
+
+// Matches backend's REQUEST_EXPIRY_SECONDS (deliveryDispatchService.js) — only
+// used here to size the ring's fill proportion, not for the countdown itself.
+const REQUEST_WINDOW_SECONDS = 30;
 
 // ─── Stats Cards ─────────────────────────────────────────────────────────────
 
@@ -101,32 +106,20 @@ function StatsCards() {
 // ─── Countdown Ring ───────────────────────────────────────────────────────────
 
 function CountdownRing({
-  totalSeconds,
-  initialRemaining,
+  expiresAt,
   onExpire,
 }: {
-  totalSeconds: number;
-  initialRemaining: number;
+  expiresAt: number;
   onExpire: () => void;
 }) {
-  const [remaining, setRemaining] = useState(initialRemaining);
-  const called = useRef(false);
-
-  useEffect(() => {
-    if (remaining <= 0) {
-      if (!called.current) {
-        called.current = true;
-        onExpire();
-      }
-      return;
-    }
-    const id = window.setInterval(() => setRemaining((r) => r - 1), 1000);
-    return () => window.clearInterval(id);
-  }, [onExpire, remaining]);
+  // Always derived from the fixed deadline — correct no matter how many
+  // times this component mounts/remounts (e.g. navigating between the
+  // dashboard popup and this tab no longer resets the clock).
+  const remaining = useCountdown(expiresAt, onExpire);
 
   const radius = 18;
   const circ = 2 * Math.PI * radius;
-  const frac = remaining / totalSeconds;
+  const frac = remaining / REQUEST_WINDOW_SECONDS;
   const dash = circ * frac;
   const color =
     remaining > 15 ? "#2B7A3E" : remaining > 5 ? "#D97706" : "#DC2626";
@@ -199,8 +192,7 @@ function RequestCard({ request }: { request: DeliveryRequest }) {
           <h3 className="text-base font-bold text-[#2B1B0E]">{request.storeName}</h3>
         </div>
         <CountdownRing
-          totalSeconds={request.expiresInSeconds}
-          initialRemaining={request.expiresInSeconds}
+          expiresAt={request.expiresAt}
           onExpire={() => removeRequest(request.requestId)}
         />
       </div>

@@ -53,6 +53,10 @@ export function useDriverDeliverySocket() {
                 deliveryDistanceKm: payload.deliveryDistanceKm,
                 estimatedEarnings: payload.estimatedEarnings,
                 expiresInSeconds: payload.expiresInSeconds,
+                // Absolute deadline computed once, here, at the moment we know
+                // "expiresInSeconds from now". Every countdown UI reads off this
+                // instead of re-deriving/restarting from expiresInSeconds later.
+                expiresAt: Date.now() + payload.expiresInSeconds * 1000,
                 createdAt: new Date().toISOString(),
             });
             toast("🛵 New delivery request!", {
