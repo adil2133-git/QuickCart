@@ -59,7 +59,7 @@ export function isLowStock(stockQuantity: number, availabilityStatus: Availabili
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
     minimumFractionDigits: 2,
   }).format(amount);
 }
