@@ -146,6 +146,11 @@ const notifyDriver = {
         title:   "Delivery Assigned 📦",
         message: `You've been assigned order #${orderNumber} from ${storeName}. Head to the store to pick it up.`,
     }),
+    requestTaken: (userId, orderNumber, orderId) => notify({
+        userId, role: "DRIVER", orderId, type: "DELIVERY",
+        title:   "Order Taken ⚡",
+        message: `Order #${orderNumber} was accepted by another driver.`,
+    }),
     delivered: (userId, orderNumber, earnings, orderId) => notify({
         userId, role: "DRIVER", orderId, type: "ORDER",
         title:   "Delivery Completed 🎉",

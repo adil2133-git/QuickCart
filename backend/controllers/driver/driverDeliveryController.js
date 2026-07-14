@@ -186,7 +186,7 @@ const acceptDeliveryRequest = async (req, res) => {
             orderId: order._id,
             _id: { $ne: requestId },
             status: "PENDING",
-        }).select("driverId");
+        }).populate({ path: "driverId", select: "userId" });
 
         if (otherRequests.length) {
             await DriverDeliveryRequest.updateMany(
@@ -194,14 +194,27 @@ const acceptDeliveryRequest = async (req, res) => {
                 { status: "EXPIRED" }
             );
 
-            // Tell other drivers their request is gone so the card disappears instantly.
+            // Raw socket event — just for removing the card from the other
+            // drivers' screens instantly. No toast here; the persisted
+            // notification below (notifyDriver.requestTaken) is what surfaces
+            // the message, so the driver isn't shown it twice.
             const { emitToDriver } = require("../../socket");
             otherRequests.forEach((r) => {
-                emitToDriver(r.driverId, "delivery:request:taken", {
+                emitToDriver(r.driverId._id ?? r.driverId, "delivery:request:taken", {
                     orderId: order._id.toString(),
                     requestId: requestId,
                     message: "This order was picked up by another driver.",
                 });
+
+                // Real, persisted notification — shows in the notification
+                // bell/history, unlike the raw socket event above.
+                if (r.driverId?.userId) {
+                    notifyDriver.requestTaken(
+                        r.driverId.userId,
+                        order.orderNumber,
+                        order._id
+                    ).catch(() => {});
+                }
             });
         }
 

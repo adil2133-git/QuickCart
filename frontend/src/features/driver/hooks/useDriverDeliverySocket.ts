@@ -66,11 +66,10 @@ export function useDriverDeliverySocket() {
         };
 
         const handleRequestTaken = (payload: RequestTakenPayload) => {
+            // Just remove the card — the toast/notification-bell entry for
+            // this comes from the persisted notification (notifyDriver.requestTaken)
+            // via useNotificationsSync, so we don't show it twice here.
             removeRequestByOrderId(payload.orderId);
-            toast("⚡ Order taken by another driver", {
-                description: payload.message,
-                duration: 4000,
-            });
         };
 
         socket.on("delivery:request", handleNewRequest);
