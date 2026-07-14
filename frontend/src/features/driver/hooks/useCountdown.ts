@@ -9,9 +9,11 @@ import { useEffect, useRef, useState } from "react";
 // matter when/how often the component using it mounts.
 //
 // Calls onExpire exactly once when the deadline passes.
-export function useCountdown(expiresAt: number, onExpire?: () => void) {
-  const computeRemaining = () =>
-    Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+export function useCountdown(expiresAt: number | undefined, onExpire?: () => void) {
+  const computeRemaining = () => {
+    if (!expiresAt || isNaN(expiresAt)) return 0;
+    return Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+  };
 
   const [remaining, setRemaining] = useState(computeRemaining);
   const expiredRef = useRef(false);
