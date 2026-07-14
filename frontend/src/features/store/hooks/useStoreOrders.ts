@@ -4,6 +4,8 @@ import type {
   GetStoreOrdersResponse,
   GetStoreOrderDetailResponse,
   UpdateOrderStatusResponse,
+  RetryDriverSearchResponse,
+  CancelUndeliverableOrderResponse,
   PackingItem,
   OrderStatus,
 } from "../types/storeOrders";
@@ -86,5 +88,59 @@ export function useUpdateOrderStatus() {
       }
     },
     [setUpdatingStatus, updateOrderStatusLocally]
+  );
+}
+
+// ─── Retry a failed driver search ─────────────────────────────────────────────
+// For orders stuck with driverSearchFailed: true. Resets the search and kicks
+// off a fresh round of dispatch rounds.
+export function useRetryDriverSearch() {
+  const { setUpdatingStatus, updateOrderLocally } = useStoreOrdersStore();
+
+  return useCallback(
+    async (orderId: string): Promise<boolean> => {
+      setUpdatingStatus(true);
+      try {
+        const { data } = await api.post<RetryDriverSearchResponse>(
+          `${BASE}/orders/${orderId}/retry-dispatch`
+        );
+        if (!data.success) throw new Error(data.message ?? "Retry failed");
+        updateOrderLocally(orderId, { driverSearchFailed: false });
+        return true;
+      } catch (err) {
+        console.error("Retry driver search error:", err);
+        return false;
+      } finally {
+        setUpdatingStatus(false);
+      }
+    },
+    [setUpdatingStatus, updateOrderLocally]
+  );
+}
+
+// ─── Cancel an order that never found a driver ────────────────────────────────
+// Full refund, no store-compensation deduction — this is a platform failure,
+// not something the customer or store caused.
+export function useCancelUndeliverableOrder() {
+  const { setUpdatingStatus, updateOrderLocally } = useStoreOrdersStore();
+
+  return useCallback(
+    async (orderId: string): Promise<boolean> => {
+      setUpdatingStatus(true);
+      try {
+        const { data } = await api.patch<CancelUndeliverableOrderResponse>(
+          `${BASE}/orders/${orderId}/cancel-undeliverable`
+        );
+        if (!data.success) throw new Error(data.message ?? "Cancellation failed");
+        updateOrderLocally(orderId, { orderStatus: "CANCELLED", driverSearchFailed: false });
+        return true;
+      } catch (err) {
+        console.error("Cancel undeliverable order error:", err);
+        return false;
+      } finally {
+        setUpdatingStatus(false);
+      }
+    },
+    [setUpdatingStatus, updateOrderLocally]
   );
 }

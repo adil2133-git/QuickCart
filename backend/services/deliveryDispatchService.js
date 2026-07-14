@@ -208,7 +208,7 @@ const dispatchRound = async (orderId) => {
 
         return { dispatched: false, exhausted: true };
     }
-
+}
     // Fail fast — but only once we're already in the fallback phase (i.e. all
     // 3 normal radius rounds already ran with no luck). We deliberately don't
     // do this on the very first rounds: a driver could log on moments after

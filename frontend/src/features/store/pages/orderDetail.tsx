@@ -7,9 +7,17 @@ import {
   Circle,
   Package,
   Truck,
+  AlertTriangle,
+  RotateCcw,
+  XCircle,
 } from "lucide-react";
 import { useStoreOrdersStore } from "../state/storeOrdersState";
-import { useFetchOrderDetail, useUpdateOrderStatus } from "../hooks/useStoreOrders";
+import {
+  useFetchOrderDetail,
+  useUpdateOrderStatus,
+  useRetryDriverSearch,
+  useCancelUndeliverableOrder,
+} from "../hooks/useStoreOrders";
 import { useOrderCancelledWatcher } from "../hooks/useOrderCancelledWatcher";
 import { OrderCancelledModal } from "../components/orderCancelledModal";
 import type { OrderStatus } from "../types/storeOrders";
@@ -89,8 +97,10 @@ function StepIcon({ state }: { state: "done" | "active" | "idle" }) {
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const fetchDetail = useFetchOrderDetail();
+ const fetchDetail = useFetchOrderDetail();
   const updateStatus = useUpdateOrderStatus();
+  const retryDriverSearch = useRetryDriverSearch();
+  const cancelUndeliverableOrder = useCancelUndeliverableOrder();
 
   const { selectedOrder, isLoadingDetail, detailError, isUpdatingStatus } =
     useStoreOrdersStore();
@@ -111,10 +121,25 @@ export default function OrderDetailPage() {
     if (ok) navigate(`/store/orders/${order.id}/packing`);
   };
 
-  const handleMarkReady = async () => {
+   const handleMarkReady = async () => {
     if (!order) return;
     const ok = await updateStatus(order.id, "READY_FOR_PICKUP");
     if (ok) navigate(`/store/orders/${order.id}/complete`);
+  };
+
+  const handleRetryDriverSearch = async () => {
+    if (!order) return;
+    await retryDriverSearch(order.id);
+  };
+
+  const handleCancelUndeliverable = async () => {
+    if (!order) return;
+    const confirmed = window.confirm(
+      `Cancel order #${order.orderNumber}? The customer will be refunded in full and notified.`
+    );
+    if (!confirmed) return;
+    const ok = await cancelUndeliverableOrder(order.id);
+    if (ok) navigate("/store/orders");
   };
 
   // ── Loading / error states ────────────────────────────────────────────────────
@@ -193,6 +218,43 @@ export default function OrderDetailPage() {
           })}
         </div>
       </div>
+
+      {/* ── No drivers found banner ───────────────────────────────────────────── */}
+      {order.orderStatus === "READY_FOR_PICKUP" && order.driverSearchFailed && (
+        <div className="mx-8 mt-6 flex items-start justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                No drivers were found for this order
+              </p>
+              <p className="mt-1 text-sm text-amber-700">
+                We searched nearby drivers repeatedly with no luck. You can try
+                the search again, or cancel the order with a full refund to the
+                customer.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <button
+              onClick={handleRetryDriverSearch}
+              disabled={isUpdatingStatus}
+              className="flex items-center gap-2 rounded-full bg-[#2B1B0E] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Retry Driver Search
+            </button>
+            <button
+              onClick={handleCancelUndeliverable}
+              disabled={isUpdatingStatus}
+              className="flex items-center gap-2 rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+            >
+              <XCircle className="h-4 w-4" />
+              Cancel & Refund
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Content ────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 gap-6 overflow-y-auto p-8">
@@ -313,10 +375,19 @@ export default function OrderDetailPage() {
 
       {/* ── Bottom action bar ─────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between border-t border-[#EADFD3] bg-white px-8 py-4">
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+         <div className="flex items-center gap-2">
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${
+              order.orderStatus === "READY_FOR_PICKUP" && order.driverSearchFailed
+                ? "bg-amber-500"
+                : "bg-emerald-500"
+            }`}
+          />
           <span className="text-sm font-semibold text-[#2B1B0E]">
-            CURRENTLY: {order.orderStatus.replace(/_/g, " ")}
+            CURRENTLY:{" "}
+            {order.orderStatus === "READY_FOR_PICKUP" && order.driverSearchFailed
+              ? "NO DRIVERS FOUND"
+              : order.orderStatus.replace(/_/g, " ")}
           </span>
         </div>
 

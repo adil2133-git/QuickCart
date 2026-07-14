@@ -22,7 +22,8 @@ import {
   ZoomOut,
   Maximize2,
   Minimize2,
-  Bike,
+   Bike,
+  AlertTriangle,
 } from "lucide-react";
 import { useActiveDeliveryStore } from "../state/activeDeliveryState";
 import { useActiveDeliveryTracking } from "../hooks/useActiveDeliveryTracking";
@@ -355,6 +356,28 @@ export function OrderTrackingContent({
               style={{ borderColor: "#145C43", borderTopColor: "transparent" }}
             />
             <span className="text-sm text-gray-500">Loading tracking info…</span>
+          </div>
+        </div>
+      ) : detail?.rawStatus === "READY_FOR_PICKUP" && detail?.driverSearchFailed ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="flex flex-col items-center gap-4 px-8 text-center max-w-md">
+            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: "#FBEAE6" }}>
+              <AlertTriangle size={40} color="#C0392B" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">Still looking for a driver</h3>
+            <p className="text-sm text-gray-500">
+              We're having trouble finding a driver for order #{detail?.orderNumber}. The
+              store has been notified and will follow up shortly — you don't need to
+              do anything right now.
+            </p>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={onBack}
+              className="rounded-xl px-6 py-3 text-sm font-semibold text-white border-none cursor-pointer mt-2"
+              style={{ backgroundColor: "#145C43" }}
+            >
+              Back to My Orders
+            </motion.button>
           </div>
         </div>
       ) : !isMatchingOrder || !driverPos ? (

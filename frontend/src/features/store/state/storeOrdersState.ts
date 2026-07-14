@@ -43,6 +43,9 @@ interface StoreOrdersState {
   isUpdatingStatus: boolean;
   setUpdatingStatus: (value: boolean) => void;
   updateOrderStatusLocally: (orderId: string, status: StoreOrder["orderStatus"]) => void;
+
+  // ── Generic partial patch (used by retry-dispatch / cancel-undeliverable) ────
+  updateOrderLocally: (orderId: string, patch: Partial<StoreOrder>) => void;
 }
 
 export const useStoreOrdersStore = create<StoreOrdersState>((set) => ({
@@ -89,7 +92,7 @@ export const useStoreOrdersStore = create<StoreOrdersState>((set) => ({
   // ── Status update ───────────────────────────────────────────────────────────
   isUpdatingStatus: false,
   setUpdatingStatus: (value) => set({ isUpdatingStatus: value }),
-  updateOrderStatusLocally: (orderId, status) =>
+ updateOrderStatusLocally: (orderId, status) =>
     set((state) => ({
       orders: state.orders.map((o) =>
         o.id === orderId ? { ...o, orderStatus: status } : o
@@ -97,6 +100,17 @@ export const useStoreOrdersStore = create<StoreOrdersState>((set) => ({
       selectedOrder:
         state.selectedOrder?.id === orderId
           ? { ...state.selectedOrder, orderStatus: status }
+          : state.selectedOrder,
+    })),
+
+  updateOrderLocally: (orderId, patch) =>
+    set((state) => ({
+      orders: state.orders.map((o) =>
+        o.id === orderId ? { ...o, ...patch } : o
+      ),
+      selectedOrder:
+        state.selectedOrder?.id === orderId
+          ? { ...state.selectedOrder, ...patch }
           : state.selectedOrder,
     })),
 }));

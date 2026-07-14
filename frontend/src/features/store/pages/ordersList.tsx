@@ -65,7 +65,14 @@ function AvatarInitials({ name }: { name: string }) {
     );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, driverSearchFailed }: { status: string; driverSearchFailed?: boolean }) {
+    if (status === "READY_FOR_PICKUP" && driverSearchFailed) {
+        return (
+            <span className="inline-block whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold tracking-wide text-amber-700">
+                No Driver
+            </span>
+        );
+    }
     const style = STATUS_STYLES[status] ?? "bg-slate-100 text-slate-600";
     const label = STATUS_LABELS[status] ?? status.replace(/_/g, " ");
     return (
@@ -245,8 +252,8 @@ export default function OrdersPage() {
                                 {formatTime(order.placedAt)}
                             </span>
 
-                            {/* Status */}
-                            <StatusBadge status={order.orderStatus} />
+                             {/* Status */}
+                            <StatusBadge status={order.orderStatus} driverSearchFailed={order.driverSearchFailed} />
 
                             {/* Actions */}
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

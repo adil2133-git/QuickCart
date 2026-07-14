@@ -45,6 +45,9 @@ export interface StoreOrder {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  // True once dispatch has given up finding a driver for this order.
+  // Only meaningful while orderStatus is READY_FOR_PICKUP.
+  driverSearchFailed: boolean;
   itemCount: number;
   subtotal: number;
   deliveryCharge: number;
@@ -91,6 +94,18 @@ export interface GetStoreOrderDetailResponse {
 }
 
 export interface UpdateOrderStatusResponse {
+  success: boolean;
+  message: string;
+  order?: Partial<StoreOrder>;
+}
+
+export interface RetryDriverSearchResponse {
+  success: boolean;
+  message: string;
+  order?: Partial<StoreOrder>;
+}
+
+export interface CancelUndeliverableOrderResponse {
   success: boolean;
   message: string;
   order?: Partial<StoreOrder>;

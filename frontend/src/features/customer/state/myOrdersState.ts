@@ -34,7 +34,8 @@ interface OrdersState {
   setLoading: () => void;
   setOrders: (orders: CustomerOrder[]) => void;
   setError: (message: string) => void;
-  liveUpdateStatus: (orderId: string, rawStatus: RawOrderStatus) => void;
+ liveUpdateStatus: (orderId: string, rawStatus: RawOrderStatus) => void;
+  liveUpdateDriverSearchFailed: (orderId: string, failed: boolean) => void;
   removeOrder: (orderId: string) => void;
 }
 
@@ -49,10 +50,16 @@ export const useOrdersStore = create<OrdersState>((set) => ({
   setLoading: () => set({ isLoading: true, error: null }),
   setOrders: (orders) => set({ orders, isLoading: false, error: null }),
   setError: (message) => set({ isLoading: false, error: message }),
-  liveUpdateStatus: (orderId, rawStatus) =>
+   liveUpdateStatus: (orderId, rawStatus) =>
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id === orderId ? { ...o, rawStatus, ...deriveFromRaw(rawStatus) } : o
+      ),
+    })),
+  liveUpdateDriverSearchFailed: (orderId, failed) =>
+    set((s) => ({
+      orders: s.orders.map((o) =>
+        o.id === orderId ? { ...o, driverSearchFailed: failed } : o
       ),
     })),
   removeOrder: (orderId) =>

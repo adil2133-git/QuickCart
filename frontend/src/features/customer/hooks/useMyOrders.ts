@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../api/axios"; // adjust to your real path, e.g. "../../../api/axiosInstance"
+import { getSocket } from "../../../lib/socket";
 import { useOrdersStore } from "../state/myOrdersState";
 import type { GetOrdersResponse, GetOrderDetailResponse, CustomerOrderDetail, OrdersTab } from "../types/myOrders";
-
 export function useOrdersTab() {
   const activeTab = useOrdersStore((s) => s.activeTab);
   const setActiveTab = useOrdersStore((s) => s.setActiveTab);
@@ -90,20 +90,30 @@ export function useOrderDetail(orderId: string | null) {
     let cancelled = false;
     setIsLoading(true);
 
-    api
-      .get<GetOrderDetailResponse>(`/customer/orders/${orderId}`)
-      .then(({ data }) => {
-        if (!cancelled) setDetail(data.order);
-      })
-      .catch(() => {
-        if (!cancelled) setDetail(null);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+    const fetchDetail = () =>
+      api
+        .get<GetOrderDetailResponse>(`/customer/orders/${orderId}`)
+        .then(({ data }) => {
+          if (!cancelled) setDetail(data.order);
+        })
+        .catch(() => {
+          if (!cancelled) setDetail(null);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+
+    fetchDetail();
+
+    const socket = getSocket();
+    const handleDriverSearchFailed = (p: { orderId: string }) => {
+      if (p.orderId === orderId) fetchDetail();
+    };
+    socket.on("order:driverSearchFailed", handleDriverSearchFailed);
 
     return () => {
       cancelled = true;
+      socket.off("order:driverSearchFailed", handleDriverSearchFailed);
     };
   }, [orderId]);
 

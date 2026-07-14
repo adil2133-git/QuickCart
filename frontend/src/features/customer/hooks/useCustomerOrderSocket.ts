@@ -9,19 +9,34 @@ interface OrderStatusChangedPayload {
   orderNumber: string;
 }
 
+interface OrderDriverSearchFailedPayload {
+  orderId: string;
+  orderNumber: string;
+  failed: boolean;
+}
+
 export function useCustomerOrderSocket() {
   const liveUpdateStatus = useOrdersStore((s) => s.liveUpdateStatus);
+  const liveUpdateDriverSearchFailed = useOrdersStore((s) => s.liveUpdateDriverSearchFailed);
 
   useEffect(() => {
     const socket = getSocket();
 
-    const handle = (p: OrderStatusChangedPayload) => {
+    const handleStatusChanged = (p: OrderStatusChangedPayload) => {
       liveUpdateStatus(p.orderId, p.orderStatus);
       // Toast is shown by useNotifications via notification:new event
       // so we don't double-toast here
     };
 
-    socket.on("order:statusChanged", handle);
-    return () => { socket.off("order:statusChanged", handle); };
-  }, [liveUpdateStatus]);
+    const handleDriverSearchFailed = (p: OrderDriverSearchFailedPayload) => {
+      liveUpdateDriverSearchFailed(p.orderId, p.failed);
+    };
+
+    socket.on("order:statusChanged", handleStatusChanged);
+    socket.on("order:driverSearchFailed", handleDriverSearchFailed);
+    return () => {
+      socket.off("order:statusChanged", handleStatusChanged);
+      socket.off("order:driverSearchFailed", handleDriverSearchFailed);
+    };
+  }, [liveUpdateStatus, liveUpdateDriverSearchFailed]);
 }

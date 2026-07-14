@@ -37,6 +37,9 @@ export interface CustomerOrder {
   storeName: string;
   status: OrderStatus;
   rawStatus: RawOrderStatus;
+  // True once dispatch has given up finding a driver — only meaningful
+  // while rawStatus is READY_FOR_PICKUP.
+  driverSearchFailed: boolean;
   itemSummary: string; // e.g. "Fresh Produce & Dairy"
   itemCount: number;
   previewItems: OrderItemPreview[]; // thumbnails shown on the card

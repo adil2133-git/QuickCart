@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, X } from "lucide-react";
+import { ArrowLeft, Phone, X, AlertTriangle } from "lucide-react";
 import { useCancelOrder, useOrdersList, useOrdersTab } from "../hooks/useMyOrders";
 import type { CustomerOrder, OrderStatus } from "../types/myOrders";
 import { stageIndexForStatus } from "../types/myOrders";
@@ -156,6 +156,16 @@ function OrderCard({
       {!isPast && (
         <div className="mb-5">
           <ProgressTracker order={order} />
+        </div>
+      )}
+
+      {!isPast && order.driverSearchFailed && (
+        <div className="mb-5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
+          <p className="text-sm text-amber-800">
+            We're having trouble finding a driver for this order. The store has
+            been notified and will follow up shortly.
+          </p>
         </div>
       )}
 
