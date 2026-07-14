@@ -7,6 +7,7 @@ const { sendOrderCancelledEmail } = require("../../services/mailService");
 const { emitToCustomer } = require("../../socket");
 const { notifyCustomer } = require("../../services/notificationService");
 const { dispatchRound } = require("../../services/deliveryDispatchService");
+const walletService = require("../../services/walletService");
 
 /**
  * Returns the StoreProfile ID of the authenticated store user.
@@ -62,6 +63,7 @@ const toListShape = (order) => ({
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     orderStatus: order.orderStatus,
+    driverSearchFailed: order.driverSearchFailed ?? false,
     itemCount: (order.products || []).reduce((sum, item) => sum + item.quantity, 0),
     subtotal: order.subtotal,
     deliveryCharge: order.deliveryCharge,
@@ -364,8 +366,177 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/store/orders/:id/retry-dispatch
+// Resets a failed driver search and kicks off a fresh round of
+// dispatch rounds. Only valid for orders the search already gave
+// up on (driverSearchFailed === true) — this is the only path
+// that can un-stick them, since READY_FOR_PICKUP otherwise has
+// no allowed transitions and the retry cron ignores failed orders.
+// ─────────────────────────────────────────────────────────────
+const retryDriverSearch = async (req, res) => {
+    try {
+        const storeId = await resolveStoreId(req);
+        const { id } = req.params;
+
+        const order = await Order.findOne({ _id: id, storeId });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found.",
+            });
+        }
+
+        if (order.orderStatus !== "READY_FOR_PICKUP" || !order.driverSearchFailed) {
+            return res.status(400).json({
+                success: false,
+                message: "This order isn't in a failed driver search state.",
+            });
+        }
+
+        order.driverSearchFailed = false;
+        order.deliveryRequestRound = 0;
+        order.deliveryRoundExpiresAt = null;
+        await order.save();
+
+        emitToCustomer(order.customerId, "order:driverSearchFailed", {
+            orderId: order._id.toString(),
+            orderNumber: order.orderNumber,
+            failed: false,
+        });
+
+        dispatchRound(order._id).catch((err) =>
+            console.error("[retryDriverSearch] dispatchRound failed:", err)
+        );
+
+        CustomerProfile.findById(order.customerId)
+            .populate("userId", "_id")
+            .lean()
+            .then((cp) => {
+                if (cp?.userId?._id) {
+                    notifyCustomer.searchingDriver(
+                        cp.userId._id,
+                        order.orderNumber,
+                        order._id
+                    ).catch(() => {});
+                }
+            })
+            .catch(() => {});
+
+        setNoCacheHeaders(res);
+
+        return res.status(200).json({
+            success: true,
+            message: "Retrying driver search.",
+            order: toListShape(order.toObject()),
+        });
+    } catch (err) {
+        console.error("RETRY DRIVER SEARCH ERROR:", err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// PATCH /api/store/orders/:id/cancel-undeliverable
+// Cancels an order that never found a driver, with a full refund
+// (no store-compensation deduction — this is a platform failure,
+// not something the customer or store caused, unlike the
+// self-cancel flow in customer/ordersController.js).
+// ─────────────────────────────────────────────────────────────
+const cancelUndeliverableOrder = async (req, res) => {
+    try {
+        const storeId = await resolveStoreId(req);
+        const { id } = req.params;
+
+        const order = await Order.findOne({ _id: id, storeId });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found.",
+            });
+        }
+
+        if (order.orderStatus !== "READY_FOR_PICKUP" || !order.driverSearchFailed) {
+            return res.status(400).json({
+                success: false,
+                message: "This order can only be cancelled this way after a failed driver search.",
+            });
+        }
+
+        let refundAmount = 0;
+        if (order.paymentStatus === "PAID") {
+            refundAmount = order.totalAmount;
+
+            await walletService.creditRefund({
+                customerId: order.customerId,
+                amount: refundAmount,
+                orderId: order._id,
+                description: `Refund for order #${order.orderNumber} — no driver was available`,
+            });
+
+            order.paymentStatus = "REFUNDED";
+        }
+
+        order.orderStatus = "CANCELLED";
+        await order.save();
+
+        emitToCustomer(order.customerId, "order:statusChanged", {
+            orderId: order._id.toString(),
+            orderStatus: "CANCELLED",
+            orderNumber: order.orderNumber,
+            refundAmount,
+        });
+
+        CustomerProfile.findById(order.customerId)
+            .populate("userId", "_id name email")
+            .lean()
+            .then((cp) => {
+                if (!cp?.userId?._id) return;
+
+                notifyCustomer.cancelledNoDriver(
+                    cp.userId._id,
+                    order.orderNumber,
+                    order._id,
+                    refundAmount
+                ).catch(() => {});
+
+                if (cp.userId.email) {
+                    sendOrderCancelledEmail({
+                        toEmail: cp.userId.email,
+                        name: cp.userId.name,
+                        order,
+                    }).catch(() => {});
+                }
+            })
+            .catch(() => {});
+
+        setNoCacheHeaders(res);
+
+        return res.status(200).json({
+            success: true,
+            message: "Order cancelled and refunded.",
+            order: toListShape(order.toObject()),
+        });
+    } catch (err) {
+        console.error("CANCEL UNDELIVERABLE ORDER ERROR:", err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
 module.exports = {
     getStoreOrders,
     getStoreOrderDetail,
     updateOrderStatus,
+    retryDriverSearch,
+    cancelUndeliverableOrder,
 };

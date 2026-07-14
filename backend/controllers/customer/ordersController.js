@@ -91,6 +91,7 @@ const toCardShape = (order, productImageMap = {}) => {
         storeName: order.storeId?.storeName ?? "Store",
         status: STAGE_FOR_STATUS[order.orderStatus] ?? "PROCESSING",
         rawStatus: order.orderStatus, // exposed in case the UI ever needs the precise state
+        driverSearchFailed: order.driverSearchFailed ?? false,
         itemSummary: firstItem?.productName ?? "Order items",
         itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
         previewItems: previewItem ? [previewItem] : [],

@@ -39,6 +39,8 @@ const {
     getStoreOrders,
     getStoreOrderDetail,
     updateOrderStatus,
+    retryDriverSearch,
+    cancelUndeliverableOrder,
 } = require("../../controllers/store/storeOrdersController");
 
 // GET /api/store/me
@@ -71,5 +73,7 @@ router.delete("/deleteCategory/:id", protectRoutes, authorizeRoles("STORE"), del
 router.get("/orders", protectRoutes, authorizeRoles("STORE"), getStoreOrders);
 router.get("/orders/:id", protectRoutes, authorizeRoles("STORE"), getStoreOrderDetail);
 router.patch("/orders/:id/status", protectRoutes, authorizeRoles("STORE"), updateOrderStatus);
+router.post("/orders/:id/retry-dispatch", protectRoutes, authorizeRoles("STORE"), retryDriverSearch);
+router.patch("/orders/:id/cancel-undeliverable", protectRoutes, authorizeRoles("STORE"), cancelUndeliverableOrder);
 
 module.exports = router;

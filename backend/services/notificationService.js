@@ -93,6 +93,18 @@ const notifyCustomer = {
             ? `Your order #${orderNumber} has been cancelled. Since the store had already started packing it, a ₹${feeCharged} cancellation fee was deducted from your wallet.`
             : `Your order #${orderNumber} has been cancelled. No payment was made for this order, so there's nothing to refund.`,
     }),
+    noDriversFound: (userId, orderNumber, orderId) => notify({
+        userId, role: "CUSTOMER", orderId, type: "DELIVERY",
+        title:   "Trouble Finding a Driver ⚠️",
+        message: `We're having trouble finding a driver for order #${orderNumber}. The store has been notified and will follow up shortly.`,
+    }),
+    cancelledNoDriver: (userId, orderNumber, orderId, refundAmount = 0) => notify({
+        userId, role: "CUSTOMER", orderId, type: "ORDER",
+        title:   "Order Cancelled ❌",
+        message: refundAmount > 0
+            ? `We couldn't find a driver for order #${orderNumber}, so the store has cancelled it. ₹${refundAmount} has been refunded to your QuickKart wallet.`
+            : `We couldn't find a driver for order #${orderNumber}, so the store has cancelled it. No payment was made for this order, so there's nothing to refund.`,
+    }),
 };
 
 // ─── Order lifecycle — store ──────────────────────────────────────────────────

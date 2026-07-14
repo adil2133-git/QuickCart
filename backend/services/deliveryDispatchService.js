@@ -1,11 +1,12 @@
 const Order = require("../models/shared/order");
 const DriverProfile = require("../models/driver/driverProfile");
 const StoreProfile = require("../models/store/storeProfile");
+const CustomerProfile = require("../models/customer/customerProfile");
 const DriverDeliveryRequest = require("../models/driver/driverDeliveryRequest");
 
 const { haversineKm } = require("../utils/distance");
-const { emitToDriver } = require("../socket");
-const { notifyStore } = require("./notificationService");
+const { emitToDriver, emitToCustomer } = require("../socket");
+const { notifyStore, notifyCustomer } = require("./notificationService");
 
 // Driver location is considered stale after 5 minutes
 const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000;
@@ -44,7 +45,7 @@ const loadOrderForDispatch = (orderId) =>
             select: "storeName address coordinates",
         })
         .select(
-            "orderNumber recipientName deliveryAddress deliveryCoordinates totalAmount paymentMethod products storeId orderStatus driverId deliveryRequestRound driverSearchFailed"
+            "orderNumber recipientName deliveryAddress deliveryCoordinates totalAmount paymentMethod products storeId customerId orderStatus driverId deliveryRequestRound driverSearchFailed"
         );
 
 // Get drivers who already rejected this order
@@ -113,6 +114,51 @@ const createAndEmitRequests = async (
     return requests;
 };
 
+// Mark an order's driver search as failed and notify both sides.
+// Previously this only notified the store — the customer was never told,
+// leaving them staring at "Finding Your Driver" indefinitely. Now both get
+// a notification the moment the search is given up on.
+const markSearchFailed = async (order, logMessage) => {
+    order.driverSearchFailed = true;
+    await order.save();
+
+    if (logMessage) console.warn(logMessage);
+
+    emitToCustomer(order.customerId, "order:driverSearchFailed", {
+        orderId: order._id.toString(),
+        orderNumber: order.orderNumber,
+        failed: true,
+    });
+
+    StoreProfile.findById(order.storeId._id ?? order.storeId)
+        .populate("userId", "_id")
+        .lean()
+        .then((store) => {
+            if (store?.userId?._id) {
+                notifyStore.noDriversFound?.(
+                    store.userId._id,
+                    order.orderNumber,
+                    order._id
+                ).catch(() => {});
+            }
+        })
+        .catch(() => {});
+
+    CustomerProfile.findById(order.customerId)
+        .populate("userId", "_id")
+        .lean()
+        .then((cp) => {
+            if (cp?.userId?._id) {
+                notifyCustomer.noDriversFound?.(
+                    cp.userId._id,
+                    order.orderNumber,
+                    order._id
+                ).catch(() => {});
+            }
+        })
+        .catch(() => {});
+};
+
 // Send the current dispatch round to nearby drivers
 const dispatchRound = async (orderId) => {
     const order = await loadOrderForDispatch(orderId);
@@ -135,25 +181,9 @@ const dispatchRound = async (orderId) => {
     const isFallbackRound = nextRound > MAX_DISPATCH_ROUNDS;
 
     // Stop searching if all rounds are completed
-    if (nextRound > TOTAL_DISPATCH_ROUNDS) {
-        order.driverSearchFailed = true;
-        await order.save();
-
-        StoreProfile.findById(order.storeId._id ?? order.storeId)
-            .populate("userId", "_id")
-            .lean()
-            .then((store) => {
-                if (store?.userId?._id) {
-                    notifyStore.noDriversFound?.(
-                        store.userId._id,
-                        order.orderNumber,
-                        order._id
-                    ).catch(() => {});
-                }
-            })
-            .catch(() => {});
-
-        console.warn(
+   if (nextRound > TOTAL_DISPATCH_ROUNDS) {
+        await markSearchFailed(
+            order,
             `[dispatch] Order ${orderId} exhausted all ${MAX_DISPATCH_ROUNDS} rounds + ${FALLBACK_ATTEMPTS} fallback attempts — no driver found`
         );
 
@@ -171,24 +201,8 @@ const dispatchRound = async (orderId) => {
     });
 
     if (onlineDriverCount === 0) {
-        order.driverSearchFailed = true;
-        await order.save();
-
-        StoreProfile.findById(order.storeId._id ?? order.storeId)
-            .populate("userId", "_id")
-            .lean()
-            .then((store) => {
-                if (store?.userId?._id) {
-                    notifyStore.noDriversFound?.(
-                        store.userId._id,
-                        order.orderNumber,
-                        order._id
-                    ).catch(() => {});
-                }
-            })
-            .catch(() => {});
-
-        console.warn(
+        await markSearchFailed(
+            order,
             `[dispatch] Order ${orderId}: no online drivers at all — failing search early instead of waiting out remaining rounds`
         );
 
@@ -209,30 +223,13 @@ const dispatchRound = async (orderId) => {
         });
 
         if (onlineDriverCount === 0) {
-            order.driverSearchFailed = true;
-            await order.save();
-
-            StoreProfile.findById(order.storeId._id ?? order.storeId)
-                .populate("userId", "_id")
-                .lean()
-                .then((store) => {
-                    if (store?.userId?._id) {
-                        notifyStore.noDriversFound?.(
-                            store.userId._id,
-                            order.orderNumber,
-                            order._id
-                        ).catch(() => {});
-                    }
-                })
-                .catch(() => {});
-
-            console.warn(
+            await markSearchFailed(
+                order,
                 `[dispatch] Order ${orderId}: no online drivers at all during fallback phase — failing search early instead of waiting out remaining fallback cooldowns`
             );
 
             return { dispatched: false, exhausted: true };
         }
-    }
 
     // Select search radius
     const radiusKm = isFallbackRound
