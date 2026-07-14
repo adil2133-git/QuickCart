@@ -6,8 +6,8 @@ import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 // Send a location ping if the driver moved more than this many metres,
 // OR if this many milliseconds have passed since the last ping — whichever
 // comes first.
-const MIN_DISTANCE_METRES = 500;
-const MAX_INTERVAL_MS = 60_000;
+const MIN_DISTANCE_METRES = 50;
+const MAX_INTERVAL_MS = 15_000;
 const HEARTBEAT_INTERVAL_MS = 60_000;
 const GEOCODE_INTERVAL_MS = 120_000;
 

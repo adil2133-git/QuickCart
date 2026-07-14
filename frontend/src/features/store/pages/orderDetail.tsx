@@ -272,10 +272,10 @@ export default function OrderDetailPage() {
                   )}
                   <span className="text-sm font-medium text-[#2B1B0E]">{item.productName}</span>
                 </div>
-                <span className="text-sm text-[#7A6352]">${item.price.toFixed(2)}</span>
+                <span className="text-sm text-[#7A6352]">₹{item.price.toFixed(2)}</span>
                 <span className="text-sm text-[#7A6352]">{item.quantity}x</span>
                 <span className="text-sm font-semibold text-[#2B1B0E]">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  ₹{(item.price * item.quantity).toFixed(2)}
                 </span>
               </div>
             ))}
@@ -290,19 +290,19 @@ export default function OrderDetailPage() {
             <div className="mt-4 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-[#7A6352]">Subtotal</span>
-                <span className="font-medium text-[#2B1B0E]">${order.subtotal.toFixed(2)}</span>
+                <span className="font-medium text-[#2B1B0E]">₹{order.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-[#7A6352]">Delivery Fee</span>
                 <span className="font-medium text-[#2B1B0E]">
-                  ${order.deliveryCharge.toFixed(2)}
+                  ₹{order.deliveryCharge.toFixed(2)}
                 </span>
               </div>
               <div className="border-t border-[#EADFD3] pt-3">
                 <div className="flex justify-between">
                   <span className="text-base font-bold text-[#2B1B0E]">Total</span>
                   <span className="text-base font-bold text-[#2B1B0E]">
-                    ${order.totalAmount.toFixed(2)}
+                    ₹{order.totalAmount.toFixed(2)}
                   </span>
                 </div>
               </div>

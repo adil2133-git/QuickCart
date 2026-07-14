@@ -39,7 +39,8 @@ export interface DeliveryRequest {
   pickupDistanceKm: number;
   deliveryDistanceKm: number;
   estimatedEarnings: number;
-  expiresInSeconds: number; // countdown seconds remaining
+  expiresInSeconds: number; // remaining seconds AT THE TIME this snapshot was taken — do not count down from this directly, it goes stale. Use `expiresAt` instead.
+  expiresAt: number; // absolute deadline (epoch ms) — always compute live countdowns from this
   createdAt: string;
 }
 
