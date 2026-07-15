@@ -106,6 +106,20 @@ const orderSchema = new mongoose.Schema(
             default: 0,
         },
 
+        // Only meaningful for COD orders once cash has been collected
+        // (paymentStatus flips to PAID via confirmCashCollected). Tracks
+        // whether that cash has since been handed back to the platform.
+        codSettlementStatus: {
+            type: String,
+            enum: ["PENDING", "SETTLED"],
+            default: "PENDING",
+        },
+
+        codSettledAt: {
+            type: Date,
+            default: null,
+        },
+
         razorpayOrderId: {
             type: String,
             unique: true,
