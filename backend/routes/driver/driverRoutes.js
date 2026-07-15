@@ -18,6 +18,12 @@ const {
 } = require("../../controllers/driver/driverDeliveryController");
 const { updateLocation } = require("../../controllers/driver/driverLocationController");
 const { getMyDriverProfile } = require("../../controllers/driver/driverProfileController");
+const {
+    getWalletSummary,
+    withdrawFunds,
+    getCodSummary,
+    settleCod,
+} = require("../../controllers/driver/driverWalletController");
 
 router.use(protectRoutes);
 router.use(authorizeRoles("DRIVER"));
@@ -39,6 +45,12 @@ router.post("/deliveries/:orderId/cash-collected", confirmCashCollected);
 router.get("/deliveries/completed", getCompletedDeliveries);
 router.get("/deliveries/stats/today", getTodayStats);
 router.get("/earnings", getEarningsSummary);
+
+// wallet & COD settlement
+router.get("/wallet", getWalletSummary);
+router.post("/wallet/withdraw", withdrawFunds);
+router.get("/wallet/cod", getCodSummary);
+router.post("/wallet/cod/settle", settleCod);
 
 // online/offline toggle + live location ping
 router.patch("/availability", updateAvailability);
