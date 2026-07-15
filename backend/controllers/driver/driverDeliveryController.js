@@ -572,6 +572,129 @@ const updateAvailability = async (req, res) => {
     }
 };
 
+// GET /api/driver/earnings
+const getEarningsSummary = async (req, res) => {
+    try {
+        const driver = await resolveDriverProfile(req);
+
+        const now = new Date();
+
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const startOfYesterday = new Date(startOfToday);
+        startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+        // Week starts Monday
+        const dayOfWeek = (startOfToday.getDay() + 6) % 7; // 0 = Monday
+        const startOfWeek = new Date(startOfToday);
+        startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
+
+        const startOfLastWeek = new Date(startOfWeek);
+        startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        const sumInRange = async (from, to) => {
+            const result = await Order.aggregate([
+                {
+                    $match: {
+                        driverId: driver._id,
+                        orderStatus: "DELIVERED",
+                        createdAt: to ? { $gte: from, $lt: to } : { $gte: from },
+                    },
+                },
+                { $group: { _id: null, total: { $sum: "$deliveryCharge" }, count: { $sum: 1 } } },
+            ]);
+            return { total: result[0]?.total ?? 0, count: result[0]?.count ?? 0 };
+        };
+
+        const sevenDaysAgo = new Date(startOfToday);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+        const [
+            today, yesterday,
+            thisWeek, lastWeek,
+            thisMonth, lastMonth,
+            allTime,
+            dailyAgg,
+        ] = await Promise.all([
+            sumInRange(startOfToday, null),
+            sumInRange(startOfYesterday, startOfToday),
+            sumInRange(startOfWeek, null),
+            sumInRange(startOfLastWeek, startOfWeek),
+            sumInRange(startOfMonth, null),
+            sumInRange(startOfLastMonth, startOfMonth),
+            sumInRange(new Date(0), null),
+            Order.aggregate([
+                {
+                    $match: {
+                        driverId: driver._id,
+                        orderStatus: "DELIVERED",
+                        createdAt: { $gte: sevenDaysAgo },
+                    },
+                },
+                {
+                    $group: {
+                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                        total: { $sum: "$deliveryCharge" },
+                    },
+                },
+            ]),
+        ]);
+
+        const dailyMap = new Map(dailyAgg.map((d) => [d._id, d.total]));
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(startOfToday);
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            last7Days.push({
+                label: d.toLocaleDateString("en-US", { weekday: "short" }),
+                total: dailyMap.get(key) ?? 0,
+            });
+        }
+
+        const pctChange = (curr, prev) => {
+            if (prev > 0) return Math.round(((curr - prev) / prev) * 100);
+            return curr > 0 ? 100 : 0;
+        };
+
+        // hardcoded for now — move to config once per-driver targets are needed
+        const weeklyTargetDeliveries = 10;
+        const weeklyTargetBonus = 200;
+        const monthlyGoalAmount = 5000;
+
+        return res.status(200).json({
+            success: true,
+            earnings: {
+                today: today.total,
+                todayChangePercent: pctChange(today.total, yesterday.total),
+                thisWeek: thisWeek.total,
+                weekChangePercent: pctChange(thisWeek.total, lastWeek.total),
+                thisMonth: thisMonth.total,
+                monthChangePercent: pctChange(thisMonth.total, lastMonth.total),
+                total: allTime.total,
+                totalDeliveries: driver.totalDeliveries,
+                monthDeliveries: thisMonth.count,
+                monthlyGoalAmount,
+                walletBalance: driver.walletBalance,
+                cashPendingSettlement: driver.cashPendingSettlement,
+                weeklyChallenge: {
+                    target: weeklyTargetDeliveries,
+                    current: thisWeek.count,
+                    bonus: weeklyTargetBonus,
+                },
+                last7Days,
+            },
+        });
+    } catch (err) {
+        console.error("[getEarningsSummary]", err);
+        return res.status(500).json({ success: false, message: "Failed to load earnings." });
+    }
+};
+
 module.exports = {
     getDeliveryRequests,
     acceptDeliveryRequest,
@@ -581,5 +704,6 @@ module.exports = {
     confirmCashCollected,
     getCompletedDeliveries,
     getTodayStats,
+    getEarningsSummary,
     updateAvailability,
 };

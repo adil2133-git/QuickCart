@@ -13,6 +13,7 @@ const {
     confirmCashCollected,
     getCompletedDeliveries,
     getTodayStats,
+    getEarningsSummary,
     updateAvailability,
 } = require("../../controllers/driver/driverDeliveryController");
 const { updateLocation } = require("../../controllers/driver/driverLocationController");
@@ -37,6 +38,7 @@ router.post("/deliveries/:orderId/cash-collected", confirmCashCollected);
 // history & stats
 router.get("/deliveries/completed", getCompletedDeliveries);
 router.get("/deliveries/stats/today", getTodayStats);
+router.get("/earnings", getEarningsSummary);
 
 // online/offline toggle + live location ping
 router.patch("/availability", updateAvailability);
