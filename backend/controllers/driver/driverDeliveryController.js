@@ -3,8 +3,9 @@ const DriverProfile = require("../../models/driver/driverProfile");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
+const WalletTransaction = require("../../models/driver/walletTransaction");
 const { sendOrderDeliveredEmail } = require("../../services/mailService");
-const { emitToStore, emitToCustomer } = require("../../socket");
+const { emitToStore, emitToCustomer, emitToDriver } = require("../../socket");
 const { notifyCustomer, notifyStore, notifyDriver } = require("../../services/notificationService");
 
 const resolveDriverProfile = async (req) => {
@@ -329,7 +330,44 @@ const advanceDeliveryStage = async (req, res) => {
             completedAt = new Date().toISOString();
             driver.totalDeliveries += 1;
             driver.availabilityStatus = "ONLINE";
+
+            // Credit the driver's wallet with this delivery's payout.
+            // Previously nothing ever incremented walletBalance — it just sat
+            // at its default of 0 forever, so the wallet page had no real
+            // earnings to show.
+            const payout = order.deliveryCharge ?? 0;
+            if (payout > 0) {
+                driver.walletBalance += payout;
+            }
+
             await driver.save();
+
+            if (payout > 0) {
+                WalletTransaction.create({
+                    driverId: driver._id,
+                    orderId: order._id,
+                    amount: payout,
+                    type: "EARNING",
+                    description: `Delivery payout for order #${order.orderNumber}`,
+                })
+                    .then((txn) => {
+                        emitToDriver(driver._id, "wallet:updated", {
+                            balance: driver.walletBalance,
+                            change: payout,
+                            reason: "EARNING",
+                            orderId: order._id.toString(),
+                            transaction: {
+                                id: txn._id.toString(),
+                                type: txn.type,
+                                amount: txn.amount,
+                                description: txn.description,
+                                orderNumber: order.orderNumber,
+                                createdAt: txn.createdAt,
+                            },
+                        });
+                    })
+                    .catch((err) => console.error("[wallet credit]", err));
+            }
 
             notifyDriver.delivered(
                 req.user.userID,
