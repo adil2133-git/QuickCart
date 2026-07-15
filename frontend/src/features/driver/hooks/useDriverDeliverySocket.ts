@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { getSocket } from "../../../lib/socket";
 import { useDriverDeliveryStore } from "../state/driverDeliveryState";
+import { useDriverWalletStore } from "../state/driverWalletState";
+import type { WalletTransaction } from "../types/driverWallet";
 
 interface DeliveryRequestPayload {
     requestId: string;
@@ -26,9 +28,19 @@ interface RequestTakenPayload {
     message: string;
 }
 
+interface WalletUpdatedPayload {
+    balance: number;
+    change: number;
+    reason: "EARNING" | "BONUS" | "WITHDRAWAL" | "ADJUSTMENT";
+    orderId?: string | null;
+    transaction: WalletTransaction;
+}
+
 export function useDriverDeliverySocket() {
     const addRequest = useDriverDeliveryStore((s) => s.addRequest);
     const removeRequestByOrderId = useDriverDeliveryStore((s) => s.removeRequestByOrderId);
+    const liveUpdateBalance = useDriverWalletStore((s) => s.liveUpdateBalance);
+    const prependTransaction = useDriverWalletStore((s) => s.prependTransaction);
     useEffect(() => {
         const socket = getSocket();
 
@@ -65,12 +77,26 @@ export function useDriverDeliverySocket() {
             removeRequestByOrderId(payload.orderId);
         };
 
+        const handleWalletUpdated = (payload: WalletUpdatedPayload) => {
+            liveUpdateBalance(payload.balance);
+            prependTransaction(payload.transaction);
+            if (payload.reason === "EARNING" && payload.change > 0) {
+                toast.success(`₹${payload.change} credited to your wallet`, {
+                    description: payload.transaction.orderNumber
+                        ? `Order #${payload.transaction.orderNumber}`
+                        : undefined,
+                });
+            }
+        };
+
         socket.on("delivery:request", handleNewRequest);
         socket.on("delivery:request:taken", handleRequestTaken);
+        socket.on("wallet:updated", handleWalletUpdated);
 
         return () => {
             socket.off("delivery:request", handleNewRequest);
             socket.off("delivery:request:taken", handleRequestTaken);
+            socket.off("wallet:updated", handleWalletUpdated);
         };
-    }, [addRequest, removeRequestByOrderId]);
+    }, [addRequest, removeRequestByOrderId, liveUpdateBalance, prependTransaction]);
 }
