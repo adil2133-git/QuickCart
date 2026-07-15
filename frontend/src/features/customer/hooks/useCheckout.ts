@@ -14,11 +14,11 @@ import type {
   VerifyPaymentResponse,
 } from "../types/checkout";
 
-// -- Payment succeeded, but createOrderFromCart failed after verify-payment --
+// payment succeeded, but createOrderFromCart failed after verify-payment
 // (e.g. stock ran out in the seconds between paying and verifying). Money is
 // already captured on Razorpay's side at this point, so this needs to surface
-// the actual payment ID to the customer -- a generic toast that vanishes in a
-// few seconds isn't enough for something that may require a support ticket.
+// the actual payment ID to the customer — a toast that vanishes in a few
+// seconds isn't enough for something that may need a support ticket.
 export class PaymentCapturedOrderFailedError extends Error {
   paymentId: string;
   constructor(message: string, paymentId: string) {
@@ -28,10 +28,9 @@ export class PaymentCapturedOrderFailedError extends Error {
   }
 }
 
-// -- Load summary on mount, and again whenever the selected address changes --
-// Delivery charge is distance-based (store -> address), so totals can only be
-// computed once an address is known -- every address change needs a fresh
-// summary call.
+// loads the summary on mount, and again whenever the selected address
+// changes — delivery charge is distance-based (store -> address), so totals
+// can only be computed once an address is known
 export function useLoadCheckoutSummary() {
   const setSummaryLoading = useCheckoutStore((s) => s.setSummaryLoading);
   const setSummaryData = useCheckoutStore((s) => s.setSummaryData);
@@ -63,7 +62,7 @@ export function useLoadCheckoutSummary() {
       } catch (err) {
         if (cancelled) return;
         // axios interceptor already handles 401/403 (toast + redirect/logout);
-        // this covers everything else -- network errors, 500s, etc.
+        // this covers everything else — network errors, 500s, etc.
         const message =
           (err as any)?.response?.data?.message ?? "Couldn't load your checkout. Please try again.";
         setSummaryError(message);
@@ -81,12 +80,11 @@ export function useLoadCheckoutSummary() {
   return { isLoadingSummary, summaryError };
 }
 
-// Stable reference so the selector never returns a fresh array when cart is
-// null -- returning a new [] literal each render breaks Zustand/React's
-// reference-equality check and triggers "getSnapshot should be cached".
+// stable reference so the selector never returns a fresh array when cart is
+// null — a new [] literal each render breaks Zustand/React's
+// reference-equality check and triggers "getSnapshot should be cached"
 const EMPTY_CART_ITEMS: CartProductLine[] = [];
 
-// -- Cart items, shaped for the existing OrderSummary UI --------------------
 export function useCartItems(): CartProductLine[] {
   return useCheckoutStore((s) => s.cart?.products ?? EMPTY_CART_ITEMS);
 }
@@ -104,14 +102,14 @@ export function useOrderTotals() {
   const useWallet = useCheckoutStore((s) => s.useWallet);
   const paymentMethod = useCheckoutStore((s) => s.paymentMethod);
 
-  // The local coupon discount is cosmetic display only -- it is NOT sent to
-  // the backend and the backend's own totals are what's actually charged.
+  // cosmetic display only — not sent to the backend, whose own totals are
+  // what actually gets charged
   const couponDiscount = couponApplied ? LOCAL_COUPON_DISCOUNT : 0;
   const grandTotal = productTotal + deliveryCharge + packagingFee - couponDiscount;
 
-  // How much wallet balance would actually be applied, and what's left to
-  // pay via Razorpay -- purely for display; the backend recomputes this
-  // exact split server-side before charging anything.
+  // how much wallet balance would apply, and what's left to pay via
+  // Razorpay — purely for display; the backend recomputes this same split
+  // itself before charging anything
   const walletApplicable = paymentMethod === "ONLINE" && useWallet;
   const walletAmountToApply = walletApplicable ? Math.min(walletBalance, grandTotal) : 0;
   const amountToPay = grandTotal - walletAmountToApply;
@@ -169,7 +167,6 @@ export function useAddressDropdown() {
   return { addresses, selectedAddressId, setSelectedAddressId, selected };
 }
 
-// -- Place order --------------------------------------------------------------
 export function usePlaceOrder() {
   const isPlacingOrder = useCheckoutStore((s) => s.isPlacingOrder);
   const setIsPlacingOrder = useCheckoutStore((s) => s.setIsPlacingOrder);
@@ -199,7 +196,7 @@ export function usePlaceOrder() {
       useWallet,
     });
 
-    // Wallet alone covered the whole order -- no Razorpay step needed at all.
+    // wallet alone covered the whole order — no Razorpay step needed
     if (data.fullyCoveredByWallet && data.order) {
       return data.order;
     }
@@ -213,9 +210,9 @@ export function usePlaceOrder() {
       throw new Error("Couldn't load the payment gateway. Check your connection and try again.");
     }
 
-    // The Razorpay modal is callback-driven, so we bridge it back into this
-    // async function with a Promise that resolves/rejects from inside the
-    // handler / ondismiss callbacks.
+    // the Razorpay modal is callback-driven, so this bridges it back into
+    // this async function with a Promise that resolves/rejects from inside
+    // the handler / ondismiss callbacks
     return new Promise<PlaceOrderResponse["order"] | null>((resolve, reject) => {
       const rzp = new window.Razorpay({
         key: data.razorpayKeyId!,
@@ -248,7 +245,7 @@ export function usePlaceOrder() {
           }
         },
         modal: {
-          ondismiss: () => resolve(null), // user closed the modal -- not an error, just no order
+          ondismiss: () => resolve(null), // user closed the modal — not an error, just no order
         },
         theme: { color: "#145C43" },
       });
@@ -285,8 +282,8 @@ export function usePlaceOrder() {
       return order;
     } catch (err) {
       if (err instanceof PaymentCapturedOrderFailedError) {
-        // This one doesn't auto-dismiss -- the customer needs time to actually
-        // read and note down the payment ID, not have it vanish in 4 seconds.
+        // doesn't auto-dismiss — the customer needs time to actually read
+        // and note down the payment ID, not have it vanish in 4 seconds
         toast.error(`${err.message} Payment ID: ${err.paymentId}`, {
           id: "payment-captured-error",
           duration: Infinity,

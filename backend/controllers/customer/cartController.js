@@ -5,18 +5,15 @@ const mongoose = require("mongoose");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// ─── Helper: resolve customerId from the JWT user ─────────────────────────────
 const resolveCustomerId = async (req) => {
     const profile = await resolveCustomerProfile(req.user.userID);
     return profile._id;
 };
 
-// ─── Helper: recalculate totalAmount ─────────────────────────────────────────
 const recalcTotal = (products) =>
     products.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-// ─── GET /api/customer/cart ───────────────────────────────────────────────────
-// Returns the customer's cart, fully populated with product + store info.
+// GET /api/customer/cart
 const getCart = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -43,10 +40,9 @@ const getCart = async (req, res) => {
     }
 };
 
-// ─── POST /api/customer/cart/add ─────────────────────────────────────────────
-// Body: { productId, quantity }
-// If the cart already has items from a DIFFERENT store, returns 409 so the
-// frontend can prompt the user to clear & replace.
+// POST /api/customer/cart/add — { productId, quantity }
+// returns 409 if the cart already has items from a different store, so the
+// frontend can prompt the user to clear it first
 const addToCart = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -63,7 +59,6 @@ const addToCart = async (req, res) => {
             return res.status(400).json({ success: false, message: "quantity must be >= 1." });
         }
 
-        // Verify the product exists and is available
         const product = await Product.findById(productId)
             .populate("storeId", "storeName logoUrl")
             .lean();
@@ -87,16 +82,14 @@ const addToCart = async (req, res) => {
         let cart = await Cart.findOne({ customerId });
 
         if (!cart) {
-            // Brand-new cart
             cart = await Cart.create({
                 customerId,
                 products: [{ productId, quantity, price: product.price }],
                 totalAmount: product.price * quantity,
             });
         } else {
-            // Multi-store conflict check
+            // cart isn't multi-store — check what's already in there before adding
             if (cart.products.length > 0) {
-                // Get storeId of the first item already in the cart
                 const firstProduct = await Product.findById(cart.products[0].productId)
                     .select("storeId")
                     .lean();
@@ -105,7 +98,6 @@ const addToCart = async (req, res) => {
                 const incomingStoreId = product.storeId._id.toString();
 
                 if (cartStoreId && cartStoreId !== incomingStoreId) {
-                    // Conflict — ask frontend to decide
                     return res.status(409).json({
                         success: false,
                         conflict: true,
@@ -122,7 +114,6 @@ const addToCart = async (req, res) => {
                 }
             }
 
-            // Same store — upsert the item
             const existingIndex = cart.products.findIndex(
                 (p) => p.productId.toString() === productId
             );
@@ -136,7 +127,7 @@ const addToCart = async (req, res) => {
                     });
                 }
                 cart.products[existingIndex].quantity = newQty;
-                cart.products[existingIndex].price = product.price; // always use latest price
+                cart.products[existingIndex].price = product.price; // always use the latest price
             } else {
                 cart.products.push({ productId, quantity, price: product.price });
             }
@@ -145,7 +136,6 @@ const addToCart = async (req, res) => {
             await cart.save();
         }
 
-        // Return populated cart
         const populated = await Cart.findById(cart._id)
             .populate({
                 path: "products.productId",
@@ -161,8 +151,8 @@ const addToCart = async (req, res) => {
     }
 };
 
-// ─── PATCH /api/customer/cart/item/:productId ─────────────────────────────────
-// Body: { quantity } — set absolute quantity (not delta). quantity: 0 removes the item.
+// PATCH /api/customer/cart/item/:productId — { quantity }
+// sets the absolute quantity, not a delta; quantity: 0 removes the item
 const updateCartItem = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -195,7 +185,6 @@ const updateCartItem = async (req, res) => {
         if (quantity === 0) {
             cart.products.splice(itemIndex, 1);
         } else {
-            // Validate stock
             const product = await Product.findById(productId).select("stockQuantity price").lean();
             if (product && quantity > product.stockQuantity) {
                 return res.status(400).json({
@@ -225,8 +214,7 @@ const updateCartItem = async (req, res) => {
     }
 };
 
-// ─── DELETE /api/customer/cart/item/:productId ────────────────────────────────
-// Removes a single item from the cart.
+// DELETE /api/customer/cart/item/:productId
 const removeFromCart = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);
@@ -272,8 +260,7 @@ const removeFromCart = async (req, res) => {
     }
 };
 
-// ─── DELETE /api/customer/cart ────────────────────────────────────────────────
-// Clears the entire cart (used when customer confirms store-switch).
+// DELETE /api/customer/cart — used when the customer confirms a store switch
 const clearCart = async (req, res) => {
     try {
         const customerId = await resolveCustomerId(req);

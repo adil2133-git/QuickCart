@@ -2,8 +2,6 @@ import { create } from "zustand";
 import api from "../../../api/axios";
 import type { StoreProfileSummary } from "../types/store";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 async function apiGet<T>(
   path: string,
   params: Record<string, unknown> = {}
@@ -15,11 +13,7 @@ async function apiGet<T>(
   return res.data;
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export type SortKey = "nearest" | "rating" | "popular";
-
-// ─── Store State & Actions ────────────────────────────────────────────────────
 
 interface StoresListState {
   stores: StoreProfileSummary[];
@@ -30,7 +24,6 @@ interface StoresListState {
   sortOpen: boolean;
   openNowOnly: boolean;
 
-  // Actions
   fetchNearbyStores: (lat: number, lng: number, radiusKm?: number) => Promise<void>;
   setSortKey: (key: SortKey) => void;
   setSortOpen: (val: boolean) => void;
@@ -38,12 +31,9 @@ interface StoresListState {
   resetStoresList: () => void;
 }
 
-// ─── Initial State ────────────────────────────────────────────────────────────
+type ActionKeys = "fetchNearbyStores" | "setSortKey" | "setSortOpen" | "setOpenNowOnly" | "resetStoresList";
 
-const initialState: Omit<
-  StoresListState,
-  "fetchNearbyStores" | "setSortKey" | "setSortOpen" | "setOpenNowOnly" | "resetStoresList"
-> = {
+const initialState: Omit<StoresListState, ActionKeys> = {
   stores: [],
   storesLoading: false,
   storesError: null,
@@ -52,12 +42,10 @@ const initialState: Omit<
   openNowOnly: false,
 };
 
-// ─── Zustand Store ────────────────────────────────────────────────────────────
-
 export const useStoresListStore = create<StoresListState>((set) => ({
   ...initialState,
 
-  // ── Nearby stores  →  GET /api/customer/stores/nearby ─────────────────────
+  // GET /api/customer/stores/nearby
   fetchNearbyStores: async (lat, lng, radiusKm = 10) => {
     set({ storesLoading: true, storesError: null });
     try {

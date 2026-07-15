@@ -1,4 +1,3 @@
-// src/features/customer/state/customerProfileStore.ts
 import { create } from "zustand";
 import { useAuthStore } from "../../../features/auth/state/authState";
 import type { CustomerProfile, SavedAddress } from "../types/customerProfile";
@@ -66,7 +65,8 @@ export const useCustomerProfileStore = create<CustomerProfileState>((set) => ({
   clearProfile: () => set({ profile: null, isLoading: false, error: null }),
 }));
 
-// Reactively clear profile when user logs out
+// clears the cached profile the moment the user logs out, so a later
+// login doesn't briefly flash the previous user's saved addresses
 useAuthStore.subscribe(
   (state) => state.isAuthenticated,
   (isAuthenticated) => {

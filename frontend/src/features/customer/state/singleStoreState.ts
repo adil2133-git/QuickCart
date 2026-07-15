@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import api from "../../../api/axios";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export interface Category {
   _id: string;
   categoryName: string;
@@ -74,8 +72,6 @@ export interface PaginatedProducts {
 
 export type SortValue = "newest" | "priceAsc" | "priceDesc";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 async function apiGet<T>(
   path: string,
   params: Record<string, unknown> = {}
@@ -87,22 +83,16 @@ async function apiGet<T>(
   return res.data;
 }
 
-// ─── Store State & Actions ────────────────────────────────────────────────────
-
 interface SingleStoreState {
-  // Store profile
   store: StoreProfileSummary | null;
   storeLoading: boolean;
   storeError: string | null;
 
-  // Bestsellers
   bestsellers: Product[];
   bestsellersLoading: boolean;
 
-  // Categories
   categories: Category[];
 
-  // Products
   products: Product[];
   productsLoading: boolean;
   productsError: string | null;
@@ -110,41 +100,28 @@ interface SingleStoreState {
   pages: number;
   loadingMore: boolean;
 
-  // Filters
   activeCategory: string;
   searchInput: string;
   search: string;
   sort: SortValue;
   sortOpen: boolean;
 
-  // Reviews
   ratingSummary: RatingSummary | null;
   reviews: Review[];
   reviewsLoading: boolean;
 
-  // UI
   followed: boolean;
 
-  // Actions — store profile
   fetchStore: (storeId: string) => Promise<void>;
-
-  // Actions — bestsellers
   fetchBestsellers: (storeId: string) => Promise<void>;
-
-  // Actions — categories
   fetchCategories: () => Promise<void>;
-
-  // Actions — products
   fetchProducts: (
     storeId: string,
     pageNum: number,
     opts?: { append?: boolean }
   ) => Promise<void>;
-
-  // Actions — reviews
   fetchReviews: (storeId: string) => Promise<void>;
 
-  // Actions — filters / UI
   setActiveCategory: (cat: string) => void;
   setSearchInput: (val: string) => void;
   setSearch: (val: string) => void;
@@ -152,14 +129,10 @@ interface SingleStoreState {
   setSortOpen: (val: boolean) => void;
   toggleFollowed: () => void;
 
-  // Reset when navigating away
   resetStore: () => void;
 }
 
-// ─── Initial State ────────────────────────────────────────────────────────────
-
-const initialState: Omit<
-  SingleStoreState,
+type ActionKeys =
   | "fetchStore"
   | "fetchBestsellers"
   | "fetchCategories"
@@ -171,8 +144,9 @@ const initialState: Omit<
   | "setSort"
   | "setSortOpen"
   | "toggleFollowed"
-  | "resetStore"
-> = {
+  | "resetStore";
+
+const initialState: Omit<SingleStoreState, ActionKeys> = {
   store: null,
   storeLoading: true,
   storeError: null,
@@ -202,12 +176,10 @@ const initialState: Omit<
   followed: false,
 };
 
-// ─── Zustand Store ────────────────────────────────────────────────────────────
-
 export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
   ...initialState,
 
-  // ── Store profile  →  GET /api/customer/:storeId ────────────────────────────
+  // GET /api/customer/:storeId
   fetchStore: async (storeId) => {
     set({ storeLoading: true, storeError: null });
     try {
@@ -224,7 +196,7 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
     }
   },
 
-  // ── Bestsellers  →  GET /api/customer/:storeId/bestsellers ─────────────────
+  // GET /api/customer/:storeId/bestsellers
   fetchBestsellers: async (storeId) => {
     set({ bestsellersLoading: true });
     try {
@@ -240,7 +212,7 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
     }
   },
 
-  // ── Categories  →  GET /api/store/getCategories ────────────────────────────
+  // GET /api/store/getCategories
   fetchCategories: async () => {
     try {
       const data = await apiGet<{ categories: Category[] }>(`/store/getCategories`, {
@@ -252,7 +224,7 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
     }
   },
 
-  // ── Products  →  GET /api/customer/:storeId/products ───────────────────────
+  // GET /api/customer/:storeId/products
   fetchProducts: async (storeId, pageNum, { append = false } = {}) => {
     const { search, activeCategory, sort } = get();
 
@@ -293,7 +265,7 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
     }
   },
 
-  // ── Reviews  →  GET /api/customer/:storeId/reviews/* ───────────────────────
+  // GET /api/customer/:storeId/reviews and /reviews/summary
   fetchReviews: async (storeId) => {
     set({ reviewsLoading: true });
     try {
@@ -315,7 +287,6 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
     }
   },
 
-  // ── Filters & UI ───────────────────────────────────────────────────────────
   setActiveCategory: (cat) => set({ activeCategory: cat }),
   setSearchInput: (val) => set({ searchInput: val }),
   setSearch: (val) => set({ search: val }),
@@ -323,6 +294,5 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
   setSortOpen: (val) => set({ sortOpen: val }),
   toggleFollowed: () => set((state) => ({ followed: !state.followed })),
 
-  // ── Reset ──────────────────────────────────────────────────────────────────
   resetStore: () => set({ ...initialState }),
 }));

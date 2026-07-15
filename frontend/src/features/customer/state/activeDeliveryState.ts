@@ -47,6 +47,8 @@ export const useActiveDeliveryStore = create<ActiveDeliveryState>((set, get) => 
   updateStatus: (orderId, orderStatus) => {
     const { delivery } = get();
     if (!delivery || delivery.orderId !== orderId) return;
+    // once delivered or cancelled there's nothing left to track — clear it
+    // so the floating widget disappears instead of showing a stale order
     if (orderStatus === "DELIVERED" || orderStatus === "CANCELLED") {
       set({ delivery: null, isMinimized: false });
     } else {

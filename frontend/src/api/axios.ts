@@ -37,7 +37,6 @@ const logoutUser = () => {
   }, 500);
 };
 
-// ─── Response Interceptor ─────────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -45,10 +44,10 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
 
-    // The refresh call itself failed — refresh token is expired/invalid.
-    // If this refresh came from hydrate()'s initial "do I have a session?"
-    // check, don't force-redirect — having no session on first load is
-    // normal, not an expired one, and hydrate() already handles it quietly.
+    // the refresh call itself failed — refresh token is expired/invalid.
+    // if this came from hydrate()'s initial "do I have a session?" check,
+    // don't force a redirect — no session on first load is normal, not
+    // an expired one, and hydrate() already handles that quietly
     if (status === 401 && isRefreshCall) {
       isRefreshing = false;
       processQueue(error);
@@ -58,14 +57,14 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // _skipRefresh is set on requests that should NOT trigger a silent refresh
-    // on 401 — specifically the hydrate() call to /auth/me on app startup.
-    // A 401 there just means "no session yet", not "token expired".
+    // _skipRefresh marks requests that shouldn't trigger a silent refresh on
+    // 401 — just the hydrate() call to /auth/me on startup, where a 401
+    // means "no session yet", not "token expired"
     if (status === 401 && originalRequest?._skipRefresh) {
       return Promise.reject(error);
     }
 
-    // ── Token expired on a real API call: silent refresh then retry ───────────
+    // token expired on a real API call — refresh silently, then retry once
     if (status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

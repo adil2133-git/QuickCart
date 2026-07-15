@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { CustomerOrder, OrdersTab, RawOrderStatus } from "../types/myOrders";
 
-// Maps raw backend status → collapsed UI status + progress
+// maps the raw backend status to a collapsed UI status + progress percentage
 function deriveFromRaw(raw: RawOrderStatus): Pick<CustomerOrder, "status" | "progressPercent"> {
   const statusMap: Record<RawOrderStatus, CustomerOrder["status"]> = {
     PENDING: "PROCESSING",
@@ -26,7 +26,6 @@ interface OrdersState {
   activeTab: OrdersTab;
   setActiveTab: (tab: OrdersTab) => void;
 
-  // ── Server state ──────────────────────────────────────────────────────────
   orders: CustomerOrder[];
   isLoading: boolean;
   error: string | null;
@@ -34,7 +33,7 @@ interface OrdersState {
   setLoading: () => void;
   setOrders: (orders: CustomerOrder[]) => void;
   setError: (message: string) => void;
- liveUpdateStatus: (orderId: string, rawStatus: RawOrderStatus) => void;
+  liveUpdateStatus: (orderId: string, rawStatus: RawOrderStatus) => void;
   liveUpdateDriverSearchFailed: (orderId: string, failed: boolean) => void;
   removeOrder: (orderId: string) => void;
 }
@@ -50,7 +49,7 @@ export const useOrdersStore = create<OrdersState>((set) => ({
   setLoading: () => set({ isLoading: true, error: null }),
   setOrders: (orders) => set({ orders, isLoading: false, error: null }),
   setError: (message) => set({ isLoading: false, error: message }),
-   liveUpdateStatus: (orderId, rawStatus) =>
+  liveUpdateStatus: (orderId, rawStatus) =>
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id === orderId ? { ...o, rawStatus, ...deriveFromRaw(rawStatus) } : o

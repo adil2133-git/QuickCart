@@ -1,4 +1,3 @@
-// src/components/AccessDenied.tsx
 import { useNavigate } from "react-router-dom";
 import type { UserRole } from "../features/auth/state/authState";
 

@@ -57,6 +57,7 @@ const ROLE_HOME: Record<UserRole, string> = {
   STORE: '/store/dashboard',
 }
 
+// keeps a logged-in user off the public login/landing pages, bouncing them to their home instead
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore()
   if (isAuthenticated && user) {
@@ -70,6 +71,7 @@ function App() {
   const hydrate = useAuthStore((state) => state.hydrate)
   const [ready, setReady] = useState(false)
 
+  // checks the session once on load before rendering any routes
   useEffect(() => {
     hydrate().finally(() => setReady(true))
   }, [hydrate])
@@ -97,7 +99,7 @@ function App() {
       <Toaster position="top-right" richColors closeButton expand gap={10} visibleToasts={4} />
       <Routes>
 
-        {/* ── Public routes ─────────────────────────────────────────── */}
+        {/* public routes */}
         <Route path="/" element={<Navigate to="/landing" replace />} />
         <Route path="/landing" element={<PublicOnlyRoute><QuickKartLanding /></PublicOnlyRoute>} />
         <Route path="/login" element={<PublicOnlyRoute><QuickKartLogin /></PublicOnlyRoute>} />
@@ -109,8 +111,7 @@ function App() {
         <Route path="/driver/pending" element={<PendingApproval role="driver" />} />
         <Route path="/store/pending" element={<PendingApproval role="store" />} />
 
-        {/* ── Customer routes ───────────────────────────────────────── */}
-        {/* ── Customer routes (most wrapped in CustomerShell) ──────── */}
+        {/* customer routes — most wrapped in CustomerShell */}
         <Route
           path="/customer"
           element={
@@ -129,12 +130,12 @@ function App() {
           <Route path="profile" element={<CustomerProfilePage />} />
         </Route>
 
-        {/* These two stay outside the shell — they manage their own header */}
+        {/* these two stay outside the shell — they manage their own header */}
         <Route path="/customer/discovery" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><ProductDiscoveryPage /></ProtectedRoute>} />
         <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute>} />
         <Route path="/customer/track/:orderId" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><OrderTrackingPage /></ProtectedRoute>} />
 
-        {/* ── Driver routes (all wrapped in DriverShell) ────────────── */}
+        {/* driver routes — all wrapped in DriverShell */}
         <Route
           path="/driver"
           element={<ProtectedRoute allowedRoles={['DRIVER']}><DriverShell /></ProtectedRoute>}
@@ -143,7 +144,7 @@ function App() {
           <Route path="deliveries" element={<DriverDeliveriesPage />} />
         </Route>
 
-        {/* ── Store routes (all wrapped in StoreShell) ──────────────── */}
+        {/* store routes — all wrapped in StoreShell */}
         <Route path="/store/dashboard" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><DashboardPage /></StoreShell></ProtectedRoute>} />
         <Route path="/store/products/new" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><AddProductPage /></StoreShell></ProtectedRoute>} />
         <Route path="/store/products" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><ProductsPage /></StoreShell></ProtectedRoute>} />
@@ -155,14 +156,14 @@ function App() {
         <Route path="/store/orders/:id/packing" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><PackingChecklistPage /></StoreShell></ProtectedRoute>} />
         <Route path="/store/orders/:id/complete" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><PackingCompletePage /></StoreShell></ProtectedRoute>} />
 
-        {/* ── Admin routes ──────────────────────────────────────────── */}
+        {/* admin routes */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><Dashboard /></ProtectedRoute>} />
         <Route path="/admin/approvals/store" element={<ProtectedRoute allowedRoles={['ADMIN']}><StoreApplicationsPage /></ProtectedRoute>} />
         <Route path="/admin/approvals/store/:id" element={<ProtectedRoute allowedRoles={['ADMIN']}><StoreApplicationReview /></ProtectedRoute>} />
         <Route path="/admin/approvals/drivers" element={<ProtectedRoute allowedRoles={['ADMIN']}><DriverApplicationsPage /></ProtectedRoute>} />
         <Route path="/admin/approvals/driver/:id" element={<ProtectedRoute allowedRoles={['ADMIN']}><DriverApplicationReview /></ProtectedRoute>} />
 
-        {/* ── Catch-all ─────────────────────────────────────────────── */}
+        {/* catch-all */}
         <Route path="*" element={<NotFound />} />
 
       </Routes>

@@ -5,13 +5,12 @@ import type {
   SavedAddress,
 } from "../types/checkout";
 
-// Local-only coupon placeholder -- purely cosmetic until a real coupon system
-// exists on the backend. Deliberately NOT folded into grandTotal sent to the
+// local-only coupon placeholder — purely cosmetic until a real coupon system
+// exists on the backend. Deliberately not folded into the total sent to the
 // server; the backend computes its own totals and ignores this entirely.
 export const LOCAL_COUPON_DISCOUNT = 50;
 
 interface CheckoutState {
-  // -- Server state -----------------------------------------------------------
   cart: CartResponse | null;
   addresses: SavedAddress[];
   codAllowed: boolean;
@@ -21,13 +20,13 @@ interface CheckoutState {
   distanceKm: number | null;
   freeDeliveryApplied: boolean;
   walletBalance: number;
-  pricingError: string | null; // e.g. "outside delivery range" -- blocks checkout when set
+  pricingError: string | null; // e.g. "outside delivery range" — blocks checkout when set
   minOrderValue: number;
 
   isLoadingSummary: boolean;
   summaryError: string | null;
 
-  // -- UI-only draft state ------------------------------------------------------
+  // UI-only draft state
   selectedAddressId: string | null;
   deliveryInstructions: string;
   paymentMethod: PaymentMethod;
@@ -35,10 +34,8 @@ interface CheckoutState {
   couponCode: string;
   couponApplied: boolean;
 
-  // -- Order submission state ----------------------------------------------------
   isPlacingOrder: boolean;
 
-  // -- Actions ------------------------------------------------------------------
   setSummaryLoading: () => void;
   setSummaryData: (data: {
     cart: CartResponse;
@@ -107,8 +104,8 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
     minOrderValue,
   }) => {
     const currentSelected = get().selectedAddressId;
-    // Keep the user's selection if it's still valid, otherwise fall back to
-    // the server's default, otherwise the first saved address.
+    // keep the user's selection if it's still valid, otherwise fall back to
+    // the server's default, otherwise just the first saved address
     const stillValid = currentSelected && addresses.some((a) => a._id === currentSelected);
     const nextSelected = stillValid
       ? currentSelected

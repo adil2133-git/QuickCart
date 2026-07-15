@@ -1,10 +1,6 @@
-// src/features/customer/state/locationState.ts
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import api from "../../../api/axios";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface SavedAddress {
     _id: string;
@@ -18,14 +14,10 @@ export interface CustomerProfile {
     defaultAddress: string | null;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 async function apiGet<T>(path: string): Promise<T> {
     const res = await api.get<T>(path);
     return res.data;
 }
-
-// ─── Store State & Actions ────────────────────────────────────────────────────
 
 interface LocationState {
     profile: CustomerProfile | null;
@@ -37,7 +29,6 @@ interface LocationState {
 
     showLocationModal: boolean;
 
-    // Actions
     fetchProfile: () => Promise<void>;
     onLocationSaved: () => Promise<void>;
     openLocationModal: () => void;
@@ -45,12 +36,9 @@ interface LocationState {
     resetLocation: () => void;
 }
 
-// ─── Initial State ────────────────────────────────────────────────────────────
+type PersistedFields = "fetchProfile" | "onLocationSaved" | "openLocationModal" | "closeLocationModal" | "resetLocation";
 
-const initialState: Omit<
-    LocationState,
-    "fetchProfile" | "onLocationSaved" | "openLocationModal" | "closeLocationModal" | "resetLocation"
-> = {
+const initialState: Omit<LocationState, PersistedFields> = {
     profile: null,
     activeCoords: null,
     activeAddress: null,
@@ -59,8 +47,7 @@ const initialState: Omit<
     showLocationModal: false,
 };
 
-// ─── Shared resolver: pick default address, falling back to first saved ──────
-
+// picks the customer's default address, falling back to the first saved one
 function resolveDefault(profile: CustomerProfile): SavedAddress | undefined {
     return (
         profile.savedAddresses.find((a) => a._id === profile.defaultAddress) ??
@@ -68,14 +55,11 @@ function resolveDefault(profile: CustomerProfile): SavedAddress | undefined {
     );
 }
 
-// ─── Zustand Store ────────────────────────────────────────────────────────────
-
 export const useLocationStore = create<LocationState>()(
     persist(
         (set, get) => ({
             ...initialState,
 
-            // ── Profile  →  GET /api/customer/profile ─────────────────────────────
             fetchProfile: async () => {
                 set({ profileLoading: true, profileError: null });
                 try {
@@ -87,6 +71,7 @@ export const useLocationStore = create<LocationState>()(
                         profile,
                         activeAddress: def ?? null,
                         activeCoords: def?.coordinates?.lat ? def.coordinates : null,
+                        // no address saved yet — prompt for one before they can order
                         showLocationModal: !profile.defaultAddress || profile.savedAddresses.length === 0,
                     });
                 } catch (err: unknown) {
@@ -100,7 +85,7 @@ export const useLocationStore = create<LocationState>()(
                 }
             },
 
-            // ── Called after LocationPickerModal saves a new address ──────────────
+            // called after LocationPickerModal saves a new address
             onLocationSaved: async () => {
                 set({ showLocationModal: false });
                 await get().fetchProfile();
@@ -113,7 +98,7 @@ export const useLocationStore = create<LocationState>()(
         }),
         {
             name: "quickkart-location",
-            // Only persist the resolved coords/address — re-fetch profile fresh on load
+            // only persist the resolved coords/address — profile itself is re-fetched fresh on load
             partialize: (state) => ({
                 activeCoords: state.activeCoords,
                 activeAddress: state.activeAddress,

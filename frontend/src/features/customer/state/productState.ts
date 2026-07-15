@@ -2,8 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem, Product } from "../types/product";
 
-// ─── Cart Store ───────────────────────────────────────────────────────────────
-
+// NOTE: not used anywhere in the app — every page imports useCartStore from
+// ../state/cartState (the real, server-backed cart) instead. Left in place
+// rather than deleted without being asked, but safe to remove.
 interface CartState {
   items: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
@@ -78,8 +79,8 @@ export const useCartStore = create<CartState>()(
   )
 );
 
-// ─── Wishlist Store ───────────────────────────────────────────────────────────
-
+// wishlist is local-only (persisted to localStorage) — there's no backend
+// wishlist endpoint yet, so this doesn't sync across devices
 interface WishlistState {
   wishlist: string[]; // product IDs
   toggleWishlist: (productId: string) => void;
@@ -104,8 +105,6 @@ export const useWishlistStore = create<WishlistState>()(
     { name: "quickkart-wishlist" }
   )
 );
-
-// ─── Product Detail Store ─────────────────────────────────────────────────────
 
 interface ProductDetailState {
   product: Product | null;

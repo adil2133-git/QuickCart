@@ -2,8 +2,6 @@ import { create } from "zustand";
 import api from "../../../api/axios";
 import { toast } from "sonner";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export interface CartProduct {
   _id: string;
   productName: string;
@@ -39,7 +37,6 @@ export interface StoreConflict {
 }
 
 interface CartStore {
-  // ── State ──────────────────────────────────────────────────────────────────
   cart: CartData | null;
   items: CartItem[];
   isLoading: boolean;
@@ -47,27 +44,22 @@ interface CartStore {
   error: string | null;
   conflict: StoreConflict | null; // non-null = show conflict modal
 
-  // ── Actions ────────────────────────────────────────────────────────────────
   fetchCart: () => Promise<void>;
   addToCart: (productIdOrItem: string | { _id: string }, quantity?: number) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   removeItem: (productId: string) => Promise<void>;
   clearCart: () => Promise<void>;
 
-  // Multi-store conflict resolution
+  // multi-store conflict resolution
   resolveConflict: (replace: boolean) => Promise<void>;
   dismissConflict: () => void;
 
-  // Helpers
   getItemQuantity: (productId: string) => number;
   cartItemCount: () => number;
   clearError: () => void;
 }
 
-// ─── Route prefix (matches your api baseURL of http://localhost:3001/api) ─────
 const CART = "/customer/cart";
-
-// ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useCartStore = create<CartStore>((set, get) => ({
   cart: null,
@@ -77,7 +69,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
   error: null,
   conflict: null,
 
-  // ── Fetch cart on mount ───────────────────────────────────────────────────
   fetchCart: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -86,8 +77,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       set({ cart: normalizedCart, items: normalizedCart.products ?? [], isLoading: false });
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number; data?: { message?: string } } };
-      // 401 is handled globally by your interceptor (redirect to /login)
-      // Only surface non-auth errors here
+      // 401 is handled globally by the axios interceptor (redirect to /login) — only surface other errors here
       if (axiosError.response?.status !== 401) {
         set({
           error: axiosError.response?.data?.message ?? "Failed to load cart.",
@@ -99,14 +89,13 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
-  // ── Add item ──────────────────────────────────────────────────────────────
   addToCart: async (productIdOrItem, quantity = 1) => {
     const resolvedProductId = typeof productIdOrItem === "string"
       ? productIdOrItem
       : productIdOrItem._id;
 
-    // If the item is already in the cart, increment quantity instead of
-    // adding a new entry — avoids duplicate rows and skips the conflict check
+    // already in the cart — bump the quantity instead of adding a duplicate row,
+    // and skip the store-conflict check entirely since nothing new is being added
     const existingQty = get().getItemQuantity(resolvedProductId);
     if (existingQty > 0) {
       await get().updateQuantity(resolvedProductId, existingQty + quantity);
@@ -122,7 +111,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       toast.success("Added to cart", { duration: 2000 });
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number; data?: { cartStoreName?: string; newStoreName?: string; productId?: string; quantity?: number; message?: string } } };
-      // 409 = multi-store conflict — handle in UI, not as a generic error
+      // 409 = adding this would mix items from two stores — handled by the conflict modal, not a toast
       if (axiosError.response?.status === 409) {
         const d = axiosError.response?.data as { cartStoreName?: string; newStoreName?: string; productId?: string; quantity?: number } | undefined;
         set({
@@ -143,7 +132,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
-  // ── Update quantity ───────────────────────────────────────────────────────
   updateQuantity: async (productId, quantity) => {
     set({ isUpdating: productId, error: null });
     try {
@@ -159,7 +147,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
-  // ── Remove item ───────────────────────────────────────────────────────────
   removeItem: async (productId) => {
     set({ isUpdating: productId, error: null });
     try {
@@ -175,7 +162,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
-  // ── Clear entire cart ─────────────────────────────────────────────────────
   clearCart: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -191,7 +177,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
-  // ── Multi-store conflict: user chose to replace or keep ───────────────────
+  // user chose to replace the existing cart with the item that caused the conflict
   resolveConflict: async (replace) => {
     const { conflict } = get();
     if (!conflict) return;
@@ -226,7 +212,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   dismissConflict: () => set({ conflict: null }),
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
   getItemQuantity: (productId) => {
     const { cart, items } = get();
     const source = items.length > 0 ? items : cart?.products ?? [];

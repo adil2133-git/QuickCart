@@ -1,4 +1,3 @@
-// src/features/customer/hooks/useCustomerProfile.ts
 import { useEffect, useCallback } from "react";
 import api from "../../../api/axios";
 import { useCustomerProfileStore } from "../state/customerProfileState";

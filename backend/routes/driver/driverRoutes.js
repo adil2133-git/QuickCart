@@ -16,32 +16,30 @@ const {
     updateAvailability,
 } = require("../../controllers/driver/driverDeliveryController");
 const { updateLocation } = require("../../controllers/driver/driverLocationController");
-const { getMyDriverProfile } = require("../../controllers/driver/driverProfileController"); 
+const { getMyDriverProfile } = require("../../controllers/driver/driverProfileController");
 
-// All routes require a valid JWT
 router.use(protectRoutes);
 router.use(authorizeRoles("DRIVER"));
 
-// ── Driver profile (includes availabilityStatus) ──────────────────────────────
+// profile (includes availabilityStatus)
 router.get("/me", getMyDriverProfile);
 
-// ── Delivery requests (broadcast from store accept) ──────────────────────────
+// delivery requests — broadcast from the store's dispatch service
 router.get("/deliveries/requests", getDeliveryRequests);
 router.post("/deliveries/requests/:requestId/accept", acceptDeliveryRequest);
 router.post("/deliveries/requests/:requestId/decline", declineDeliveryRequest);
 
-// ── Active delivery ───────────────────────────────────────────────────────────
+// active delivery
 router.get("/deliveries/active", getActiveDelivery);
 router.patch("/deliveries/:orderId/stage", advanceDeliveryStage);
 router.post("/deliveries/:orderId/cash-collected", confirmCashCollected);
 
-// ── History & stats ───────────────────────────────────────────────────────────
+// history & stats
 router.get("/deliveries/completed", getCompletedDeliveries);
 router.get("/deliveries/stats/today", getTodayStats);
 
-// ── Online/offline toggle ─────────────────────────────────────────────────────
+// online/offline toggle + live location ping
 router.patch("/availability", updateAvailability);
-
 router.patch("/location", updateLocation);
 
 module.exports = router;

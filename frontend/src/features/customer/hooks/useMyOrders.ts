@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import api from "../../../api/axios"; // adjust to your real path, e.g. "../../../api/axiosInstance"
+import api from "../../../api/axios";
 import { getSocket } from "../../../lib/socket";
 import { useOrdersStore } from "../state/myOrdersState";
 import type { GetOrdersResponse, GetOrderDetailResponse, CustomerOrderDetail, OrdersTab } from "../types/myOrders";
+
 export function useOrdersTab() {
   const activeTab = useOrdersStore((s) => s.activeTab);
   const setActiveTab = useOrdersStore((s) => s.setActiveTab);
   return { activeTab, setActiveTab };
 }
 
-// Fetches orders for the given tab whenever the tab changes. The backend
+// fetches orders for the given tab whenever the tab changes. The backend
 // filters server-side via ?tab=active|past, so each tab switch is a fresh
-// request rather than a client-side filter of one big list.
+// request rather than a client-side filter of one big list
 export function useOrdersList(tab: OrdersTab) {
   const orders = useOrdersStore((s) => s.orders);
   const isLoading = useOrdersStore((s) => s.isLoading);
@@ -51,8 +52,8 @@ export function useOrdersList(tab: OrdersTab) {
   return { orders, isLoading, error };
 }
 
-// Cancels an order the customer placed. Only valid while the order is still
-// PENDING/ACCEPTED/PACKING on the backend — the API rejects it otherwise.
+// cancels an order the customer placed. Only valid while the order is still
+// PENDING/ACCEPTED/PACKING on the backend — the API rejects it otherwise
 export function useCancelOrder() {
   const removeOrder = useOrdersStore((s) => s.removeOrder);
 
@@ -74,9 +75,9 @@ export function useCancelOrder() {
   return { cancelOrder };
 }
 
-// Fetches full detail (line items, delivery address, payment status) for a
+// fetches full detail (line items, delivery address, payment status) for a
 // single order — used by the order tracking view's "Delivering To" and
-// "Order Summary" cards, which need more than the list endpoint returns.
+// "Order Summary" cards, which need more than the list endpoint returns
 export function useOrderDetail(orderId: string | null) {
   const [detail, setDetail] = useState<CustomerOrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);

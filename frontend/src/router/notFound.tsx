@@ -1,4 +1,3 @@
-// src/components/NotFound.tsx
 import { useNavigate } from "react-router-dom";
 import { useAuthStore, type UserRole } from "../features/auth/state/authState";
 
