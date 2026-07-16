@@ -326,10 +326,22 @@ const advanceDeliveryStage = async (req, res) => {
         }
 
         let completedAt = null;
+        let tierUp = null;
         if (stage === "DELIVERED") {
             completedAt = new Date().toISOString();
             driver.totalDeliveries += 1;
             driver.availabilityStatus = "ONLINE";
+
+            // Recompute the driver's tier from the new delivery count.
+            // Previously currentLevel was set to "BRONZE" at signup and never
+            // touched again — every driver was permanently Bronze regardless
+            // of activity.
+            const previousLevel = driver.currentLevel;
+            const { resolveTier } = require("../../services/driverTierService");
+            driver.currentLevel = resolveTier(driver.totalDeliveries).key;
+            if (driver.currentLevel !== previousLevel) {
+                tierUp = driver.currentLevel;
+            }
 
             // Credit the driver's wallet with this delivery's payout.
             // Previously nothing ever incremented walletBalance — it just sat
@@ -341,6 +353,10 @@ const advanceDeliveryStage = async (req, res) => {
             }
 
             await driver.save();
+
+            if (tierUp) {
+                emitToDriver(driver._id, "driver:tierChanged", { newLevel: tierUp });
+            }
 
             if (payout > 0) {
                 WalletTransaction.create({
@@ -436,6 +452,7 @@ const advanceDeliveryStage = async (req, res) => {
             success: true,
             currentStage: stage,
             completedAt,
+            tierUp,
         });
     } catch (err) {
         console.error("[advanceDeliveryStage]", err);
