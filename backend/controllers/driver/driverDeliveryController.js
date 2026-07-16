@@ -3,10 +3,10 @@ const DriverProfile = require("../../models/driver/driverProfile");
 const DriverDeliveryRequest = require("../../models/driver/driverDeliveryRequest");
 const CustomerProfile = require("../../models/customer/customerProfile");
 const StoreProfile = require("../../models/store/storeProfile");
-const WalletTransaction = require("../../models/driver/walletTransaction");
 const { sendOrderDeliveredEmail } = require("../../services/mailService");
 const { emitToStore, emitToCustomer, emitToDriver } = require("../../socket");
 const { notifyCustomer, notifyStore, notifyDriver } = require("../../services/notificationService");
+const driverWalletService = require("../../services/driverWalletService");
 
 const resolveDriverProfile = async (req) => {
     const profile = await DriverProfile.findOne({ userId: req.user.userID });
@@ -145,6 +145,18 @@ const acceptDeliveryRequest = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "This order is no longer available.",
+            });
+        }
+
+        const requestedOrder = await Order.findById(request.orderId).select("paymentMethod");
+        if (!requestedOrder || !driverWalletService.isEligibleForOrder(driver, requestedOrder)) {
+            await DriverDeliveryRequest.findByIdAndUpdate(requestId, { status: "EXPIRED" });
+            return res.status(403).json({
+                success: false,
+                message:
+                    driver.codRestrictionStatus === "WARNING"
+                        ? "You can't accept new COD orders until your pending cash is settled."
+                        : "You can't accept new delivery requests until your pending cash is settled.",
             });
         }
 
@@ -343,46 +355,16 @@ const advanceDeliveryStage = async (req, res) => {
                 tierUp = driver.currentLevel;
             }
 
-            // Credit the driver's wallet with this delivery's payout.
-            // Previously nothing ever incremented walletBalance — it just sat
-            // at its default of 0 forever, so the wallet page had no real
-            // earnings to show.
-            const payout = order.deliveryCharge ?? 0;
-            if (payout > 0) {
-                driver.walletBalance += payout;
-            }
+            // Earnings only land in pendingBalance now — they move to
+            // availableBalance (withdrawable) once the T+1 settlement cron
+            // runs 24h later. See driverWalletService.creditEarning.
+            const earningResult = await driverWalletService.creditEarning({ driver, order });
+            const payout = earningResult?.amount ?? 0;
 
             await driver.save();
 
             if (tierUp) {
                 emitToDriver(driver._id, "driver:tierChanged", { newLevel: tierUp });
-            }
-
-            if (payout > 0) {
-                WalletTransaction.create({
-                    driverId: driver._id,
-                    orderId: order._id,
-                    amount: payout,
-                    type: "EARNING",
-                    description: `Delivery payout for order #${order.orderNumber}`,
-                })
-                    .then((txn) => {
-                        emitToDriver(driver._id, "wallet:updated", {
-                            balance: driver.walletBalance,
-                            change: payout,
-                            reason: "EARNING",
-                            orderId: order._id.toString(),
-                            transaction: {
-                                id: txn._id.toString(),
-                                type: txn.type,
-                                amount: txn.amount,
-                                description: txn.description,
-                                orderNumber: order.orderNumber,
-                                createdAt: txn.createdAt,
-                            },
-                        });
-                    })
-                    .catch((err) => console.error("[wallet credit]", err));
             }
 
             notifyDriver.delivered(
@@ -475,15 +457,26 @@ const confirmCashCollected = async (req, res) => {
             return res.status(400).json({ success: false, message: "Order is not a COD order." });
         }
 
-        // tracked on the driver's profile for settlement later
-        driver.cashCollected += order.totalAmount;
-        driver.cashPendingSettlement += order.totalAmount;
-        await driver.save();
+        // tracked on the driver's profile for settlement later; also
+        // recomputes the COD restriction tier (Warning/Restricted/Suspended)
+        const restriction = driverWalletService.collectCash({ driver, order });
+        await Promise.all([driver.save(), order.save()]);
 
-        order.paymentStatus = "PAID";
-        await order.save();
+        driverWalletService.notifyCodRestrictionChange(driver, restriction.oldTier, restriction.newTier);
 
-        return res.status(200).json({ success: true, message: "Cash collection confirmed." });
+        emitToDriver(driver._id, "wallet:updated", {
+            cashCollected: driver.cashCollected,
+            cashPendingSettlement: driver.cashPendingSettlement,
+            codRestrictionStatus: driver.codRestrictionStatus,
+            reason: "COD_COLLECTED",
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Cash collection confirmed.",
+            cashPendingSettlement: driver.cashPendingSettlement,
+            codRestrictionStatus: driver.codRestrictionStatus,
+        });
     } catch (err) {
         console.error("[confirmCashCollected]", err);
         return res.status(500).json({ success: false, message: "Failed to confirm cash collection." });
@@ -605,6 +598,18 @@ const updateAvailability = async (req, res) => {
             return res.status(409).json({
                 success: false,
                 message: "Cannot go offline while you have an active delivery.",
+            });
+        }
+
+        if (status === "ONLINE" && !driverWalletService.canGoOnline(driver)) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    driver.codRestrictionStatus === "SUSPENDED"
+                        ? "Your account is suspended due to unsettled COD cash. Please contact admin."
+                        : "You can't go online until your pending COD cash is settled.",
+                codRestrictionStatus: driver.codRestrictionStatus,
+                cashPendingSettlement: driver.cashPendingSettlement,
             });
         }
 
@@ -734,8 +739,10 @@ const getEarningsSummary = async (req, res) => {
                 totalDeliveries: driver.totalDeliveries,
                 monthDeliveries: thisMonth.count,
                 monthlyGoalAmount,
-                walletBalance: driver.walletBalance,
+                pendingBalance: driver.pendingBalance,
+                availableBalance: driver.availableBalance,
                 cashPendingSettlement: driver.cashPendingSettlement,
+                codRestrictionStatus: driver.codRestrictionStatus,
                 weeklyChallenge: {
                     target: weeklyTargetDeliveries,
                     current: thisWeek.count,
