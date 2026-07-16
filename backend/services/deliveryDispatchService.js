@@ -7,6 +7,15 @@ const DriverDeliveryRequest = require("../models/driver/driverDeliveryRequest");
 const { haversineKm } = require("../utils/distance");
 const { emitToDriver, emitToCustomer } = require("../socket");
 const { notifyStore, notifyCustomer } = require("./notificationService");
+const { isEligibleForOrder } = require("./driverWalletService");
+
+// COD-restriction-aware companion to the plain availabilityStatus filter —
+// WARNING-tier drivers stay eligible for prepaid orders but not COD ones;
+// RESTRICTED/SUSPENDED drivers are excluded from the base query entirely.
+const codRestrictionFilterFor = (paymentMethod) =>
+    paymentMethod === "COD"
+        ? { codRestrictionStatus: "NORMAL" }
+        : { codRestrictionStatus: { $in: ["NORMAL", "WARNING"] } };
 
 // driver location older than this is treated as stale
 const STALE_LOCATION_THRESHOLD_MS = 5 * 60 * 1000;
@@ -229,6 +238,7 @@ const dispatchRound = async (orderId) => {
     const onlineDrivers = await DriverProfile.find({
         availabilityStatus: "ONLINE",
         _id: { $nin: excludedDriverIds },
+        ...codRestrictionFilterFor(order.paymentMethod),
         ...(hasStoreLocation && {
             "currentLocation.lat": { $ne: null },
             "currentLocation.lng": { $ne: null },
@@ -325,6 +335,10 @@ const dispatchToOnlineDriver = async (driver) => {
         const isFallbackPhase = order.deliveryRequestRound > MAX_DISPATCH_ROUNDS;
 
         if (!isFallbackPhase && rejectedOrderIdSet.has(order._id.toString())) {
+            continue;
+        }
+
+        if (!isEligibleForOrder(driver, order)) {
             continue;
         }
 
