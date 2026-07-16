@@ -8,6 +8,8 @@ const { initSocket } = require("./socket");
 const { startNotificationCleanup } = require("./jobs/cleanupNotifications");
 const { startDeliveryRequestRetry } = require("./jobs/deliveryRequestRetry");
 const { startDriverOfflineSweep } = require("./jobs/driverOfflineSweep");
+const { startWalletSettlement } = require("./jobs/walletSettlement");
+const { startCodRestrictionSweep } = require("./jobs/codRestrictionSweep");
 
 
 connectDB()
@@ -18,6 +20,8 @@ initSocket(httpServer);
 startNotificationCleanup();
 startDeliveryRequestRetry();
 startDriverOfflineSweep();
+startWalletSettlement();
+startCodRestrictionSweep();
 
 httpServer.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`)
