@@ -24,6 +24,7 @@ const {
     getCodSummary,
     settleCod,
 } = require("../../controllers/driver/driverWalletController");
+const { getRewardsSummary } = require("../../controllers/driver/driverRewardsController");
 
 router.use(protectRoutes);
 router.use(authorizeRoles("DRIVER"));
@@ -51,6 +52,9 @@ router.get("/wallet", getWalletSummary);
 router.post("/wallet/withdraw", withdrawFunds);
 router.get("/wallet/cod", getCodSummary);
 router.post("/wallet/cod/settle", settleCod);
+
+// rewards & tiers
+router.get("/rewards", getRewardsSummary);
 
 // online/offline toggle + live location ping
 router.patch("/availability", updateAvailability);
