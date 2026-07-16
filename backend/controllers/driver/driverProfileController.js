@@ -46,6 +46,8 @@ const getMyDriverProfile = async (req, res) => {
                 vehicleNumber: driverProfile.vehicleNumber,
                 licenseNumber: driverProfile.licenseNumber,
                 documents,
+                currentLevel: driverProfile.currentLevel,
+                totalDeliveries: driverProfile.totalDeliveries,
             },
         });
 
