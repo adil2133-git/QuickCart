@@ -11,6 +11,7 @@ const DriverDeliveryRequest = require("./driver/driverDeliveryRequest");
 const DriverEarnings = require("./driver/driverEarnings");
 const WalletTransaction = require("./driver/walletTransaction");
 const WithdrawalRequest = require("./driver/withdrawalRequest");
+const CodSettlement = require("./driver/codSettlement");
 const DriverReview = require("./driver/driverReview");
 const StoreReview = require("./store/storeReview");
 const StoreTransaction = require("./store/storeTransaction");
@@ -32,6 +33,7 @@ module.exports = {
     DriverEarnings,
     WalletTransaction,
     WithdrawalRequest,
+    CodSettlement,
     DriverReview,
     StoreReview,
     StoreTransaction,
