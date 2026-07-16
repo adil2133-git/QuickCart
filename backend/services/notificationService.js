@@ -167,6 +167,60 @@ const notifyDriver = {
         title:   "Delivery Completed 🎉",
         message: `Order #${orderNumber} delivered successfully. You earned ₹${earnings}.`,
     }),
+
+    // ── Wallet & COD settlement ─────────────────────────────────────────
+    earningPending: (userId, orderNumber, amount, orderId) => notify({
+        userId, role: "DRIVER", orderId, type: "WALLET",
+        title:   "Earning Added 💰",
+        message: `₹${amount} from order #${orderNumber} has been added to your Pending Balance. It'll be available to withdraw in 24 hours.`,
+    }),
+    balanceAvailable: (userId, amount) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   "Balance Available ✅",
+        message: `₹${amount} is now available in your wallet and ready to withdraw.`,
+    }),
+    withdrawalRequested: (userId, amount) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   "Withdrawal Requested 🏦",
+        message: `Your withdrawal request for ₹${amount} has been submitted and is awaiting approval.`,
+    }),
+    withdrawalApproved: (userId, amount) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   "Withdrawal Approved 🎉",
+        message: `Your withdrawal of ₹${amount} has been approved and processed.`,
+    }),
+    withdrawalRejected: (userId, amount, reason) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   "Withdrawal Rejected ❌",
+        message: reason
+            ? `Your withdrawal request for ₹${amount} was rejected: ${reason}`
+            : `Your withdrawal request for ₹${amount} was rejected.`,
+    }),
+    codReminder: (userId, amount) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   "COD Settlement Reminder ⏰",
+        message: `You have ₹${amount} in cash pending settlement. Please settle soon to avoid delivery restrictions.`,
+    }),
+    codRestrictionActivated: (userId, tier, amount) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   tier === "SUSPENDED" ? "Account Suspended 🚫" : "COD Restriction Applied ⚠️",
+        message:
+            tier === "SUSPENDED"
+                ? `Your account has been suspended due to ₹${amount} in unsettled cash beyond the allowed period. Please contact admin to resolve this.`
+                : tier === "RESTRICTED"
+                ? `You won't receive any new delivery requests until you settle your ₹${amount} pending cash. You also can't go online until this is settled.`
+                : `You won't be assigned new COD orders until your pending cash of ₹${amount} is settled. Prepaid orders are unaffected.`,
+    }),
+    codRestrictionRemoved: (userId) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   "Restrictions Cleared ✅",
+        message: `Your COD cash has been settled. All delivery restrictions have been lifted.`,
+    }),
+    walletUsedForCod: (userId, amount) => notify({
+        userId, role: "DRIVER", type: "WALLET",
+        title:   "Wallet Used for Settlement 🔄",
+        message: `₹${amount} from your wallet balance was used to settle pending cash.`,
+    }),
 };
 
 module.exports = { notifyCustomer, notifyStore, notifyDriver };
