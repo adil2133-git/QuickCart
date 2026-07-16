@@ -120,6 +120,12 @@ const orderSchema = new mongoose.Schema(
             default: null,
         },
 
+        // set alongside paymentStatus flipping to PAID via confirmCashCollected
+        codCollectedAt: {
+            type: Date,
+            default: null,
+        },
+
         razorpayOrderId: {
             type: String,
             unique: true,
