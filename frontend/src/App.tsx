@@ -21,6 +21,8 @@ import DriverShell from './features/driver/pages/driverShell'
 import QuickKartDashboard from './features/driver/pages/driverDashboard'
 import DriverDeliveriesPage from './features/driver/pages/driverDeliveryPage'
 import DriverEarningsPage from './features/driver/pages/driverEarningsPage'
+import DriverWalletPage from './features/driver/pages/driverWalletPage'
+import DriverRewardsPage from './features/driver/pages/driverRewardsPage'
 
 import DashboardPage from './features/store/pages/storeDashboardPage'
 import AddProductPage from './features/store/pages/addEditProductPage'
@@ -144,6 +146,8 @@ function App() {
           <Route path="dashboard" element={<QuickKartDashboard />} />
           <Route path="deliveries" element={<DriverDeliveriesPage />} />
           <Route path="earnings" element={<DriverEarningsPage />} />
+          <Route path="wallet" element={<DriverWalletPage />} />
+          <Route path="rewards" element={<DriverRewardsPage />} />
         </Route>
 
         {/* store routes — all wrapped in StoreShell */}
