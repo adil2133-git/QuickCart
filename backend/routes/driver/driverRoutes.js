@@ -21,8 +21,10 @@ const { getMyDriverProfile } = require("../../controllers/driver/driverProfileCo
 const {
     getWalletSummary,
     withdrawFunds,
+    getWithdrawalHistory,
     getCodSummary,
     settleCod,
+    verifyCodSettlement,
 } = require("../../controllers/driver/driverWalletController");
 const { getRewardsSummary } = require("../../controllers/driver/driverRewardsController");
 
@@ -50,8 +52,10 @@ router.get("/earnings", getEarningsSummary);
 // wallet & COD settlement
 router.get("/wallet", getWalletSummary);
 router.post("/wallet/withdraw", withdrawFunds);
+router.get("/wallet/withdrawals", getWithdrawalHistory);
 router.get("/wallet/cod", getCodSummary);
 router.post("/wallet/cod/settle", settleCod);
+router.post("/wallet/cod/settle/verify", verifyCodSettlement);
 
 // rewards & tiers
 router.get("/rewards", getRewardsSummary);
