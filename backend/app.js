@@ -21,6 +21,7 @@ const StoreRoutes = require("./routes/store/storeRoutes");
 const DriverApplicationRoutes = require("./routes/admin/driverApplicationRoutes");
 const StoreApplicationRoutes = require("./routes/admin/storeApplicationRoutes");
 const AdminDashboardRoutes = require("./routes/admin/dashboardRoutes");
+const DriverWithdrawalRoutes = require("./routes/admin/driverWithdrawalRoutes");
 const CustomerRoutes = require("./routes/customer/customerRoutes");
 const notificationRoutes = require("./routes/shared/notificationRoutes");
 const RazorpayWebhookRoutes = require("./routes/webhooks/razorpayWebhookRoutes");
@@ -44,6 +45,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/webhooks", RazorpayWebhookRoutes);
 
 app.use("/api/admin/driver", DriverApplicationRoutes);
+app.use("/api/admin/driver", DriverWithdrawalRoutes);
 app.use("/api/admin/store", StoreApplicationRoutes);
 app.use("/api/admin/dashboard", AdminDashboardRoutes);
 
