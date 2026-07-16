@@ -7,10 +7,20 @@ const walletTransactionSchema = new mongoose.Schema(
             ref: "DriverProfile",
             required: true,
         },
-        amount: { type: Number, required: true },
+        orderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Order",
+            default: null,
+        },
+        amount: { type: Number, required: true }, // always positive; `type` gives direction
         type: {
             type: String,
-            enum: ["COMMISSION", "BONUS", "WITHDRAWAL"],
+            enum: [
+                "EARNING",    // per-delivery payout, credited when an order is marked DELIVERED
+                "BONUS",      // incentive credit (weekly target, admin adjustment, etc.)
+                "WITHDRAWAL", // payout to the driver's bank account, debits the wallet
+                "ADJUSTMENT", // manual correction by admin
+            ],
             required: true,
         },
         description: { type: String },
