@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { toast } from "sonner";
 import api from "../../../api/axios";
 import { useDriverDeliveryStore } from "../state/driverDeliveryState";
 import type {
@@ -149,9 +150,16 @@ export function useDriverDeliveryActions() {
         success: boolean;
         completedAt: string;
         currentStage: DeliveryStage;
+        tierUp: string | null;
       }>(`/driver/deliveries/${orderId}/stage`, { stage: newStage });
 
       store().advanceStage(data.currentStage, data.completedAt);
+
+      if (data.tierUp) {
+        toast.success(`🎉 You've reached ${data.tierUp} tier!`, {
+          description: "Check the Rewards page for your new perks.",
+        });
+      }
 
       // If delivered — move to completed tab after a brief moment
       if (newStage === "DELIVERED") {
