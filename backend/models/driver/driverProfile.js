@@ -27,7 +27,7 @@ const driverProfileSchema = new mongoose.Schema(
         cashPendingSince: { type: Date, default: null },
 
         // Progressive COD-pending restriction tier — recomputed by
-        // driverWalletService.refreshCodRestriction() after every collection
+        // driverWalletService.syncCodRestriction() after every collection
         // and settlement, and swept periodically by jobs/codRestrictionSweep.js
         // for the time-based SUSPENDED transition.
         codRestrictionStatus: {
