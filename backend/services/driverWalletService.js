@@ -211,9 +211,23 @@ const initiateCodSettlement = async ({ driver, walletAmountRequested }) => {
         throw new WalletError("There's no pending cash to settle.");
     }
 
+    // if a settlement is already awaiting online payment, hand back the same
+    // Razorpay order instead of creating a new one — otherwise a dismissed
+    // checkout would permanently block the driver from retrying
     const existingPending = await CodSettlement.findOne({ driverId: driver._id, status: "PENDING_PAYMENT" });
     if (existingPending) {
-        throw new WalletError("You already have a settlement awaiting payment. Complete or wait for it to expire before starting another.");
+        return {
+            fullySettled: false,
+            settlementId: existingPending._id.toString(),
+            walletAmountUsed: existingPending.walletAmountUsed,
+            onlineAmountDue: existingPending.onlineAmountDue,
+            razorpayOrder: {
+                id: existingPending.razorpayOrderId,
+                amount: Math.round(existingPending.onlineAmountDue * 100),
+                currency: "INR",
+            },
+            razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+        };
     }
 
     const walletAvailable = Math.max(0, driver.availableBalance || 0);
