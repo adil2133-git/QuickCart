@@ -114,22 +114,6 @@ function OrderAgainCardSkeleton() {
     );
 }
 
-function RecentlyViewedCardSkeleton() {
-    return (
-        <div className="rounded-xl border flex-shrink-0 overflow-hidden" style={{ borderColor: "#E3E7E1", width: 168 }}>
-            <Skeleton className="h-28 w-full rounded-none" />
-            <div className="p-3 space-y-2">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-3.5 w-24" />
-                <div className="flex items-center justify-between pt-1.5">
-                    <Skeleton className="h-4 w-10" />
-                    <Skeleton className="h-7 w-7 rounded-lg" />
-                </div>
-            </div>
-        </div>
-    );
-}
-
 function StoreSkeleton() {
     return (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#E3E7E1" }}>
