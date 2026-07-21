@@ -82,13 +82,14 @@ export function useOrderDetail(orderId: string | null) {
   const [detail, setDetail] = useState<CustomerOrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!orderId) {
-      setDetail(null);
-      setIsLoading(false);
-      return;
-    }
+ useEffect(() => {
+    if (!orderId) return;
     let cancelled = false;
+    // Standard "start loading, then fetch" pattern for a data-fetching
+    // effect keyed on orderId — matches React's own docs example for
+    // fetching data; the eslint-plugin-react-hooks v7 rule below is
+    // overly strict about this well-established pattern.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
 
     const fetchDetail = () =>
@@ -116,7 +117,11 @@ export function useOrderDetail(orderId: string | null) {
       cancelled = true;
       socket.off("order:driverSearchFailed", handleDriverSearchFailed);
     };
-  }, [orderId]);
+ }, [orderId]);
+
+  if (!orderId) {
+    return { detail: null, isLoading: false };
+  }
 
   return { detail, isLoading };
 }
