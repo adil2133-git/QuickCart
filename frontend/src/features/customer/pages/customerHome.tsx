@@ -488,7 +488,7 @@ export default function CustomerHome() {
     // even if the store doesn't have one yet.
     const clearViewedAction = useViewedProductsStore((s) => (s as unknown as { clearViewed?: () => void }).clearViewed);
 
-    const recentRowScroll = useHorizontalScroll();
+const { ref: recentRowRef, canScrollRight: recentCanScrollRight } = useHorizontalScroll();
 
     // ── 1. Fetch profile on mount ─────────────────────────────────────────────
     useEffect(() => {
@@ -719,7 +719,7 @@ export default function CustomerHome() {
 
                         <div className="relative">
                             <motion.div
-                                ref={recentRowScroll.ref}
+                                ref={recentRowRef}
                                 variants={staggerContainer} initial="hidden" whileInView="show"
                                 viewport={{ once: true, margin: "-40px" }}
                                 className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
@@ -756,7 +756,7 @@ export default function CustomerHome() {
                             </motion.div>
 
                             {/* Fade edge only shows while there's more to scroll */}
-                            {recentRowScroll.canScrollRight && (
+                            {recentCanScrollRight && (
                                 <div className="absolute right-0 top-0 bottom-1 w-12 pointer-events-none"
                                     style={{ background: "linear-gradient(to right, rgba(247,248,245,0), #F7F8F5)" }} />
                             )}
