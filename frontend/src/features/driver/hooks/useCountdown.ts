@@ -20,7 +20,6 @@ export function useCountdown(expiresAt: number | undefined, onExpire?: () => voi
 
   useEffect(() => {
     expiredRef.current = false;
-    setRemaining(computeRemaining());
 
     const tick = () => {
       const next = computeRemaining();
@@ -32,6 +31,7 @@ export function useCountdown(expiresAt: number | undefined, onExpire?: () => voi
     };
 
     // Fire once immediately in case expiresAt is already in the past
+    // (also handles the initial "remaining" value for a new expiresAt).
     tick();
 
     const id = window.setInterval(tick, 1000);
