@@ -35,40 +35,5 @@ const getWithdrawalRequests = async (req, res) => {
     }
 };
 
-// POST /api/admin/driver/withdrawals/:id/decision  { action: "APPROVE" | "REJECT", rejectionReason? }
-const reviewWithdrawalRequest = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { action, rejectionReason } = req.body;
-
-        if (!["APPROVE", "REJECT"].includes(action)) {
-            return res.status(400).json({ success: false, message: "action must be APPROVE or REJECT." });
-        }
-
-        const withdrawal = await driverWalletService.reviewWithdrawal({
-            withdrawalRequestId: id,
-            action,
-            adminUserId: req.user.userID,
-            rejectionReason,
-        });
-
-        return res.status(200).json({
-            success: true,
-            message: `Withdrawal ${withdrawal.status.toLowerCase()}.`,
-            withdrawal: {
-                id: withdrawal._id.toString(),
-                status: withdrawal.status,
-                amount: withdrawal.amount,
-                rejectionReason: withdrawal.rejectionReason,
-            },
-        });
-    } catch (err) {
-        if (err instanceof driverWalletService.WalletError) {
-            return res.status(err.status).json({ success: false, message: err.message });
-        }
-        console.error("[reviewWithdrawalRequest]", err);
-        return res.status(500).json({ success: false, message: "Failed to review withdrawal request." });
-    }
-};
 
 module.exports = { getWithdrawalRequests, reviewWithdrawalRequest };

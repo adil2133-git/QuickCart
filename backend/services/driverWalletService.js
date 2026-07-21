@@ -433,7 +433,6 @@ const completeCodSettlementPayment = async ({
     };
 };
 
-// ── Withdrawals ──────────────────────────────────────────────────────────
 const requestWithdrawal = async ({ driver, amount }) => {
     const resolvedAmount = round2(Number.isFinite(amount) && amount > 0 ? amount : driver.availableBalance);
 
@@ -444,14 +443,7 @@ const requestWithdrawal = async ({ driver, amount }) => {
         throw new WalletError("Withdrawal amount exceeds your available balance.");
     }
 
-    const duplicate = await WithdrawalRequest.findOne({
-        driverId: driver._id,
-        status: { $in: ["PENDING", "APPROVED"] },
-    });
-    if (duplicate) {
-        throw new WalletError("You already have a withdrawal request in progress.");
-    }
-
+    // Block if a withdrawal already processed today (duplicate prevention)
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     const todayTotalAgg = await WithdrawalRequest.aggregate([
@@ -467,78 +459,37 @@ const requestWithdrawal = async ({ driver, amount }) => {
     const todayTotal = todayTotalAgg[0]?.total ?? 0;
 
     if (todayTotal + resolvedAmount > WITHDRAWAL_DAILY_LIMIT) {
-        throw new WalletError(`Daily withdrawal limit is ₹${WITHDRAWAL_DAILY_LIMIT}. You've already requested ₹${todayTotal} today.`);
+        throw new WalletError(`Daily withdrawal limit is ₹${WITHDRAWAL_DAILY_LIMIT}. You've already withdrawn ₹${todayTotal} today.`);
     }
 
-    const withdrawal = await WithdrawalRequest.create({
-        driverId: driver._id,
-        amount: resolvedAmount,
-        status: "PENDING",
-    });
-
-    notifyDriver.withdrawalRequested(driver.userId, resolvedAmount).catch(() => {});
-
-    return withdrawal;
-};
-
-const reviewWithdrawal = async ({ withdrawalRequestId, action, adminUserId, rejectionReason }) => {
-    const withdrawal = await WithdrawalRequest.findOne({ _id: withdrawalRequestId, status: "PENDING" });
-    if (!withdrawal) {
-        throw new WalletError("Withdrawal request not found or already reviewed.", 404);
-    }
-
-    const driver = await DriverProfile.findById(withdrawal.driverId);
-    if (!driver) {
-        throw new WalletError("Driver profile not found.", 404);
-    }
-
-    if (action === "REJECT") {
-        withdrawal.status = "REJECTED";
-        withdrawal.reviewedBy = adminUserId;
-        withdrawal.reviewedAt = new Date();
-        withdrawal.rejectionReason = rejectionReason || null;
-        await withdrawal.save();
-
-        notifyDriver.withdrawalRejected(driver.userId, withdrawal.amount, rejectionReason).catch(() => {});
-        return withdrawal;
-    }
-
-    // APPROVE — re-check balance in case it moved since the request was made
-    if (driver.availableBalance < withdrawal.amount) {
-        withdrawal.status = "REJECTED";
-        withdrawal.reviewedBy = adminUserId;
-        withdrawal.reviewedAt = new Date();
-        withdrawal.rejectionReason = "Insufficient available balance at time of approval.";
-        await withdrawal.save();
-
-        notifyDriver.withdrawalRejected(driver.userId, withdrawal.amount, withdrawal.rejectionReason).catch(() => {});
-        return withdrawal;
-    }
-
-    driver.availableBalance = round2(driver.availableBalance - withdrawal.amount);
+    // Deduct balance immediately — no admin step
+    driver.availableBalance = round2(driver.availableBalance - resolvedAmount);
     await driver.save();
 
     await WalletTransaction.create({
         driverId: driver._id,
-        amount: withdrawal.amount,
+        amount: resolvedAmount,
         type: "WITHDRAWAL",
         status: "COMPLETED",
-        description: `Bank withdrawal — Ref: WDR-${withdrawal._id.toString().slice(-6)}`,
+        description: `Bank withdrawal — Ref: WDR-${Date.now().toString().slice(-6)}`,
     });
 
-    withdrawal.status = "PAID";
-    withdrawal.reviewedBy = adminUserId;
-    withdrawal.reviewedAt = new Date();
-    withdrawal.paidAt = new Date();
-    await withdrawal.save();
+    const withdrawal = await WithdrawalRequest.create({
+        driverId: driver._id,
+        amount: resolvedAmount,
+        status: "PAID",
+        reviewedAt: new Date(),
+        paidAt: new Date(),
+    });
 
     emitToDriver(driver._id, "wallet:updated", {
         availableBalance: driver.availableBalance,
-        change: -withdrawal.amount,
-        reason: "WITHDRAWAL",
+        event: "WITHDRAWAL_PROCESSED",
+        amount: resolvedAmount,
     });
 
-    notifyDriver.withdrawalApproved(driver.userId, withdrawal.amount).catch(() => {});
+    notifyDriver.withdrawalApproved(driver.userId, resolvedAmount).catch(() => {});
+
     return withdrawal;
 };
 
@@ -593,7 +544,6 @@ module.exports = {
     initiateCodSettlement,
     completeCodSettlementPayment,
     requestWithdrawal,
-    reviewWithdrawal,
     sweepCodRestrictions,
     WITHDRAWAL_MIN_AMOUNT,
     WITHDRAWAL_DAILY_LIMIT,

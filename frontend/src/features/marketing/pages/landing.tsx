@@ -31,13 +31,13 @@ function RouteSignature() {
     <svg viewBox="0 0 420 260" fill="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
       <defs>
         <linearGradient id="routeFade" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#C2825A" stopOpacity="0" />
-          <stop offset="15%" stopColor="#C2825A" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#C2825A" stopOpacity="0.9" />
+          <stop offset="0%" stopColor="#8FCDB0" stopOpacity="0" />
+          <stop offset="15%" stopColor="#8FCDB0" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#8FCDB0" stopOpacity="0.9" />
         </linearGradient>
       </defs>
-      <circle cx="34" cy="56" r="5" fill="#C2825A" />
-      <circle cx="34" cy="56" r="9" stroke="#C2825A" strokeWidth="1.5" opacity="0.4" />
+      <circle cx="34" cy="56" r="5" fill="#8FCDB0" />
+      <circle cx="34" cy="56" r="9" stroke="#8FCDB0" strokeWidth="1.5" opacity="0.4" />
       <motion.path
         d="M34 56 C 110 40, 140 130, 210 130 S 320 70, 386 188"
         stroke="url(#routeFade)" strokeWidth="2.5" strokeDasharray="2 8" strokeLinecap="round"
@@ -45,7 +45,7 @@ function RouteSignature() {
         transition={{ duration: 1.8, ease: "easeInOut", delay: 0.3 }}
       />
       <motion.circle
-        r="5" fill="#F8F2EA" stroke="#C2825A" strokeWidth="2"
+        r="5" fill="#FFFFFF" stroke="#8FCDB0" strokeWidth="2"
         initial={{ offsetDistance: "0%" }} animate={{ offsetDistance: "100%" }}
         transition={{ duration: 3.2, repeat: Infinity, ease: "linear", delay: 2.1 }}
         style={{ offsetPath: "path('M34 56 C 110 40, 140 130, 210 130 S 320 70, 386 188')" }}
@@ -54,8 +54,8 @@ function RouteSignature() {
         initial={{ opacity: 0, scale: 0.4, y: -6 }} animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ delay: 2.0, duration: 0.4, ease: "backOut" }}
       >
-        <circle cx="386" cy="188" r="6" fill="#241710" />
-        <circle cx="386" cy="188" r="6" fill="#C2825A" opacity="0.5">
+        <circle cx="386" cy="188" r="6" fill="#0A1F17" />
+        <circle cx="386" cy="188" r="6" fill="#8FCDB0" opacity="0.5">
           <animate attributeName="r" values="6;14;6" dur="2s" repeatCount="indefinite" />
           <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite" />
         </circle>
@@ -68,16 +68,16 @@ function RouteSignature() {
 
 function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden bg-[#2A1B12] px-6 pb-20 pt-16 text-[#F8F2EA] md:pb-28 md:pt-20">
+    <section id="top" className="relative overflow-hidden bg-[#0D2B21] px-6 pb-20 pt-16 text-white md:pb-28 md:pt-20">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #F8F2EA 1px, transparent 0)", backgroundSize: "28px 28px" }}
+        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #FFFFFF 1px, transparent 0)", backgroundSize: "28px 28px" }}
       />
       <div className="relative mx-auto grid max-w-7xl items-center gap-14 md:grid-cols-2">
         <motion.div variants={container} initial="hidden" animate="visible">
           <motion.span
             variants={fadeUp}
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#C2825A]/30 bg-[#C2825A]/10 px-3.5 py-1.5 text-xs font-medium tracking-wide text-[#E3B894]"
+            className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#8FCDB0]/30 bg-[#8FCDB0]/10 px-3.5 py-1.5 text-xs font-medium tracking-wide text-[#8FCDB0]"
           >
             <Radar size={13} /> Live across 40+ neighbourhoods
           </motion.span>
@@ -89,46 +89,46 @@ function Hero() {
           >
             Your neighbourhood
             <br />
-            grocery, <span className="italic text-[#E3B894]">delivered fast.</span>
+            grocery, <span className="italic text-[#8FCDB0]">delivered fast.</span>
           </motion.h1>
 
-          <motion.p variants={fadeUp} className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-[#F8F2EA]/65">
+          <motion.p variants={fadeUp} className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-white/65">
             QuickKart checks real stock across nearby supermarkets in real time — so you order from the store that actually has it, not just the closest one.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
             <button
               onClick={() => scrollTo("join")}
-              className="group inline-flex items-center gap-2 rounded-full bg-[#C2825A] px-6 py-3.5 text-sm font-semibold text-[#241710] transition-transform hover:-translate-y-0.5"
+              className="group inline-flex items-center gap-2 rounded-full bg-[#145C43] px-6 py-3.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 hover:bg-[#114E39]"
             >
               Order now <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </button>
             <button
               onClick={() => scrollTo("join")}
-              className="inline-flex items-center gap-2 rounded-full border border-[#F8F2EA]/25 px-6 py-3.5 text-sm font-semibold text-[#F8F2EA] transition-colors hover:bg-[#F8F2EA]/10"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
             >
               Explore stores
             </button>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm text-[#F8F2EA]/60">
-            <span className="inline-flex items-center gap-1.5"><MapPin size={15} className="text-[#E3B894]" /> Hyperlocal</span>
-            <span className="inline-flex items-center gap-1.5"><Clock3 size={15} className="text-[#E3B894]" /> Real-time stock</span>
-            <span className="inline-flex items-center gap-1.5"><Zap size={15} className="text-[#E3B894]" /> Fast delivery</span>
+          <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm text-white/60">
+            <span className="inline-flex items-center gap-1.5"><MapPin size={15} className="text-[#8FCDB0]" /> Hyperlocal</span>
+            <span className="inline-flex items-center gap-1.5"><Clock3 size={15} className="text-[#8FCDB0]" /> Real-time stock</span>
+            <span className="inline-flex items-center gap-1.5"><Zap size={15} className="text-[#8FCDB0]" /> Fast delivery</span>
           </motion.div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: "easeOut", delay: 0.15 }}
-          className="relative mx-auto aspect-[4/3] w-full max-w-md rounded-[28px] border border-[#F8F2EA]/10 bg-[#3A2718] p-2 shadow-2xl shadow-black/40"
+          className="relative mx-auto aspect-[4/3] w-full max-w-md rounded-[28px] border border-white/10 bg-[#123A2C] p-2 shadow-2xl shadow-black/40"
         >
-          <div className="relative h-full w-full overflow-hidden rounded-[22px] bg-[#241710]">
+          <div className="relative h-full w-full overflow-hidden rounded-[22px] bg-[#0A1F17]">
             <RouteSignature />
-            <div className="absolute left-4 top-4 rounded-full bg-[#F8F2EA]/95 px-3 py-1.5 text-[11px] font-semibold text-[#241710] shadow">
+            <div className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-[#16241D] shadow">
               Greenfield Mart · 0.6 km
             </div>
-            <div className="absolute bottom-4 right-4 rounded-full bg-[#C2825A] px-3 py-1.5 text-[11px] font-semibold text-[#241710] shadow">
+            <div className="absolute bottom-4 right-4 rounded-full bg-[#145C43] px-3 py-1.5 text-[11px] font-semibold text-white shadow">
               Arriving in 14 min
             </div>
           </div>
@@ -169,11 +169,11 @@ const roles = [
 
 function RoleSelection() {
   return (
-    <section id="join" className="bg-[#F8F2EA] px-6 py-24">
+    <section id="join" className="bg-[#F7F8F5] px-6 py-24">
       <div className="mx-auto max-w-7xl">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto mb-14 max-w-xl text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#C2825A]">Join the ecosystem</p>
-          <h2 className="text-3xl text-[#241710] md:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#145C43]">Join the ecosystem</p>
+          <h2 className="text-3xl text-[#16241D] md:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
             One platform, three ways in
           </h2>
         </motion.div>
@@ -182,19 +182,19 @@ function RoleSelection() {
           {roles.map((r, i) => (
             <motion.div
               key={r.title} custom={i} variants={fadeUp}
-              className="group flex flex-col rounded-3xl border border-[#241710]/[0.07] bg-white p-8 transition-all hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#241710]/[0.06]"
+              className="group flex flex-col rounded-3xl border border-[#16241D]/[0.07] bg-white p-8 transition-all hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#16241D]/[0.06]"
             >
-              <span className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C2825A]/15 text-[#C2825A] transition-colors group-hover:bg-[#C2825A] group-hover:text-white">
+              <span className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#145C43]/15 text-[#145C43] transition-colors group-hover:bg-[#145C43] group-hover:text-white">
                 <r.icon size={22} strokeWidth={2} />
               </span>
-              <h3 className="mb-2 text-xl text-[#241710]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>{r.title}</h3>
-              <p className="mb-7 flex-1 text-[0.95rem] leading-relaxed text-[#241710]/60">{r.copy}</p>
+              <h3 className="mb-2 text-xl text-[#16241D]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>{r.title}</h3>
+              <p className="mb-7 flex-1 text-[0.95rem] leading-relaxed text-[#16241D]/60">{r.copy}</p>
               <Link
                 to={r.route}
                 className={
                   r.primary
-                    ? "inline-flex items-center justify-center gap-2 rounded-full bg-[#241710] px-5 py-3 text-sm font-semibold text-[#F8F2EA] transition-transform hover:-translate-y-0.5"
-                    : "inline-flex items-center justify-center gap-2 rounded-full border border-[#241710]/15 px-5 py-3 text-sm font-semibold text-[#241710] transition-colors hover:bg-[#241710]/[0.04]"
+                    ? "inline-flex items-center justify-center gap-2 rounded-full bg-[#145C43] px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 hover:bg-[#114E39]"
+                    : "inline-flex items-center justify-center gap-2 rounded-full border border-[#16241D]/15 px-5 py-3 text-sm font-semibold text-[#16241D] transition-colors hover:bg-[#16241D]/[0.04]"
                 }
               >
                 {r.cta} <ArrowRight size={15} />
@@ -217,24 +217,24 @@ const steps = [
 
 function HowItWorks() {
   return (
-    <section id="how-it-works" className="relative bg-[#E7D7C1] px-6 py-24">
+    <section id="how-it-works" className="relative bg-[#F5F7F3] px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto mb-16 max-w-xl text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#8C5A37]">From search to doorstep</p>
-          <h2 className="text-3xl text-[#241710] md:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#145C43]">From search to doorstep</p>
+          <h2 className="text-3xl text-[#16241D] md:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
             How QuickKart works
           </h2>
         </motion.div>
 
         <div className="relative grid gap-12 md:grid-cols-3">
-          <div className="absolute left-0 right-0 top-7 hidden h-px bg-[#241710]/15 md:block" />
+          <div className="absolute left-0 right-0 top-7 hidden h-px bg-[#16241D]/15 md:block" />
           {steps.map((s, i) => (
             <motion.div key={s.title} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="relative flex flex-col items-center text-center">
-              <span className="relative z-10 mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#F8F2EA] text-[#241710] shadow-sm ring-1 ring-[#241710]/10">
+              <span className="relative z-10 mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[#16241D] shadow-sm ring-1 ring-[#16241D]/10">
                 <s.icon size={22} strokeWidth={1.8} />
               </span>
-              <h3 className="mb-2 text-lg text-[#241710]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>{s.title}</h3>
-              <p className="max-w-xs text-sm leading-relaxed text-[#241710]/60">{s.copy}</p>
+              <h3 className="mb-2 text-lg text-[#16241D]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>{s.title}</h3>
+              <p className="max-w-xs text-sm leading-relaxed text-[#16241D]/60">{s.copy}</p>
             </motion.div>
           ))}
         </div>
@@ -253,23 +253,23 @@ const reasons = [
 
 function WhyQuickKart() {
   return (
-    <section className="bg-[#F8F2EA] px-6 py-24">
+    <section className="bg-[#F7F8F5] px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto mb-14 max-w-xl text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#C2825A]">Why it's different</p>
-          <h2 className="text-3xl text-[#241710] md:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#145C43]">Why it's different</p>
+          <h2 className="text-3xl text-[#16241D] md:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
             Built around availability, not guesswork
           </h2>
         </motion.div>
 
         <motion.div variants={container} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}
-          className="grid gap-px overflow-hidden rounded-3xl border border-[#241710]/[0.08] bg-[#241710]/[0.08] md:grid-cols-3"
+          className="grid gap-px overflow-hidden rounded-3xl border border-[#16241D]/[0.08] bg-[#16241D]/[0.08] md:grid-cols-3"
         >
           {reasons.map((r, i) => (
-            <motion.div key={r.title} custom={i} variants={fadeUp} className="bg-[#F8F2EA] p-8">
-              <r.icon size={22} className="mb-4 text-[#C2825A]" strokeWidth={1.8} />
-              <h3 className="mb-2 text-lg text-[#241710]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>{r.title}</h3>
-              <p className="text-sm leading-relaxed text-[#241710]/60">{r.copy}</p>
+            <motion.div key={r.title} custom={i} variants={fadeUp} className="bg-[#F7F8F5] p-8">
+              <r.icon size={22} className="mb-4 text-[#145C43]" strokeWidth={1.8} />
+              <h3 className="mb-2 text-lg text-[#16241D]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>{r.title}</h3>
+              <p className="text-sm leading-relaxed text-[#16241D]/60">{r.copy}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -287,16 +287,16 @@ const bannerItems = [
 
 function PartnerBanner() {
   return (
-    <section className="bg-[#2A1B12] px-6 py-20 text-[#F8F2EA]">
-      <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-3xl border border-[#F8F2EA]/10 bg-[#F8F2EA]/10 md:grid-cols-2">
+    <section className="bg-[#0D2B21] px-6 py-20 text-white">
+      <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 md:grid-cols-2">
         {bannerItems.map((b) => (
-          <motion.div key={b.title} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="bg-[#2A1B12] p-10">
-            <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[#C2825A]/15 text-[#E3B894]">
+          <motion.div key={b.title} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="bg-[#0D2B21] p-10">
+            <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[#145C43]/25 text-[#8FCDB0]">
               <b.icon size={20} />
             </span>
             <h3 className="mb-2 text-2xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>{b.title}</h3>
-            <p className="mb-6 max-w-sm text-sm leading-relaxed text-[#F8F2EA]/60">{b.copy}</p>
-            <Link to={b.route} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#E3B894] transition-colors hover:text-[#F8F2EA]">
+            <p className="mb-6 max-w-sm text-sm leading-relaxed text-white/60">{b.copy}</p>
+            <Link to={b.route} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#8FCDB0] transition-colors hover:text-white">
               {b.cta} <ArrowRight size={15} />
             </Link>
           </motion.div>
@@ -310,7 +310,7 @@ function PartnerBanner() {
 
 export default function QuickKartLanding() {
   return (
-    <div className="min-h-screen bg-[#F8F2EA] font-[Inter] text-[#241710] antialiased">
+    <div className="min-h-screen bg-[#F7F8F5] font-[Inter] text-[#16241D] antialiased">
       <Navbar />
       <Hero />
       <RoleSelection />
