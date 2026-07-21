@@ -41,7 +41,7 @@ export function useDriverWalletActions() {
       store().liveUpdateBalance(data.availableBalance);
       return data.availableBalance;
     } catch (err) {
-      throw new Error(getErrorMessage(err, "Withdrawal failed. Please try again."));
+      throw new Error(getErrorMessage(err, "Withdrawal failed. Please try again."), { cause: err });
     } finally {
       store().setWithdrawing(false);
     }
@@ -70,7 +70,7 @@ export function useDriverWalletActions() {
       await fetchCodSummary(1);
       return data.settledAmount;
     } catch (err) {
-      throw new Error(getErrorMessage(err, "Settlement failed. Please try again."));
+      throw new Error(getErrorMessage(err, "Settlement failed. Please try again."), { cause: err });
     } finally {
       store().setSettling(false);
     }
