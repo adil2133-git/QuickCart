@@ -64,7 +64,8 @@ export function useLoadCheckoutSummary() {
         // axios interceptor already handles 401/403 (toast + redirect/logout);
         // this covers everything else — network errors, 500s, etc.
         const message =
-          (err as any)?.response?.data?.message ?? "Couldn't load your checkout. Please try again.";
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Couldn't load your checkout. Please try again.";
         setSummaryError(message);
         toast.error(message, { id: "checkout-summary-error" });
       }
@@ -233,7 +234,11 @@ export function usePlaceOrder() {
             );
             resolve(verifyResult.order);
           } catch (err) {
-            const responseData = (err as any)?.response?.data;
+            const responseData = (
+              err as {
+                response?: { data?: { message?: string; paymentCapturedButOrderFailed?: boolean } };
+              }
+            )?.response?.data;
             const message = responseData?.message ?? "Payment verification failed.";
 
             if (responseData?.paymentCapturedButOrderFailed) {
@@ -292,7 +297,7 @@ export function usePlaceOrder() {
       }
 
       const message =
-        (err as any)?.response?.data?.message ??
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         (err instanceof Error ? err.message : "Couldn't place your order. Please try again.");
       toast.error(message, { id: "place-order-error" });
       return null;
