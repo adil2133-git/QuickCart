@@ -1,5 +1,5 @@
 // pages/CustomerProfilePage.tsx
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   User as UserIcon,
@@ -44,10 +44,15 @@ const CustomerProfilePage = () => {
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   // Clear any in-progress order tracking whenever the tab itself changes
-  // (e.g. navigating to Wallet mid-tracking via the navbar).
-  useEffect(() => {
+  // (e.g. navigating to Wallet mid-tracking via the navbar). Adjusted
+  // during render — React's recommended pattern for resetting state when
+  // a derived value changes — instead of via an effect, so it applies on
+  // the same render rather than a follow-up one.
+  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
+  if (activeTab !== prevActiveTab) {
+    setPrevActiveTab(activeTab);
     setTrackingOrderId(null);
-  }, [activeTab]);
+  }
 
   const setActiveTab = (tab: SidebarTab) => {
     setSearchParams(tab === "profile" ? {} : { tab }, { replace: true });
