@@ -310,10 +310,21 @@ export function OrderTrackingContent({
   const clampedIdx = Math.min(Math.max(statusIdx, pickedIdx), deliveredIdx);
   const progressPct = ((clampedIdx - pickedIdx) / (deliveredIdx - pickedIdx)) * 100;
 
-  const driverInitial = delivery?.driver.name?.trim().charAt(0).toUpperCase() || "D";
-  const expectedByLabel =
-    eta != null ? new Date(Date.now() + eta * 60000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : null;
+ const driverInitial = delivery?.driver.name?.trim().charAt(0).toUpperCase() || "D";
 
+  // "Expected by" is a wall-clock label derived from `eta` (minutes from
+  // now). Reading Date.now() directly during render is impure (flagged by
+  // react-hooks/purity), so the clock read has to live in an effect. That
+  // makes the state update below one of the legitimate exceptions to
+  // set-state-in-effect: anchoring a value that depends on something
+  // outside React (the system clock) can only happen after render.
+  const [etaAnchor, setEtaAnchor] = useState(() => Date.now());
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEtaAnchor(Date.now());
+  }, [eta]);
+  const expectedByLabel =
+    eta != null ? new Date(etaAnchor + eta * 60000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : null;
   const canCancel = detail ? CANCELLABLE_RAW_STATUSES.includes(detail.rawStatus) : false;
 
   const handleCancel = async () => {
