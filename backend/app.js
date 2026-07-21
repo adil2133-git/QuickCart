@@ -4,6 +4,10 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
+// Comma-separated list in .env, e.g. FRONTEND_URL=http://localhost:5173,https://quickcart.vercel.app
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim());
 // The `verify` callback stashes the raw body on req.rawBody before it's
 // parsed — the Razorpay webhook needs the exact original bytes to check its
 // signature against, since re-serializing req.body wouldn't byte-for-byte
@@ -28,7 +32,14 @@ const RazorpayWebhookRoutes = require("./routes/webhooks/razorpayWebhookRoutes")
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: (origin, callback) => {
+            // Allow requests with no origin (server-to-server, curl, mobile apps)
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error(`CORS blocked for origin: ${origin}`));
+            }
+        },
         credentials: true,
     })
 );

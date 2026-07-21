@@ -33,10 +33,15 @@ async function resolveRoomsForUser(userId, role) {
   return rooms;
 }
 
+// Comma-separated list in .env, e.g. FRONTEND_URL=http://localhost:5173,https://quickcart.vercel.app
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim());
+
 function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: allowedOrigins,
       credentials: true,
     },
   });
