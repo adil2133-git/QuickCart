@@ -1,15 +1,8 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { ProductsAPI, CategoriesAPI, type ProductFormValues } from "../productsApi";
+import { getApiErrorMessage as getErrorMessage } from "../../../api/apiError";
 import type { Product, Category, AvailabilityStatus } from "../types/product";
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { message?: string } } }).response;
-    if (typeof response?.data?.message === "string") return response.data.message;
-  }
-  return fallback;
-}
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */

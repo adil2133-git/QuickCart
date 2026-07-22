@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 import { useDriverWalletStore } from "../state/driverWalletState";
 import type {
   GetWalletSummaryResponse,
@@ -7,9 +8,6 @@ import type {
   GetCodSummaryResponse,
   SettleCodResponse,
 } from "../types/driverWallet";
-
-const getErrorMessage = (err: unknown, fallback: string) =>
-  (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback;
 
 export function useDriverWalletActions() {
   // Same reasoning as useDriverDeliveryActions: read via getState() (no
@@ -41,7 +39,7 @@ export function useDriverWalletActions() {
       store().liveUpdateBalance(data.availableBalance);
       return data.availableBalance;
     } catch (err) {
-      throw new Error(getErrorMessage(err, "Withdrawal failed. Please try again."), { cause: err });
+      throw new Error(getApiErrorMessage(err, "Withdrawal failed. Please try again."), { cause: err });
     } finally {
       store().setWithdrawing(false);
     }
@@ -70,7 +68,7 @@ export function useDriverWalletActions() {
       await fetchCodSummary(1);
       return data.settledAmount;
     } catch (err) {
-      throw new Error(getErrorMessage(err, "Settlement failed. Please try again."), { cause: err });
+      throw new Error(getApiErrorMessage(err, "Settlement failed. Please try again."), { cause: err });
     } finally {
       store().setSettling(false);
     }

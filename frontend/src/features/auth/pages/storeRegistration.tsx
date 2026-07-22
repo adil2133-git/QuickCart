@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
@@ -517,8 +518,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
 
       setShowOtpModal(true);
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || "Something went wrong");
+      setError(getApiErrorMessage(err, "Something went wrong"));
     } finally {
       setLoading(false);
     }

@@ -1,15 +1,8 @@
 import { useEffect } from "react";
 import api from "../../../api/axios";
+import { getApiErrorMessage as getErrorMessage } from "../../../api/apiError";
 import { useDashboardStore } from "../state/dashboardState";
 import type { DashboardSummary, StoreStatus } from "../types/dashboard";
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { message?: string } } }).response;
-    if (typeof response?.data?.message === "string") return response.data.message;
-  }
-  return fallback;
-}
 
 interface GetDashboardSummaryResponse {
   success: boolean;

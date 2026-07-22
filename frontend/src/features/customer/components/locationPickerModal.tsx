@@ -32,6 +32,7 @@ import {
     Home, Briefcase, Tag, Loader2,
 } from "lucide-react";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -277,8 +278,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
             });
             onSaved(selectedLabel);
         } catch (err: unknown) {
-            const axiosError = err as { response?: { data?: { message?: string } } };
-            setSaveError(axiosError.response?.data?.message || "Couldn't save address. Try again.");
+            setSaveError(getApiErrorMessage(err, "Couldn't save address. Try again."));
         } finally {
             setSaving(false);
         }

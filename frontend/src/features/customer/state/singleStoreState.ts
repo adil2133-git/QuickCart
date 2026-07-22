@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 export interface Category {
   _id: string;
@@ -186,10 +187,8 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
       const data = await apiGet<{ store: StoreProfileSummary }>(`/customer/${storeId}`);
       set({ store: data.store });
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
       set({
-        storeError:
-          axiosError?.response?.data?.message || axiosError?.message || "Something went wrong.",
+        storeError: getApiErrorMessage(err, err instanceof Error ? err.message : "Something went wrong."),
       });
     } finally {
       set({ storeLoading: false });
@@ -251,10 +250,8 @@ export const useSingleStoreStore = create<SingleStoreState>((set, get) => ({
         page: data.page || 1,
       }));
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
       set({
-        productsError:
-          axiosError?.response?.data?.message || axiosError?.message || "Something went wrong.",
+        productsError: getApiErrorMessage(err, err instanceof Error ? err.message : "Something went wrong."),
       });
     } finally {
       if (append) {

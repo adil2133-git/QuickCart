@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerDriver } from "../../driver/driverAuthService";
+import { getApiErrorMessage } from "../../../api/apiError";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
@@ -170,11 +171,7 @@ export default function DeliveryPartnerRegistration() {
 
       setShowOtp(true);
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setApiError(
-        axiosError?.response?.data?.message ||
-        "Something went wrong. Please try again."
-      );
+      setApiError(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setSubmitting(false);
     }

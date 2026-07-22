@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 import type { StoreProfileSummary } from "../types/store";
 
 async function apiGet<T>(
@@ -55,10 +56,8 @@ export const useStoresListStore = create<StoresListState>((set) => ({
       );
       set({ stores: data.stores || [] });
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
       set({
-        storesError:
-          axiosError?.response?.data?.message || axiosError?.message || "Couldn't load nearby stores.",
+        storesError: getApiErrorMessage(err, err instanceof Error ? err.message : "Couldn't load nearby stores."),
       });
     } finally {
       set({ storesLoading: false });

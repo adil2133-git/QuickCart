@@ -1,15 +1,8 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import api from "../../../api/axios";
+import { getApiErrorMessage as getErrorMessage } from "../../../api/apiError";
 import type { OperatingHour } from "./storeProfileState";
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { message?: string } } }).response;
-    if (typeof response?.data?.message === "string") return response.data.message;
-  }
-  return fallback;
-}
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */

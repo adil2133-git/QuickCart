@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { suppressNextOrderToast } from "../../shared/state/notificationState";
 import { useCheckoutStore, LOCAL_COUPON_DISCOUNT } from "../state/checkoutState";
 import api from "../../../api/axios";
+import { getApiErrorMessage, getApiErrorData } from "../../../api/apiError";
 import { loadRazorpayScript } from "../../../lib/loadRazorpay";
 import type {
   CartProductLine,
@@ -63,9 +64,7 @@ export function useLoadCheckoutSummary() {
         if (cancelled) return;
         // axios interceptor already handles 401/403 (toast + redirect/logout);
         // this covers everything else — network errors, 500s, etc.
-        const message =
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Couldn't load your checkout. Please try again.";
+        const message = getApiErrorMessage(err, "Couldn't load your checkout. Please try again.");
         setSummaryError(message);
         toast.error(message, { id: "checkout-summary-error" });
       }
@@ -234,11 +233,9 @@ export function usePlaceOrder() {
             );
             resolve(verifyResult.order);
           } catch (err) {
-            const responseData = (
-              err as {
-                response?: { data?: { message?: string; paymentCapturedButOrderFailed?: boolean } };
-              }
-            )?.response?.data;
+            const responseData = getApiErrorData(err) as
+              | { message?: string; paymentCapturedButOrderFailed?: boolean }
+              | undefined;
             const message = responseData?.message ?? "Payment verification failed.";
 
             if (responseData?.paymentCapturedButOrderFailed) {
@@ -296,9 +293,10 @@ export function usePlaceOrder() {
         return null;
       }
 
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        (err instanceof Error ? err.message : "Couldn't place your order. Please try again.");
+      const message = getApiErrorMessage(
+        err,
+        err instanceof Error ? err.message : "Couldn't place your order. Please try again."
+      );
       toast.error(message, { id: "place-order-error" });
       return null;
     } finally {

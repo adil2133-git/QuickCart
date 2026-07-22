@@ -21,6 +21,7 @@ import {
 import Sidebar from "../components/sidebar";
 import TopBar from "../components/topbar";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
@@ -114,7 +115,7 @@ export default function DriverApplicationReview() {
 
         api.get(`/admin/driver/applications/${id}`)
             .then((res) => active && setDriver(res.data.application))
-            .catch((err) => active && setLoadError(err?.response?.data?.message || "Failed to load application."))
+.catch((err) => active && setLoadError(getApiErrorMessage(err, "Failed to load application.")))
             .finally(() => active && setLoading(false));
 
         return () => { active = false; };
@@ -162,8 +163,7 @@ export default function DriverApplicationReview() {
             setDriver((prev) => prev ? { ...prev, reviewNotes: res.data.reviewNotes } : prev);
             setNote("");
         } catch (err: unknown) {
-            const axiosError = err as { response?: { data?: { message?: string } } };
-            setActionError(axiosError?.response?.data?.message || "Failed to add note.");
+            setActionError(getApiErrorMessage(err, "Failed to add note."));
         } finally {
             setSavingNote(false);
         }
@@ -181,8 +181,7 @@ export default function DriverApplicationReview() {
             setSubmittedDecision(decision);
             setDriver((prev) => prev ? { ...prev, status: res.data.status } : prev);
         } catch (err: unknown) {
-            const axiosError = err as { response?: { data?: { message?: string } } };
-            setActionError(axiosError?.response?.data?.message || "Failed to submit decision.");
+            setActionError(getApiErrorMessage(err, "Failed to submit decision."));
         } finally {
             setSubmitting(false);
         }

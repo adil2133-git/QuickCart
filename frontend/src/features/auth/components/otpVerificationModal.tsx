@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 /**
  * mode="register"      — default, existing behaviour: verifies via /auth/register/verify-otp
@@ -80,8 +81,7 @@ export default function OtpVerificationModal({
         setTimeout(() => onVerified(), 800);
       }
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || "Invalid or expired OTP. Please try again.");
+      setError(getApiErrorMessage(err, "Invalid or expired OTP. Please try again."));
     } finally {
       setVerifying(false);
     }
@@ -101,8 +101,7 @@ export default function OtpVerificationModal({
       setOtp(["", "", "", ""]);
       inputsRef.current[0]?.focus();
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || "Failed to resend OTP. Please try again.");
+      setError(getApiErrorMessage(err, "Failed to resend OTP. Please try again."));
     } finally {
       setResending(false);
     }

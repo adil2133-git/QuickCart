@@ -12,6 +12,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useProductStore } from "../state/productState";
+import { getApiErrorMessage as getErrorMessage } from "../../../api/apiError";
 import type { ProductFormValues } from "../productsApi";
 
 const UNITS = ["unit", "kg", "g", "litre", "ml", "pack", "dozen"];
@@ -29,14 +30,6 @@ const initialState: ProductFormValues = {
 type Errors = Partial<Record<keyof ProductFormValues, string>>;
 
 type ImageSlot = { kind: "existing"; url: string } | { kind: "new"; file: File; previewUrl: string };
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { message?: string } } }).response;
-    if (typeof response?.data?.message === "string") return response.data.message;
-  }
-  return fallback;
-}
 
 /* -------------------------------------------------------------------------- */
 /*  Image dropzone — supports multiple images, mixed existing + new           */

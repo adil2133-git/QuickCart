@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 import { useAuthStore } from "../state/authState";
 import EyeIcon from "../components/shared/eyeIcon";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
@@ -53,10 +54,7 @@ export default function CustomerRegistration() {
       });
       setShowOtp(true);
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(
-        axiosError.response?.data?.message || "Registration failed. Please try again."
-      );
+      setError(getApiErrorMessage(err, "Registration failed. Please try again."));
     } finally {
       setLoading(false);
     }

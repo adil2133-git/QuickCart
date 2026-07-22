@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../../api/axios";
+import { getApiErrorMessage, getApiErrorStatus } from "../../../api/apiError";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 import EyeIcon from "./shared/eyeIcon";
 
@@ -58,9 +59,8 @@ export default function ResetPasswordModal({
       });
       onDone();
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string }; status?: number } };
-      const msg = axiosError.response?.data?.message;
-      if (axiosError.response?.status === 400 && msg?.includes("expired")) {
+      const msg = getApiErrorMessage(err, "");
+      if (getApiErrorStatus(err) === 400 && msg.includes("expired")) {
         setError("Reset session expired. Please start the forgot password process again.");
       } else {
         setError(msg || "Something went wrong. Please try again.");

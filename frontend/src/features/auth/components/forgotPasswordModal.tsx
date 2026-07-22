@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../../api/axios";
+import { getApiErrorMessage, getApiErrorStatus } from "../../../api/apiError";
 import OtpVerificationModal from "./otpVerificationModal";
 import ResetPasswordModal from "./resetPasswordModal";
 
@@ -33,12 +34,10 @@ export default function ForgotPasswordModal({ onClose }: ForgotPasswordModalProp
       setEmail(trimmed);
       setStep("otp");
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string }; status?: number } };
-      const msg = axiosError.response?.data?.message;
-      if (axiosError.response?.status === 429) {
+      if (getApiErrorStatus(err) === 429) {
         setError("OTP already sent. Please wait before requesting again.");
       } else {
-        setError(msg || "Something went wrong. Please try again.");
+        setError(getApiErrorMessage(err, "Something went wrong. Please try again."));
       }
     } finally {
       setLoading(false);

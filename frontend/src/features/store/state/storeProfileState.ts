@@ -1,13 +1,6 @@
 import { create } from "zustand";
 import api from "../../../api/axios";
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { message?: string } } }).response;
-    if (typeof response?.data?.message === "string") return response.data.message;
-  }
-  return fallback;
-}
+import { getApiErrorMessage as getErrorMessage } from "../../../api/apiError";
 
 /* -------------------------------------------------------------------------- */
 /*  Types — mirrored from getMyStoreProfile's response shape                 */

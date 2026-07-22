@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../api/axios";
 import { getSocket } from "../../../lib/socket";
+import { getApiErrorMessage } from "../../../api/apiError";
 import { useOrdersStore } from "../state/myOrdersState";
 import type { GetOrdersResponse, GetOrderDetailResponse, CustomerOrderDetail, OrdersTab } from "../types/myOrders";
-
 export function useOrdersTab() {
   const activeTab = useOrdersStore((s) => s.activeTab);
   const setActiveTab = useOrdersStore((s) => s.setActiveTab);
@@ -35,9 +35,7 @@ export function useOrdersList(tab: OrdersTab) {
         setOrders(data.orders);
       } catch (err) {
         if (cancelled) return;
-        const message =
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Couldn't load your orders. Please try again.";
+        const message = getApiErrorMessage(err, "Couldn't load your orders. Please try again.");
         setError(message);
         toast.error(message, { id: "orders-load-error" });
       }
@@ -64,9 +62,7 @@ export function useCancelOrder() {
       toast.success("Order cancelled.");
       return true;
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Couldn't cancel your order. Please try again.";
+      const message = getApiErrorMessage(err, "Couldn't cancel your order. Please try again.");
       toast.error(message, { id: "cancel-order-error" });
       return false;
     }

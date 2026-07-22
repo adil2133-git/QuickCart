@@ -1,6 +1,7 @@
 // src/features/admin/state/storeApplicationsState.ts
 import { create } from "zustand";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 export type StoreStatus = "pending" | "approved" | "rejected" | "more-info";
 
@@ -167,9 +168,8 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
         listLoading: false,
       });
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        listError: axiosError?.response?.data?.message || "Failed to load applications.",
+        listError: getApiErrorMessage(err, "Failed to load applications."),
         listLoading: false,
       });
     }
@@ -195,9 +195,8 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
       const res = await api.get(`/admin/store/applications/${id}`);
       set({ currentApplication: res.data.application, detailLoading: false });
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        detailError: axiosError?.response?.data?.message || "Failed to load application.",
+        detailError: getApiErrorMessage(err, "Failed to load application."),
         detailLoading: false,
       });
     }
@@ -235,9 +234,8 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
         savingNote: false,
       }));
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        noteError: axiosError?.response?.data?.message || "Failed to add note.",
+        noteError: getApiErrorMessage(err, "Failed to add note."),
         savingNote: false,
       });
     }
@@ -277,9 +275,8 @@ export const useStoreApplicationsStore = create<StoreApplicationsState>((set, ge
         ),
       }));
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
-        decisionError: axiosError?.response?.data?.message || "Failed to submit decision.",
+        decisionError: getApiErrorMessage(err, "Failed to submit decision."),
         submitting: false,
       });
     }

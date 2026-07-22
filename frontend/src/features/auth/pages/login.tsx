@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ForgotPasswordModal from "../components/forgotPasswordModal";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 import { useAuthStore, type UserRole, type UserStatus } from "../state/authState";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 
@@ -72,8 +73,7 @@ export default function QuickKartLogin() {
       navigate(ROLE_ROUTES[role] || "/");
 
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || "Something went wrong");
+      setError(getApiErrorMessage(err, "Something went wrong"));
     } finally {
       setLoading(false);
     }

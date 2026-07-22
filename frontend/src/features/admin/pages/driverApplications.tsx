@@ -16,6 +16,7 @@ import {
 import Sidebar from "../components/sidebar";
 import TopBar from "../components/topbar";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 const STATUS_FILTERS = ["All Statuses", "Pending Review", "Approved", "Rejected"];
 const VEHICLE_FILTERS = ["All Types", "Bike", "Scooter"];
@@ -256,7 +257,7 @@ export default function DriverApplicationsPage() {
             })
             .catch((err) => {
                 if (!active) return;
-                setError(err?.response?.data?.message || "Failed to load applications.");
+                setError(getApiErrorMessage(err, "Failed to load applications."));
             })
             .finally(() => active && setLoading(false));
 

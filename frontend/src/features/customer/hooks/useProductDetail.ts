@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import axios from "axios";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 import { useProductDetailStore } from "../state/productState";
 import type { Product } from "../types/product";
 
@@ -35,14 +36,10 @@ export const useProductDetail = (productId: string, storeId?: string) => {
 
         setProduct(res.data.product);
       } catch (err: unknown) {
-        const axiosError = err as {
-          name?: string;
-          response?: { data?: { message?: string } };
-          message?: string;
-        };
-        if (axiosError?.name === "CanceledError" || axiosError?.name === "AbortError" || axios.isCancel(err)) return;
+        const name = (err as { name?: string })?.name;
+        if (name === "CanceledError" || name === "AbortError" || axios.isCancel(err)) return;
         setError(
-          axiosError?.response?.data?.message || axiosError?.message || "An unexpected error occurred."
+          getApiErrorMessage(err, err instanceof Error ? err.message : "An unexpected error occurred.")
         );
       } finally {
         setLoading(false);

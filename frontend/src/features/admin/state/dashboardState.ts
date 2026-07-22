@@ -1,6 +1,7 @@
 // src/features/admin/state/dashboardState.ts
 import { create } from "zustand";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 export type TrendDirection = "up" | "down" | "neutral";
 
@@ -129,10 +130,9 @@ export const useDashboardState = create<DashboardState>((set, get) => ({
       const res = await api.get("/admin/dashboard/kpis");
       set({ kpis: res.data.kpis, kpisLoading: false });
     } catch (err) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
         kpisLoading: false,
-        kpisError: axiosError?.response?.data?.message || "Failed to load KPIs.",
+        kpisError: getApiErrorMessage(err, "Failed to load KPIs."),
       });
     }
   },
@@ -149,10 +149,9 @@ export const useDashboardState = create<DashboardState>((set, get) => ({
         operationsLoading: false,
       });
     } catch (err) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
         operationsLoading: false,
-        operationsError: axiosError?.response?.data?.message || "Failed to load operations data.",
+        operationsError: getApiErrorMessage(err, "Failed to load operations data."),
       });
     }
   },
@@ -163,10 +162,9 @@ export const useDashboardState = create<DashboardState>((set, get) => ({
       const res = await api.get("/admin/dashboard/recent-orders", { params: { search } });
       set({ recentOrders: res.data.orders, recentOrdersLoading: false });
     } catch (err) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
         recentOrdersLoading: false,
-        recentOrdersError: axiosError?.response?.data?.message || "Failed to load recent orders.",
+        recentOrdersError: getApiErrorMessage(err, "Failed to load recent orders."),
       });
     }
   },
@@ -181,10 +179,9 @@ export const useDashboardState = create<DashboardState>((set, get) => ({
         actionRailLoading: false,
       });
     } catch (err) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
       set({
         actionRailLoading: false,
-        actionRailError: axiosError?.response?.data?.message || "Failed to load action rail.",
+        actionRailError: getApiErrorMessage(err, "Failed to load action rail."),
       });
     }
   },

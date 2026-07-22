@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 export interface SavedAddress {
     _id: string;
@@ -75,10 +76,11 @@ export const useLocationStore = create<LocationState>()(
                         showLocationModal: !profile.defaultAddress || profile.savedAddresses.length === 0,
                     });
                 } catch (err: unknown) {
-                    const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
                     set({
-                        profileError:
-                            axiosError?.response?.data?.message || axiosError?.message || "Couldn't load your saved location.",
+                        profileError: getApiErrorMessage(
+                            err,
+                            err instanceof Error ? err.message : "Couldn't load your saved location."
+                        ),
                     });
                 } finally {
                     set({ profileLoading: false });
