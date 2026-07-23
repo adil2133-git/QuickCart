@@ -1,6 +1,8 @@
 const DriverProfile = require("../../models/driver/driverProfile");
 const Order = require("../../models/shared/order");
 const WalletTransaction = require("../../models/driver/walletTransaction");
+const WithdrawalRequest = require("../../models/driver/withdrawalRequest");
+const driverWalletService = require("../../services/driverWalletService");
 const { emitToDriver } = require("../../socket");
 
 const resolveDriverProfile = async (req) => {
@@ -67,7 +69,7 @@ const getWalletSummary = async (req, res) => {
         return res.status(200).json({
             success: true,
             wallet: {
-                availableBalance: driver.walletBalance,
+                availableBalance: driver.availableBalance,
                 earnedThisMonth: monthAgg[0]?.total ?? 0,
                 nextPayoutDate: nextScheduledPayout(),
                 transactions: recentTxns.map(toTransactionShape),
@@ -83,58 +85,76 @@ const getWalletSummary = async (req, res) => {
 // POST /api/driver/wallet/withdraw
 // Withdraws the full available balance (or a specified amount) to the
 // driver's bank account. No real bank/payment-gateway integration yet —
-// this processes the withdrawal instantly. Advanced version would queue
-// this as a WithdrawalRequest for admin approval before debiting.
+// this processes the withdrawal instantly.
 // ─────────────────────────────────────────────────────────────
 const withdrawFunds = async (req, res) => {
     try {
         const driver = await resolveDriverProfile(req);
-        const requested = Number(req.body.amount);
+        const requested = req.body.amount !== undefined ? Number(req.body.amount) : undefined;
 
-        const amount = Number.isFinite(requested) && requested > 0
-            ? requested
-            : driver.walletBalance;
+        const withdrawal = await driverWalletService.requestWithdrawal({
+            driver,
+            amount: requested,
+        });
 
-        if (amount < WITHDRAWAL_MIN_AMOUNT) {
-            return res.status(400).json({
-                success: false,
-                message: `Minimum withdrawal amount is ₹${WITHDRAWAL_MIN_AMOUNT}.`,
-            });
-        }
-
-        if (amount > driver.walletBalance) {
-            return res.status(400).json({
-                success: false,
-                message: "Withdrawal amount exceeds available balance.",
-            });
-        }
-
-        driver.walletBalance -= amount;
-        await driver.save();
-
-        const txn = await WalletTransaction.create({
+        const txn = await WalletTransaction.findOne({
             driverId: driver._id,
-            amount,
             type: "WITHDRAWAL",
-            description: `Bank withdrawal — Ref: WDR-${Date.now().toString().slice(-6)}`,
-        });
-
-        emitToDriver(driver._id, "wallet:updated", {
-            balance: driver.walletBalance,
-            change: -amount,
-            reason: "WITHDRAWAL",
-            transaction: toTransactionShape(txn),
-        });
+        })
+            .sort({ createdAt: -1 })
+            .lean();
 
         return res.status(200).json({
             success: true,
             message: "Withdrawal processed.",
-            availableBalance: driver.walletBalance,
+            availableBalance: driver.availableBalance,
             transaction: toTransactionShape(txn),
         });
     } catch (err) {
         console.error("[withdrawFunds]", err);
-        return res.status(500).json({ success: false, message: "Failed to process withdrawal." });
+        return res.status(err.status || 500).json({
+            success: false,
+            message: err.message || "Failed to process withdrawal.",
+        });
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/driver/wallet/withdrawals
+// Returns the withdrawal request history for the driver.
+// ─────────────────────────────────────────────────────────────
+const getWithdrawalHistory = async (req, res) => {
+    try {
+        const driver = await resolveDriverProfile(req);
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 10);
+        const skip = (page - 1) * limit;
+
+        const [requests, total] = await Promise.all([
+            WithdrawalRequest.find({ driverId: driver._id })
+                .sort({ requestedAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            WithdrawalRequest.countDocuments({ driverId: driver._id }),
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            withdrawals: requests.map((w) => ({
+                id: w._id.toString(),
+                amount: w.amount,
+                status: w.status,
+                requestedAt: w.requestedAt,
+                paidAt: w.paidAt,
+            })),
+            total,
+            page,
+            pages: Math.ceil(total / limit) || 1,
+        });
+    } catch (err) {
+        console.error("[getWithdrawalHistory]", err);
+        return res.status(500).json({ success: false, message: "Failed to load withdrawal history." });
     }
 };
 
@@ -195,8 +215,7 @@ const getCodSummary = async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // POST /api/driver/wallet/cod/settle
 // Settles all currently-pending COD orders in one go. No partial/per-order
-// settlement yet, and no admin-side confirmation step — advanced version
-// would route this through a review step before clearing the balance.
+// settlement yet, and no admin-side confirmation step.
 // ─────────────────────────────────────────────────────────────
 const settleCod = async (req, res) => {
     try {
@@ -239,9 +258,42 @@ const settleCod = async (req, res) => {
     }
 };
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/driver/wallet/cod/settle/verify
+// Verifies COD settlement online payments.
+// ─────────────────────────────────────────────────────────────
+const verifyCodSettlement = async (req, res) => {
+    try {
+        const driver = await resolveDriverProfile(req);
+        const { settlementId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+        const result = await driverWalletService.completeCodSettlementPayment({
+            driver,
+            settlementId,
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Payment verified and COD settled.",
+            ...result,
+        });
+    } catch (err) {
+        console.error("[verifyCodSettlement]", err);
+        return res.status(err.status || 500).json({
+            success: false,
+            message: err.message || "Failed to verify settlement payment.",
+        });
+    }
+};
+
 module.exports = {
     getWalletSummary,
     withdrawFunds,
+    getWithdrawalHistory,
     getCodSummary,
     settleCod,
+    verifyCodSettlement,
 };
