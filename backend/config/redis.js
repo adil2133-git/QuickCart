@@ -9,12 +9,15 @@ client.on("error", (err) => {
     console.error("Redis Error:", err);
 });
 
+/**
+ * Connects the Redis client instance to the Redis server.
+ */
 const connectRedis = async () => {
     try {
         await client.connect();
         console.log("Redis Connected");
     } catch (err) {
-        console.log("Redis not running", err);
+        console.error("Redis connection failed:", err.message);
     }
 };
 

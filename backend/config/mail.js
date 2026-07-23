@@ -1,6 +1,9 @@
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 
+/**
+ * Configure Nodemailer transport instance for email notifications.
+ */
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
