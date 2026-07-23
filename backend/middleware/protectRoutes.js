@@ -2,7 +2,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/shared/user");
 require("dotenv").config();
 
-// checks the access token (cookie, header, or query param) and attaches req.user
+/**
+ * Middleware to verify access token (from cookies, headers, or query parameters)
+ * and attach user profile credentials to the request.
+ */
 const protectRoutes = async (req, res, next) => {
     try {
         let token =

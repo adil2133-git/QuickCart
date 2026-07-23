@@ -10,6 +10,13 @@ const MIME_BY_FORMAT = {
     pdf: "application/pdf",
 };
 
+/**
+ * Creates a configured Multer upload middleware instance targeting Cloudinary storage.
+ * @param {Object} config - Configuration settings.
+ * @param {string} config.folder - Target folder name on Cloudinary.
+ * @param {string[]} config.allowedFormats - Array of allowed file formats.
+ * @param {string} [config.resourceType="auto"] - Cloudinary resource type (e.g. image, raw).
+ */
 function createUploader({ folder, allowedFormats, resourceType = "auto" }) {
     const storage = new CloudinaryStorage({
         cloudinary,
