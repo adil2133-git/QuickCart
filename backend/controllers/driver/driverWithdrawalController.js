@@ -36,4 +36,4 @@ const getWithdrawalRequests = async (req, res) => {
 };
 
 
-module.exports = { getWithdrawalRequests, reviewWithdrawalRequest };
+module.exports = { getWithdrawalRequests };

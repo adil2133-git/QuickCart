@@ -5,7 +5,7 @@ const protectRoute = require("../../middleware/protectRoutes");
 const authorizeRoles = require("../../middleware/authorizeRoles");
 const {
     getWithdrawalRequests,
-} = require("../../controllers/admin/driverWithdrawalController");
+} = require("../../controllers/driver/driverWithdrawalController");
 
 router.use(protectRoute);
 router.use(authorizeRoles("ADMIN"));
