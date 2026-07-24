@@ -5,11 +5,9 @@ import { getApiErrorMessage } from "../../../api/apiError";
 import { useProductDetailStore } from "../state/productState";
 import type { Product } from "../types/product";
 
-// ─── Hook: useProductDetail ───────────────────────────────────────────────────
-// Fetches a product by ID from the public store endpoint and hydrates the
-// productDetailStore. Accepts an optional storeId override; if omitted, the
-// store-owner endpoint is used (requires auth).
-
+// fetches a product by ID from the public store endpoint and hydrates
+// productDetailStore. Accepts an optional storeId override — if omitted,
+// the store-owner endpoint is used instead (requires auth)
 export const useProductDetail = (productId: string, storeId?: string) => {
   const { setProduct, setLoading, setError, product, isLoading, error } =
     useProductDetailStore();
@@ -24,8 +22,8 @@ export const useProductDetail = (productId: string, storeId?: string) => {
       setError(null);
 
       try {
-        // Use public endpoint when storeId is available (customer view),
-        // otherwise fall back to the store-owner endpoint.
+        // public endpoint when a storeId is available (customer view),
+        // otherwise fall back to the store-owner endpoint
         const url = storeId
           ? `/customer/${storeId}/products/${productId}`
           : `/store/getSingleProduct/${productId}`;
