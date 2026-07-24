@@ -1,12 +1,17 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
+// Helper to construct the standard JWT payload
 const buildTokenPayload = (email, userID, role) => ({
     email,
     id: userID,
     role
 });
 
+/**
+ * Generates short-lived access tokens and long-lived refresh tokens 
+ * for user sessions.
+ */
 const generateToken = (email, userID, role) => {
     const payload = buildTokenPayload(email, userID, role);
 

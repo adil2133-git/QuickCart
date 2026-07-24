@@ -1,3 +1,4 @@
+// Central export point for all Mongoose models in the application
 const User = require("./shared/user");
 const CustomerProfile = require("./customer/customerProfile");
 const DriverProfile = require("./driver/driverProfile");
@@ -18,6 +19,7 @@ const StoreTransaction = require("./store/storeTransaction");
 const SettlementRecord = require("./admin/settlementRecord");
 const Complaint = require("./admin/complaint");
 const PlatformRevenue = require("./admin/platformRevenue");
+const Notification = require("./shared/notification");
 
 module.exports = {
     User,

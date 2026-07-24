@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { ACCESS_COOKIE_OPTIONS } = require("../utils/cookieOptions");
 
+// Refreshes the short-lived access token cookie using a valid refresh token cookie
 const tokenRegenerate = (req, res) => {
     try {
         const token = req.cookies?.Refresh_Token;

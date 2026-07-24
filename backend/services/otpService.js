@@ -3,10 +3,12 @@ const generateOTP = require("../utils/generateOtp");
 const { client } = require("../config/redis");
 require("dotenv").config();
 
-const OTP_EXPIRY = 120; // 2 minutes
+const OTP_EXPIRY = 120; // 2 minutes in seconds
 
+// Sends a new OTP to the specified email if not already sent recently
 const sendOtp = async (email) => {
     try {
+        // Prevent spamming by checking if an active OTP already exists in Redis
         const existingOtp = await client.get(`otp:${email}`);
         if (existingOtp) {
             return {
@@ -17,6 +19,7 @@ const sendOtp = async (email) => {
 
         const otp = generateOTP();
 
+        // Cache the OTP in Redis with a 2-minute expiration
         await client.setEx(`otp:${email}`, OTP_EXPIRY, otp);
 
         await transporter.sendMail({
@@ -33,6 +36,7 @@ const sendOtp = async (email) => {
     }
 };
 
+// Deletes any existing OTP and forces a fresh generation/send
 const resendOtp = async (email) => {
     try {
         await client.del(`otp:${email}`);
@@ -54,6 +58,7 @@ const resendOtp = async (email) => {
     }
 };
 
+// Verifies the user-supplied OTP against Redis and deletes it on success
 const verifyOtp = async (email, userOtp) => {
     try {
         const storedOtp = await client.get(`otp:${email}`);
@@ -63,6 +68,7 @@ const verifyOtp = async (email, userOtp) => {
         }
 
         if (storedOtp === userOtp) {
+            // Delete OTP immediately on successful verification to prevent reuse
             await client.del(`otp:${email}`);
             return { success: true };
         }
