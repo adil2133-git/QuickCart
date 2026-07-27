@@ -1,135 +1,104 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, SlidersHorizontal, MapPin, Star, ShoppingCart, ChevronDown,
-  Grid3X3, List, Store, Zap, ArrowRight, BadgePercent, Leaf, Clock,
-  Navigation, Check, Package, Wheat, Bell, User, ChevronRight as ChevronRightIcon,
-  X, ChevronLeft, Sparkles, Filter,
+  Search, SlidersHorizontal, Star, ShoppingCart, ChevronDown,
+  Grid3X3, List, Store, Zap, ArrowRight, BadgePercent, Clock,
+  Navigation, Check, ChevronRight as ChevronRightIcon,
+  X, ChevronLeft, Sparkles, Filter, Loader2,
 } from "lucide-react";
+import api from "../../../api/axios";
+import { useLocationStore } from "../state/locationState";
+import { useStoresListStore } from "../state/storesListState";
+import { useCartStore } from "../state/cartState";
 
 // ─── Color tokens (HTML theme) ────────────────────────────────────────────────
 const C = {
-  bg:            "#FFF9EF",
+  bg:            "#F7F8F5",
   surface:       "#FFFFFF",
-  surfaceCtx:    "#F3EDE4",
-  surfaceCtxLow: "#F9F3EA",
-  surfaceCtxHigh:"#EDE7DE",
-  primary:       "#735A3E",
-  primaryCont:   "#C2A383",
+  surfaceCtx:    "#EFF2EF",
+  surfaceCtxLow: "#F5F7F3",
+  surfaceCtxHigh:"#E3E7E1",
+  primary:       "#145C43",
+  primaryCont:   "#145C43",
   onPrimary:     "#FFFFFF",
-  secondary:     "#685D4B",
-  secondaryCont: "#EEDDC7",
-  onSecondaryCont:"#6D614F",
-  tertiary:      "#376847",
-  tertiaryCont:  "#80B48D",
-  outline:       "#80756B",
-  outlineVar:    "#D2C4B9",
-  onSurface:     "#1D1B16",
-  onSurfaceVar:  "#4E453D",
+  secondary:     "#16241D",
+  secondaryCont: "#E8EFEC",
+  onSecondaryCont:"#145C43",
+  tertiary:      "#145C43",
+  tertiaryCont:  "#145C43",
+  outline:       "#6E7C74",
+  outlineVar:    "#E3E7E1",
+  onSurface:     "#16241D",
+  onSurfaceVar:  "#6E7C74",
   error:         "#BA1A1A",
 };
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-type BadgeType = "Best Price" | "Nearest" | "Top Rated" | "Open Now" | "Organic" | "Fast Delivery" | "Artisanal" | "Best Value";
-type ViewMode  = "grid" | "list";
+type ViewMode = "grid" | "list";
 
-interface StoreOffer {
-  id: string; name: string; rating: number; distance: string; price: number;
-  badge?: BadgeType; isOpen: boolean; highlighted?: boolean;
-}
-interface Product {
-  id: string; name: string; category: string; subtitle: string;
-  emoji: string; topCompared: boolean; stores: StoreOffer[];
-}
-interface StoreProfile {
-  name: string; emoji: string; tagline: string; rating: number;
+interface ApiCategory {
+  _id: string;
+  categoryName: string;
+  image?: string;
 }
 
-// ─── Mock Data ─────────────────────────────────────────────────────────────────
-const PRODUCTS: Product[] = [
-  {
-    id:"1", name:"Farm Fresh Milk (1L)", category:"Dairy & Eggs", subtitle:"Daily Essential",
-    emoji:"🥛", topCompared:true,
-    stores:[
-      { id:"s1", name:"Fresh Mart",  rating:4.2, distance:"2 km",  price:32, badge:"Open Now",   isOpen:true },
-      { id:"s2", name:"Daily Needs", rating:4.5, distance:"3 km",  price:30, badge:"Best Price", isOpen:true, highlighted:true },
-      { id:"s3", name:"Green Basket",rating:4.1, distance:"1 km",  price:34, badge:"Nearest",    isOpen:false },
-      { id:"s4", name:"Organic Hub", rating:4.7, distance:"2.5 km",price:36, badge:"Organic",    isOpen:true },
-    ],
-  },
-  {
-    id:"2", name:"Whole Wheat Bread", category:"Bakery", subtitle:"Freshly Baked",
-    emoji:"🍞", topCompared:false,
-    stores:[
-      { id:"s5", name:"Artisan Bakery",rating:4.9, distance:"1.5 km",price:45, badge:"Artisanal",  isOpen:true },
-      { id:"s6", name:"Fresh Mart",    rating:4.2, distance:"2 km",  price:40, badge:"Best Value", isOpen:true, highlighted:true },
-      { id:"s7", name:"Nature Foods",  rating:4.3, distance:"3.2 km",price:42, isOpen:false },
-    ],
-  },
-  {
-    id:"3", name:"Organic Tomatoes", category:"Fruits & Vegetables", subtitle:"Farm to Table",
-    emoji:"🍅", topCompared:true,
-    stores:[
-      { id:"s8",  name:"Organic Hub",  rating:4.7, distance:"2.5 km",price:28, badge:"Organic",      isOpen:true, highlighted:true },
-      { id:"s9",  name:"Green Basket", rating:4.1, distance:"1 km",  price:32, badge:"Nearest",       isOpen:true },
-      { id:"s10", name:"Nature Foods", rating:4.3, distance:"3.2 km",price:25, badge:"Best Price",    isOpen:false },
-      { id:"s11", name:"Daily Needs",  rating:4.5, distance:"3 km",  price:30, badge:"Fast Delivery", isOpen:true },
-    ],
-  },
-  {
-    id:"4", name:"Brown Eggs (12 Pack)", category:"Dairy & Eggs", subtitle:"Free Range",
-    emoji:"🥚", topCompared:false,
-    stores:[
-      { id:"s12", name:"Organic Hub",  rating:4.7, distance:"2.5 km",price:89, badge:"Organic",    isOpen:true },
-      { id:"s13", name:"Fresh Mart",   rating:4.2, distance:"2 km",  price:79, badge:"Best Price", isOpen:true, highlighted:true },
-      { id:"s14", name:"Green Basket", rating:4.1, distance:"1 km",  price:85, badge:"Nearest",    isOpen:true },
-    ],
-  },
-  {
-    id:"5", name:"Greek Yogurt", category:"Dairy & Eggs", subtitle:"Probiotic Rich",
-    emoji:"🫙", topCompared:false,
-    stores:[
-      { id:"s15", name:"Daily Needs",  rating:4.5, distance:"3 km",  price:65, badge:"Best Price", isOpen:true, highlighted:true },
-      { id:"s16", name:"Organic Hub",  rating:4.7, distance:"2.5 km",price:72, badge:"Organic",    isOpen:true },
-      { id:"s17", name:"Fresh Mart",   rating:4.2, distance:"2 km",  price:68, badge:"Open Now",   isOpen:true },
-    ],
-  },
-];
+interface ApiProductStore {
+  _id: string;
+  storeName: string;
+  averageRating: number;
+  distanceKm: number | null;
+  status: "OPEN" | "CLOSED" | "BUSY";
+}
 
-const STORES: StoreProfile[] = [
-  { name:"Fresh Mart",     emoji:"🛒", tagline:"Everyday essentials", rating:4.2 },
-  { name:"Daily Needs",    emoji:"🧺", tagline:"Local convenience",   rating:4.5 },
-  { name:"Green Basket",   emoji:"🥦", tagline:"Closest to you",      rating:4.1 },
-  { name:"Artisan Bakery", emoji:"🥐", tagline:"Baked fresh daily",   rating:4.9 },
-  { name:"Organic Hub",    emoji:"🌿", tagline:"Certified organic",   rating:4.7 },
-  { name:"Nature Foods",   emoji:"🍃", tagline:"Farm direct",         rating:4.3 },
-];
+interface ApiProduct {
+  _id: string;
+  productName: string;
+  description?: string;
+  price: number;
+  stockQuantity: number;
+  unit?: string;
+  images?: string[];
+  availabilityStatus: string;
+  isBestseller?: boolean;
+  categoryId?: { _id: string; categoryName: string; image?: string } | null;
+  store: ApiProductStore | null;
+}
 
-const CATEGORIES = ["Fruits & Vegetables","Dairy & Eggs","Bakery","Organic","Snacks","Beverages","Frozen Foods"];
-const DISTANCE_OPTIONS = ["1 km","2 km","5 km","10 km"];
+const DISTANCE_OPTIONS = [1, 2, 5, 10];
 const RATING_OPTIONS = [4.5, 4.0, 3.5];
-const SORT_OPTIONS = ["Best Match", "Distance", "Rating", "Lowest Price", "Highest Price"];
-
-// ─── Badge Config ──────────────────────────────────────────────────────────────
-const BADGE_CFG: Record<BadgeType,{bg:string;border:string;text:string;icon:React.ReactNode}> = {
-  "Best Price":   { bg:"bg-[#EDF7ED]", border:"border-[#A8D5A8]", text:"text-[#376847]", icon:<Zap size={9}/> },
-  "Best Value":   { bg:"bg-[#EDF7ED]", border:"border-[#A8D5A8]", text:"text-[#376847]", icon:<Zap size={9}/> },
-  Nearest:        { bg:"bg-[#E8F0FB]", border:"border-[#A8C0E8]", text:"text-[#3D5A9A]", icon:<Navigation size={9}/> },
-  "Top Rated":    { bg:"bg-[#FFF3CD]", border:"border-[#D4B870]", text:"text-[#7A5C00]", icon:<Star size={9}/> },
-  "Open Now":     { bg:"bg-[#E8F5E9]", border:"border-[#9DC89D]", text:"text-[#2E6B2E]", icon:<Clock size={9}/> },
-  Organic:        { bg:"bg-[#F0FAF0]", border:"border-[#88CC88]", text:"text-[#376847]", icon:<Leaf size={9}/> },
-  "Fast Delivery":{ bg:"bg-[#FFF0E0]", border:"border-[#E0A870]", text:"text-[#8B5A00]", icon:<Zap size={9}/> },
-  Artisanal:      { bg:"bg-[#F3EDE4]", border:"border-[#C2A383]", text:"text-[#735A3E]", icon:<Star size={9}/> },
+const SORT_OPTIONS = ["Best Match", "Distance", "Rating", "Lowest Price", "Highest Price"] as const;
+type SortLabel = typeof SORT_OPTIONS[number];
+const SORT_MAP: Record<SortLabel, string> = {
+  "Best Match": "bestMatch",
+  "Distance": "distance",
+  "Rating": "rating",
+  "Lowest Price": "priceLow",
+  "Highest Price": "priceHigh",
 };
 
+// ─── Category emoji fallback (purely decorative, not data) ───────────────────
+const CATEGORY_EMOJI: Record<string, string> = {
+  fruits: "🍊", "fruits & vegetables": "🥕", dairy: "🥛", "dairy & eggs": "🥚", bakery: "🍞",
+  snacks: "🌰", vegetables: "🥕", pantry: "🫙", meat: "🥩", beverages: "☕",
+  organic: "🌿", "frozen foods": "🧊", default: "🛒",
+};
+function categoryEmoji(name?: string): string {
+  if (!name) return CATEGORY_EMOJI.default;
+  return CATEGORY_EMOJI[name.toLowerCase()] ?? CATEGORY_EMOJI.default;
+}
+
+// ─── Star row ──────────────────────────────────────────────────────────────────
 function StarRow({ rating }: { rating: number }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5">
       {[1,2,3,4,5].map(i => (
-        <Star key={i} size={11}
-          fill={i <= Math.floor(rating) ? C.primaryCont : "transparent"}
+        <Star
+          key={i}
+          size={11}
+          fill={i <= Math.round(rating) ? C.primaryCont : "transparent"}
           color={C.primaryCont}
-          strokeWidth={i <= Math.floor(rating) ? 0 : 1.5}
+          strokeWidth={i <= Math.round(rating) ? 0 : 1.5}
         />
       ))}
       <span className="text-[11px] ml-0.5" style={{ color: C.onSurfaceVar }}>({rating.toFixed(1)})</span>
@@ -137,155 +106,127 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function StoreBadge({ badge }: { badge: BadgeType }) {
-  const c = BADGE_CFG[badge];
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wide ${c.bg} ${c.border} ${c.text}`}>
-      {c.icon}{badge}
-    </span>
-  );
-}
-
-// ─── Store Card ────────────────────────────────────────────────────────────────
-function StoreCard({ store }: { store: StoreOffer }) {
-  const [added, setAdded] = useState(false);
-  const hi = store.highlighted;
+// ─── Add to Cart button (real cart) ────────────────────────────────────────────
+function AddToCartButton({ productId, disabled }: { productId: string; disabled?: boolean }) {
+  const addToCart = useCartStore(s => s.addToCart);
+  const quantity = useCartStore(s => s.getItemQuantity(productId));
+  const isUpdating = useCartStore(s => s.isUpdating === productId);
 
   return (
-    <motion.div
-      whileHover={{ y: -4, boxShadow: hi ? `0 16px 48px rgba(115,90,62,0.22)` : "0 8px 32px rgba(0,0,0,0.10)" }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className={`relative flex flex-col justify-between rounded-xl p-4 flex-1 min-w-[180px] overflow-hidden ${
-        hi ? "border-2 shadow-md" : "border shadow-sm"
-      }`}
-      style={{
-        backgroundColor: hi ? C.surfaceCtxHigh : C.surface,
-        borderColor: hi ? C.primaryCont : C.outlineVar,
-      }}
+    <motion.button
+      whileTap={{ scale: 0.92 }}
+      disabled={disabled || isUpdating}
+      onClick={(e) => { e.stopPropagation(); addToCart(productId, 1); }}
+      className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ backgroundColor: quantity > 0 ? C.tertiary : C.primary, color: C.onPrimary }}
     >
-      {hi && store.badge && (
-        <div
-          className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-[9px] font-black uppercase tracking-wider"
-          style={{ backgroundColor: C.primaryCont, color: C.onSurface }}
-        >
-          {store.badge}
-        </div>
+      {isUpdating ? (
+        <Loader2 size={12} className="animate-spin" />
+      ) : quantity > 0 ? (
+        <span className="flex items-center gap-1"><Check size={12}/> In Cart ({quantity})</span>
+      ) : (
+        <span className="flex items-center gap-1"><ShoppingCart size={12}/> Add</span>
       )}
-      {!hi && store.badge && (
-        <div className="absolute top-2.5 right-2.5">
-          <StoreBadge badge={store.badge} />
-        </div>
-      )}
-
-      <div className="mb-3 mt-0.5">
-        <p className="font-semibold text-sm pr-16" style={{ fontFamily:"'Playfair Display',serif", color: C.secondary }}>
-          {store.name}
-        </p>
-        <div className="mt-1.5">
-          <StarRow rating={store.rating} />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between mt-auto">
-        <div>
-          <p className="text-lg font-bold leading-none" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>₹{store.price}</p>
-          <p className="flex items-center gap-1 mt-1 text-[11px]" style={{ color: C.onSurfaceVar }}>
-            <Navigation size={10} /> {store.distance} Away
-            {!store.isOpen && <span className="ml-1 text-[#BA1A1A] font-medium">· Closed</span>}
-          </p>
-        </div>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => { setAdded(true); setTimeout(()=>setAdded(false),1900); }}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-300"
-          style={{ backgroundColor: added ? C.tertiary : C.primary, color: C.onPrimary }}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {added ? (
-              <motion.span key="c" initial={{scale:0.5,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:0.5,opacity:0}} className="flex items-center gap-1">
-                <Check size={12}/> Done
-              </motion.span>
-            ) : (
-              <motion.span key="a" initial={{scale:0.5,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:0.5,opacity:0}} className="flex items-center gap-1">
-                <ShoppingCart size={12}/> Add
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
-      </div>
-    </motion.div>
+    </motion.button>
   );
 }
 
-function ViewMoreCard({ count }: { count: number }) {
+// ─── Product Card ────────────────────────────────────────────────────────────
+function ProductCard({ product, viewMode, onOpen }: { product: ApiProduct; viewMode: ViewMode; onOpen: () => void }) {
+  const catName = product.categoryId?.categoryName;
+  const outOfStock = product.availabilityStatus !== "AVAILABLE" || product.stockQuantity <= 0;
+  const lowStock = !outOfStock && product.stockQuantity <= 5;
+
   return (
     <motion.div
-      whileHover={{ y: -4, borderColor: C.primary }}
-      transition={{ duration: 0.2 }}
-      className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 flex-1 min-w-[160px] cursor-pointer group"
-      style={{ borderColor: C.outlineVar, backgroundColor: C.surfaceCtxLow }}
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ y: -3, boxShadow: "0 12px 32px rgba(20,92,67,0.14)" }}
+      onClick={onOpen}
+      className={`relative flex rounded-xl border overflow-hidden cursor-pointer bg-white ${
+        viewMode === "list" ? "flex-row items-center gap-4 p-3" : "flex-col"
+      }`}
+      style={{ borderColor: C.outlineVar }}
     >
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors duration-200"
+        className={`flex items-center justify-center text-4xl overflow-hidden flex-shrink-0 ${
+          viewMode === "list" ? "w-20 h-20 rounded-lg" : "h-40 w-full"
+        }`}
         style={{ backgroundColor: C.surfaceCtx }}
       >
-        <Store size={22} style={{ color: C.outline }} className="group-hover:scale-110 transition-transform" />
+        {product.images?.[0]
+          ? <img src={product.images[0]} alt={product.productName} className="w-full h-full object-cover" />
+          : <span className="select-none">{categoryEmoji(catName)}</span>
+        }
       </div>
-      <p className="text-sm font-semibold text-center" style={{ color: C.secondary }}>
-        View {count} more stores
-      </p>
-      <p className="text-[11px] text-center mt-0.5" style={{ color: C.onSurfaceVar }}>
-        carrying this item nearby
-      </p>
+
+      {product.isBestseller && (
+        <span
+          className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide border"
+          style={{ backgroundColor: C.secondaryCont, borderColor: C.outlineVar, color: C.primary }}
+        >
+          <Zap size={9}/> Bestseller
+        </span>
+      )}
+      {outOfStock && (
+        <span
+          className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide"
+          style={{ backgroundColor: "#FEE8E8", color: "#991B1B" }}
+        >
+          Out of Stock
+        </span>
+      )}
+
+      <div className={`flex flex-col flex-1 min-w-0 ${viewMode === "list" ? "" : "p-4"}`}>
+        {product.store && (
+          <span className="text-[11px] font-medium truncate" style={{ color: C.primary }}>
+            {product.store.storeName}
+          </span>
+        )}
+        <p className="font-semibold text-sm truncate mt-0.5" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
+          {product.productName}
+        </p>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          {product.store && product.store.averageRating > 0 && <StarRow rating={product.store.averageRating} />}
+          {product.store?.distanceKm != null && (
+            <span className="flex items-center gap-0.5 text-[11px]" style={{ color: C.onSurfaceVar }}>
+              <Navigation size={10}/> {product.store.distanceKm.toFixed(1)} km
+            </span>
+          )}
+          {product.store?.status === "CLOSED" && (
+            <span className="text-[11px] font-medium" style={{ color: C.error }}>· Closed</span>
+          )}
+          {lowStock && (
+            <span className="text-[11px] font-medium" style={{ color: "#B47800" }}>· Only {product.stockQuantity} left</span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between mt-auto pt-2.5">
+          <p className="text-base font-bold leading-none" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
+            ₹{product.price}{product.unit ? <span className="text-xs font-normal" style={{ color: C.onSurfaceVar }}> /{product.unit}</span> : null}
+          </p>
+          <AddToCartButton productId={product._id} disabled={outOfStock} />
+        </div>
+      </div>
     </motion.div>
   );
 }
 
-// ─── Product Section ───────────────────────────────────────────────────────────
-function ProductSection({ product, viewMode }: { product: Product; viewMode: ViewMode }) {
-  const visible = product.stores.slice(0, 3);
-  const extra   = product.stores.length - 3;
-
+function ProductCardSkeleton({ viewMode }: { viewMode: ViewMode }) {
   return (
-    <motion.section
-      initial={{ opacity:0, y:20 }}
-      whileInView={{ opacity:1, y:0 }}
-      viewport={{ once:true, margin:"-50px" }}
-      transition={{ duration:0.45, ease:"easeOut" }}
+    <div
+      className={`rounded-xl border overflow-hidden bg-white animate-pulse ${viewMode === "list" ? "flex flex-row items-center gap-4 p-3" : "flex flex-col"}`}
+      style={{ borderColor: C.outlineVar }}
     >
-      <div className="flex items-end justify-between mb-4 pb-3 border-b" style={{ borderColor: C.outlineVar }}>
-        <div className="flex items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl border overflow-hidden flex-shrink-0"
-            style={{ backgroundColor:`${C.primaryCont}22`, borderColor: C.outlineVar }}
-          >
-            {product.emoji}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
-              {product.name}
-            </h2>
-            <p className="flex items-center gap-1 text-xs mt-0.5" style={{ color: C.onSurfaceVar }}>
-              {product.category === "Dairy & Eggs" ? <Package size={12}/> : product.category === "Bakery" ? <Wheat size={12}/> : <Leaf size={12}/>}
-              {product.category} · {product.subtitle}
-            </p>
-          </div>
-        </div>
-        {product.topCompared && (
-          <span
-            className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
-            style={{ backgroundColor:`${C.primaryCont}18`, color: C.primary }}
-          >
-            Top Compared
-          </span>
-        )}
+      <div className={viewMode === "list" ? "w-20 h-20 rounded-lg flex-shrink-0" : "h-40 w-full"} style={{ backgroundColor: C.surfaceCtx }} />
+      <div className={`flex-1 space-y-2 ${viewMode === "list" ? "" : "p-4"}`}>
+        <div className="h-3 w-20 rounded" style={{ backgroundColor: C.surfaceCtx }} />
+        <div className="h-4 w-32 rounded" style={{ backgroundColor: C.surfaceCtx }} />
+        <div className="h-3 w-24 rounded" style={{ backgroundColor: C.surfaceCtx }} />
       </div>
-
-      <div className={`flex gap-4 ${viewMode === "list" ? "flex-col sm:flex-row" : "flex-wrap sm:flex-nowrap"} overflow-x-auto pb-1`}>
-        {visible.map(s => <StoreCard key={s.id} store={s} />)}
-        {extra > 0 && <ViewMoreCard count={extra} />}
-      </div>
-    </motion.section>
+    </div>
   );
 }
 
@@ -303,7 +244,7 @@ function QuickPill({
         backgroundColor: active ? C.primary : C.surface,
         borderColor:     active ? C.primary : C.outlineVar,
         color:           active ? "#FFFFFF" : C.onSurfaceVar,
-        boxShadow:       active ? "0 2px 10px rgba(115,90,62,0.25)" : "0 1px 2px rgba(0,0,0,0.03)",
+        boxShadow:       active ? "0 2px 10px rgba(20,92,67,0.25)" : "0 1px 2px rgba(0,0,0,0.03)",
       }}
     >
       {icon}
@@ -311,7 +252,7 @@ function QuickPill({
       {typeof badgeCount === "number" && badgeCount > 0 && (
         <span
           className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black"
-          style={{ backgroundColor: active ? "rgba(255,255,255,0.25)" : C.primaryCont, color: active ? "#FFFFFF" : C.onSurface }}
+          style={{ backgroundColor: active ? "rgba(255,255,255,0.25)" : C.primaryCont, color: "#FFFFFF" }}
         >
           {badgeCount}
         </span>
@@ -344,8 +285,8 @@ function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }
   );
 }
 
-// ─── Compact Featured Store Card ──────────────────────────────────────────────
-function FeaturedStoreCard({ profile, active, onClick }: { profile: StoreProfile; active: boolean; onClick: () => void }) {
+// ─── Compact Featured Store Card (real stores) ────────────────────────────────
+function FeaturedStoreCard({ store, active, onClick }: { store: { _id: string; storeName: string; averageRating: number; logoUrl: string | null }; active: boolean; onClick: () => void }) {
   return (
     <motion.button
       onClick={onClick}
@@ -356,21 +297,24 @@ function FeaturedStoreCard({ profile, active, onClick }: { profile: StoreProfile
       style={{
         backgroundColor: active ? C.surfaceCtxHigh : C.surface,
         borderColor: active ? C.primaryCont : C.outlineVar,
-        boxShadow: active ? "0 4px 16px rgba(115,90,62,0.16)" : "0 1px 4px rgba(0,0,0,0.04)",
+        boxShadow: active ? "0 4px 16px rgba(20,92,67,0.16)" : "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
       <div
-        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl border"
+        className="w-12 h-12 rounded-full flex items-center justify-center text-lg border overflow-hidden"
         style={{ backgroundColor: `${C.primaryCont}22`, borderColor: C.outlineVar }}
       >
-        {profile.emoji}
+        {store.logoUrl
+          ? <img src={store.logoUrl} alt={store.storeName} className="w-full h-full object-cover" />
+          : <Store size={18} color={C.primary} />
+        }
       </div>
-      <p className="text-xs font-bold leading-tight text-center" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
-        {profile.name}
+      <p className="text-xs font-bold leading-tight text-center truncate w-full" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
+        {store.storeName}
       </p>
       <div className="flex items-center gap-1">
         <Star size={10} fill={C.primaryCont} color={C.primaryCont} />
-        <span className="text-[10px]" style={{ color: C.onSurfaceVar }}>{profile.rating.toFixed(1)}</span>
+        <span className="text-[10px]" style={{ color: C.onSurfaceVar }}>{store.averageRating.toFixed(1)}</span>
       </div>
       {active && (
         <span
@@ -385,10 +329,12 @@ function FeaturedStoreCard({ profile, active, onClick }: { profile: StoreProfile
 }
 
 function FeaturedStoresRail({
-  selectedStores, toggleStore,
-}: { selectedStores: string[]; toggleStore: (s: string) => void }) {
+  stores, loading, selectedStoreIds, toggleStore,
+}: { stores: { _id: string; storeName: string; averageRating: number; logoUrl: string | null }[]; loading: boolean; selectedStoreIds: string[]; toggleStore: (id: string) => void }) {
   const railRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dx: number) => railRef.current?.scrollBy({ left: dx, behavior: "smooth" });
+
+  if (!loading && stores.length === 0) return null;
 
   return (
     <section className="relative py-4">
@@ -416,14 +362,19 @@ function FeaturedStoresRail({
         </div>
       </div>
       <div ref={railRef} className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x">
-        {STORES.map(s => (
-          <FeaturedStoreCard
-            key={s.name}
-            profile={s}
-            active={selectedStores.includes(s.name)}
-            onClick={() => toggleStore(s.name)}
-          />
-        ))}
+        {loading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="w-[90px] h-[104px] rounded-2xl flex-shrink-0 animate-pulse" style={{ backgroundColor: C.surfaceCtx }} />
+            ))
+          : stores.map(s => (
+              <FeaturedStoreCard
+                key={s._id}
+                store={s}
+                active={selectedStoreIds.includes(s._id)}
+                onClick={() => toggleStore(s._id)}
+              />
+            ))
+        }
       </div>
     </section>
   );
@@ -433,14 +384,16 @@ function FeaturedStoresRail({
 interface FilterDrawerProps {
   open: boolean;
   onClose: () => void;
-  selectedStores: string[];
-  toggleStore: (s: string) => void;
-  selectedCategories: string[];
-  toggleCategory: (c: string) => void;
+  stores: { _id: string; storeName: string }[];
+  selectedStoreIds: string[];
+  toggleStore: (id: string) => void;
+  categories: ApiCategory[];
+  selectedCategoryIds: string[];
+  toggleCategory: (id: string) => void;
   minRating: number | null;
   setMinRating: (r: number | null) => void;
-  maxDistance: string | null;
-  setMaxDistance: (d: string | null) => void;
+  maxDistanceKm: number | null;
+  setMaxDistanceKm: (d: number | null) => void;
   openNow: boolean;
   setOpenNow: (v: boolean) => void;
   onClear: () => void;
@@ -479,15 +432,15 @@ function CheckRow({ label, sub, checked, onChange }: { label: string; sub?: stri
 
 function FilterDrawer(props: FilterDrawerProps) {
   const {
-    open, onClose, selectedStores, toggleStore, selectedCategories, toggleCategory,
-    minRating, setMinRating, maxDistance, setMaxDistance, openNow, setOpenNow, onClear,
+    open, onClose, stores, selectedStoreIds, toggleStore, categories, selectedCategoryIds, toggleCategory,
+    minRating, setMinRating, maxDistanceKm, setMaxDistanceKm, openNow, setOpenNow, onClear,
   } = props;
   const [storeQuery, setStoreQuery] = useState("");
 
-  const filteredStores = STORES.filter(s => s.name.toLowerCase().includes(storeQuery.toLowerCase()));
+  const filteredStores = stores.filter(s => s.storeName.toLowerCase().includes(storeQuery.toLowerCase()));
 
   const activeCount =
-    selectedStores.length + selectedCategories.length + (minRating ? 1 : 0) + (maxDistance ? 1 : 0) + (openNow ? 1 : 0);
+    selectedStoreIds.length + selectedCategoryIds.length + (minRating ? 1 : 0) + (maxDistanceKm ? 1 : 0) + (openNow ? 1 : 0);
 
   useEffect(() => {
     if (!open) return;
@@ -504,7 +457,7 @@ function FilterDrawer(props: FilterDrawerProps) {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 z-[60]"
-            style={{ backgroundColor: "rgba(29,27,22,0.45)" }}
+            style={{ backgroundColor: "rgba(22,36,29,0.45)" }}
           />
           <motion.div
             role="dialog"
@@ -566,15 +519,15 @@ function FilterDrawer(props: FilterDrawerProps) {
                   {DISTANCE_OPTIONS.map(d => (
                     <button
                       key={d}
-                      onClick={() => setMaxDistance(maxDistance === d ? null : d)}
+                      onClick={() => setMaxDistanceKm(maxDistanceKm === d ? null : d)}
                       className="px-3 py-2 rounded-xl text-sm font-semibold border transition-colors"
                       style={{
-                        backgroundColor: maxDistance === d ? C.primary : C.surfaceCtxLow,
-                        borderColor: maxDistance === d ? C.primary : C.outlineVar,
-                        color: maxDistance === d ? "#FFFFFF" : C.onSurfaceVar,
+                        backgroundColor: maxDistanceKm === d ? C.primary : C.surfaceCtxLow,
+                        borderColor: maxDistanceKm === d ? C.primary : C.outlineVar,
+                        color: maxDistanceKm === d ? "#FFFFFF" : C.onSurfaceVar,
                       }}
                     >
-                      Within {d}
+                      Within {d} km
                     </button>
                   ))}
                 </div>
@@ -582,8 +535,10 @@ function FilterDrawer(props: FilterDrawerProps) {
 
               <DrawerSection title="Categories">
                 <div className="space-y-0.5">
-                  {CATEGORIES.map(c => (
-                    <CheckRow key={c} label={c} checked={selectedCategories.includes(c)} onChange={() => toggleCategory(c)} />
+                  {categories.length === 0 ? (
+                    <p className="text-xs py-2" style={{ color: C.onSurfaceVar }}>No categories yet.</p>
+                  ) : categories.map(c => (
+                    <CheckRow key={c._id} label={c.categoryName} checked={selectedCategoryIds.includes(c._id)} onChange={() => toggleCategory(c._id)} />
                   ))}
                 </div>
               </DrawerSection>
@@ -605,14 +560,13 @@ function FilterDrawer(props: FilterDrawerProps) {
                 <div className="space-y-0.5 max-h-56 overflow-y-auto">
                   {filteredStores.length > 0 ? filteredStores.map(s => (
                     <CheckRow
-                      key={s.name}
-                      label={s.name}
-                      sub={s.tagline}
-                      checked={selectedStores.includes(s.name)}
-                      onChange={() => toggleStore(s.name)}
+                      key={s._id}
+                      label={s.storeName}
+                      checked={selectedStoreIds.includes(s._id)}
+                      onChange={() => toggleStore(s._id)}
                     />
                   )) : (
-                    <p className="text-xs py-3" style={{ color: C.onSurfaceVar }}>No stores match “{storeQuery}”.</p>
+                    <p className="text-xs py-3" style={{ color: C.onSurfaceVar }}>No stores match "{storeQuery}".</p>
                   )}
                 </div>
               </div>
@@ -642,7 +596,7 @@ function FilterDrawer(props: FilterDrawerProps) {
 }
 
 // ─── Sort Dropdown ─────────────────────────────────────────────────────────────
-function SortDropdown({ sortBy, setSortBy }: { sortBy: string; setSortBy: (s: string) => void }) {
+function SortDropdown({ sortBy, setSortBy }: { sortBy: SortLabel; setSortBy: (s: SortLabel) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -695,91 +649,128 @@ function SortDropdown({ sortBy, setSortBy }: { sortBy: string; setSortBy: (s: st
 }
 
 // ─── MAIN PAGE ─────────────────────────────────────────────────────────────────
-export default function MarketplaceFinal() {
-  const [search,             setSearch]             = useState("");
-  const [selectedStores,     setSelectedStores]     = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [openNow,            setOpenNow]            = useState(false);
-  const [minRating,          setMinRating]          = useState<number | null>(null);
-  const [maxDistance,        setMaxDistance]        = useState<string | null>(null);
-  const [viewMode,           setViewMode]           = useState<ViewMode>("grid");
-  const [sortBy,             setSortBy]             = useState("Best Match");
-  const [cartCount] = useState(3);
-  const [drawerOpen,         setDrawerOpen]         = useState(false);
+export default function ProductDiscoveryPage() {
+  const navigate = useNavigate();
 
-  const toggleStore = (s: string) =>
-    setSelectedStores(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
-  const toggleCategory = (c: string) =>
-    setSelectedCategories(p => p.includes(c) ? p.filter(x => x !== c) : [...p, c]);
+  const activeCoords = useLocationStore(s => s.activeCoords);
+  const nearbyStores = useStoresListStore(s => s.stores);
+  const storesLoading = useStoresListStore(s => s.storesLoading);
+  const fetchNearbyStores = useStoresListStore(s => s.fetchNearbyStores);
 
-  const clearAll = () => {
-    setSelectedStores([]);
-    setSelectedCategories([]);
-    setOpenNow(false);
-    setMinRating(null);
-    setMaxDistance(null);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [openNow, setOpenNow] = useState(false);
+  const [minRating, setMinRating] = useState<number | null>(null);
+  const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortBy, setSortBy] = useState<SortLabel>("Best Match");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // ── Categories, once ────────────────────────────────────────────────────────
+  useEffect(() => {
+    api.get("/customer/categories")
+      .then(({ data }) => setCategories(data.categories ?? []))
+      .catch(console.error);
+  }, []);
+
+  // ── Nearby stores (for filter list + featured rail) ────────────────────────
+  useEffect(() => {
+    if (!activeCoords) return;
+    fetchNearbyStores(activeCoords.lat, activeCoords.lng, 10);
+  }, [activeCoords, fetchNearbyStores]);
+
+  // ── Debounce the search box ─────────────────────────────────────────────────
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => window.clearTimeout(id);
+  }, [search]);
+
+  // ── Fetch products, replacing the list, whenever a filter changes ──────────
+  const fetchProducts = useCallback(async (pageArg: number, mode: "replace" | "append") => {
+    if (mode === "replace") setLoadingProducts(true); else setLoadingMore(true);
+    try {
+      const params: Record<string, string> = {
+        sortBy: SORT_MAP[sortBy],
+        page: String(pageArg),
+        limit: "20",
+      };
+      if (activeCoords) {
+        params.lat = String(activeCoords.lat);
+        params.lng = String(activeCoords.lng);
+      }
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (selectedCategoryIds.length) params.categoryIds = selectedCategoryIds.join(",");
+      if (selectedStoreIds.length) params.storeIds = selectedStoreIds.join(",");
+      if (minRating !== null) params.minRating = String(minRating);
+      if (maxDistanceKm !== null) params.maxDistanceKm = String(maxDistanceKm);
+      if (openNow) params.openNow = "true";
+
+      const { data } = await api.get("/customer/products/search", { params });
+      const newProducts: ApiProduct[] = data.products ?? [];
+      setTotalProducts(data.total ?? 0);
+      setProducts(prev => (mode === "append" ? [...prev, ...newProducts] : newProducts));
+    } catch (err) {
+      console.error("PRODUCT SEARCH ERROR:", err);
+      if (mode === "replace") { setProducts([]); setTotalProducts(0); }
+    } finally {
+      setLoadingProducts(false);
+      setLoadingMore(false);
+    }
+  }, [sortBy, activeCoords, debouncedSearch, selectedCategoryIds, selectedStoreIds, minRating, maxDistanceKm, openNow]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchProducts(1, "replace");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, selectedCategoryIds, selectedStoreIds, minRating, maxDistanceKm, openNow, sortBy, activeCoords]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchProducts(nextPage, "append");
   };
 
-  const distanceKm = (d: string) => parseFloat(d);
-  const storeDistanceKm = (d: string) => parseFloat(d);
+  const toggleStore = (id: string) =>
+    setSelectedStoreIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  const toggleCategory = (id: string) =>
+    setSelectedCategoryIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
 
-  const filtered = useMemo(() => {
-    let results = PRODUCTS.filter(p => {
-      const ms = p.name.toLowerCase().includes(search.toLowerCase());
-      const mc = selectedCategories.length === 0 || selectedCategories.includes(p.category);
-      const mo = !openNow || p.stores.some(s => s.isOpen);
-      const mx = selectedStores.length === 0 || p.stores.some(s => selectedStores.includes(s.name));
-      const mr = minRating === null || p.stores.some(s => s.rating >= minRating);
-      const md = maxDistance === null || p.stores.some(s => storeDistanceKm(s.distance) <= distanceKm(maxDistance));
-      return ms && mc && mo && mx && mr && md;
-    });
-
-    // Sort
-    switch (sortBy) {
-      case "Rating":
-        results = [...results].sort((a, b) => {
-          const maxA = Math.max(...a.stores.map(s => s.rating));
-          const maxB = Math.max(...b.stores.map(s => s.rating));
-          return maxB - maxA;
-        });
-        break;
-      case "Lowest Price":
-        results = [...results].sort((a, b) => {
-          const minA = Math.min(...a.stores.map(s => s.price));
-          const minB = Math.min(...b.stores.map(s => s.price));
-          return minA - minB;
-        });
-        break;
-      case "Highest Price":
-        results = [...results].sort((a, b) => {
-          const maxA = Math.max(...a.stores.map(s => s.price));
-          const maxB = Math.max(...b.stores.map(s => s.price));
-          return maxB - maxA;
-        });
-        break;
-      case "Distance":
-        results = [...results].sort((a, b) => {
-          const minA = Math.min(...a.stores.map(s => storeDistanceKm(s.distance)));
-          const minB = Math.min(...b.stores.map(s => storeDistanceKm(s.distance)));
-          return minA - minB;
-        });
-        break;
-      default: // Best Match - keep original order
-        break;
-    }
-    return results;
-  }, [search, selectedCategories, openNow, selectedStores, minRating, maxDistance, sortBy]);
+  const clearAll = () => {
+    setSelectedStoreIds([]);
+    setSelectedCategoryIds([]);
+    setOpenNow(false);
+    setMinRating(null);
+    setMaxDistanceKm(null);
+  };
 
   const totalActiveFilters =
-    selectedStores.length + selectedCategories.length + (minRating ? 1 : 0) + (maxDistance ? 1 : 0) + (openNow ? 1 : 0);
+    selectedStoreIds.length + selectedCategoryIds.length + (minRating ? 1 : 0) + (maxDistanceKm ? 1 : 0) + (openNow ? 1 : 0);
+
+  const storeName = (id: string) => nearbyStores.find(s => s._id === id)?.storeName ?? id;
+  const categoryName = (id: string) => categories.find(c => c._id === id)?.categoryName ?? id;
 
   const activeChips: { key: string; label: string; onRemove: () => void }[] = [
-    ...selectedStores.map(s => ({ key: `store-${s}`, label: s, onRemove: () => toggleStore(s) })),
-    ...selectedCategories.map(c => ({ key: `cat-${c}`, label: c, onRemove: () => toggleCategory(c) })),
+    ...selectedStoreIds.map(id => ({ key: `store-${id}`, label: storeName(id), onRemove: () => toggleStore(id) })),
+    ...selectedCategoryIds.map(id => ({ key: `cat-${id}`, label: categoryName(id), onRemove: () => toggleCategory(id) })),
     ...(minRating ? [{ key: "rating", label: `${minRating.toFixed(1)}★+`, onRemove: () => setMinRating(null) }] : []),
-    ...(maxDistance ? [{ key: "distance", label: `Within ${maxDistance}`, onRemove: () => setMaxDistance(null) }] : []),
+    ...(maxDistanceKm ? [{ key: "distance", label: `Within ${maxDistanceKm} km`, onRemove: () => setMaxDistanceKm(null) }] : []),
     ...(openNow ? [{ key: "open", label: "Open Now", onRemove: () => setOpenNow(false) }] : []),
   ];
+
+  const goToProduct = (p: ApiProduct) => {
+    if (!p.store) return;
+    navigate(`/customer/store/${p.store._id}/product/${p._id}`);
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: C.bg, fontFamily:"'DM Sans',sans-serif" }}>
@@ -789,71 +780,9 @@ export default function MarketplaceFinal() {
         .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
       `}</style>
 
-      {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
-      <motion.header
-        initial={{ y:-12, opacity:0 }}
-        animate={{ y:0, opacity:1 }}
-        transition={{ duration:0.45, ease:"easeOut" }}
-        className="sticky top-0 z-50 border-b w-full"
-        style={{ backgroundColor: C.surface, borderColor: C.outlineVar, boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}
-      >
-        <div className="mx-auto flex items-center justify-between gap-4 px-10 h-16" style={{ maxWidth:1200 }}>
-          <div className="flex items-center gap-5 flex-shrink-0">
-            <span className="text-xl font-bold italic" style={{ fontFamily:"'Playfair Display',serif", color: C.primary }}>
-              QuickKart
-            </span>
-            <motion.button
-              whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
-              className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-colors"
-              style={{ color: C.secondary, borderColor: C.outlineVar, backgroundColor:`${C.surfaceCtxLow}` }}
-            >
-              <MapPin size={12} color={C.secondary}/> Bengaluru <ChevronDown size={11} color={C.secondary}/>
-            </motion.button>
-          </div>
-
-          {/* Search in navbar */}
-          <div className="flex-1 max-w-md hidden lg:block">
-            <div className="flex items-center gap-2 rounded-full px-4 py-2 border" style={{ backgroundColor: C.surfaceCtx, borderColor: C.outlineVar }}>
-              <Search size={15} color={C.outline}/>
-              <input 
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search groceries, stores and more..." 
-                className="flex-1 bg-transparent outline-none text-xs" 
-                style={{ color: C.onSurfaceVar }}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <nav className="hidden md:flex items-center gap-5">
-              {["Categories","Stores","Offers"].map(l => (
-                <motion.a key={l} whileHover={{ color: C.primary }} href="#"
-                  className="text-xs font-medium transition-colors" style={{ color: C.secondary }}>
-                  {l}
-                </motion.a>
-              ))}
-            </nav>
-            <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }} className="relative p-1.5" style={{ color: C.secondary }}>
-              <Bell size={18}/>
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#BA1A1A]"/>
-            </motion.button>
-            <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }} className="relative p-1.5" style={{ color: C.secondary }}>
-              <ShoppingCart size={18}/>
-              {cartCount > 0 && (
-                <motion.span
-                  initial={{ scale:0 }} animate={{ scale:1 }}
-                  className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                  style={{ backgroundColor: C.primary }}
-                >{cartCount}</motion.span>
-              )}
-            </motion.button>
-            <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }} className="p-1.5" style={{ color: C.secondary }}>
-              <User size={18}/>
-            </motion.button>
-          </div>
-        </div>
-      </motion.header>
+      {/* This page renders under CustomerShell, which already mounts the real
+          NavBar (with real location, cart count, and search) — no second
+          header here. */}
 
       <main className="mx-auto px-10 py-8" style={{ maxWidth:1200 }}>
 
@@ -865,33 +794,51 @@ export default function MarketplaceFinal() {
           className="mb-5 space-y-1.5"
         >
           <h1 className="text-2xl font-bold" style={{ fontFamily:"'Playfair Display',serif", color: C.primary }}>
-            Global Product Discovery
-            <span 
+            Product Discovery
+            <span
               className="inline-flex items-center gap-1.5 ml-3 px-3 py-0.5 rounded-full text-xs font-semibold border"
               style={{ backgroundColor:`${C.tertiaryCont}18`, borderColor:`${C.tertiaryCont}60`, color: C.tertiary }}
             >
-              <Check size={12}/> Neighborhood Prices
+              <Check size={12}/> {activeCoords ? "Live Nearby Stock" : "Set your location to see nearby stock"}
             </span>
           </h1>
           <p className="text-sm" style={{ color: C.onSurfaceVar }}>
-            Compare prices and distance across all artisanal local merchants near you.
+            Search real products from stores near you, filter by category, rating, and distance.
           </p>
         </motion.div>
 
+        {/* ── SEARCH BAR ─────────────────────────────────────────────────── */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 rounded-xl px-4 py-3 border" style={{ backgroundColor: C.surface, borderColor: C.outlineVar }}>
+            <Search size={16} color={C.outline}/>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search products..."
+              className="flex-1 bg-transparent outline-none text-sm"
+              style={{ color: C.onSurface }}
+            />
+            {search && (
+              <button onClick={() => setSearch("")} aria-label="Clear search">
+                <X size={14} color={C.outline} />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* ── QUICK FILTERS ───────────────────────────────────────────────── */}
-        <div className="sticky top-16 z-30 -mx-10 px-10 py-3" style={{ backgroundColor:`${C.bg}EE`, backdropFilter:"blur(16px)" }}>
+        <div className="sticky top-0 z-30 -mx-10 px-10 py-3" style={{ backgroundColor:`${C.bg}EE`, backdropFilter:"blur(16px)" }}>
           <motion.div
             initial={{ opacity:0, y:6 }}
             animate={{ opacity:1, y:0 }}
             transition={{ delay:0.05, duration:0.35 }}
           >
-            {/* Quick filter pills */}
             <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-hide pb-2">
               <QuickPill icon={<Clock size={14} />} label="Open Now" active={openNow} onClick={() => setOpenNow(o => !o)} />
               <QuickPill
                 icon={<Navigation size={14} />}
-                label={maxDistance ? `Within ${maxDistance}` : "Distance"}
-                active={!!maxDistance}
+                label={maxDistanceKm ? `Within ${maxDistanceKm} km` : "Distance"}
+                active={!!maxDistanceKm}
                 onClick={() => setDrawerOpen(true)}
               />
               <QuickPill
@@ -909,7 +856,6 @@ export default function MarketplaceFinal() {
               />
             </div>
 
-            {/* Active filter chips */}
             <AnimatePresence>
               {activeChips.length > 0 && (
                 <motion.div
@@ -935,9 +881,14 @@ export default function MarketplaceFinal() {
           </motion.div>
         </div>
 
-        {/* ── FEATURED STORES RAIL (compact) ────────────────────────────── */}
+        {/* ── FEATURED STORES RAIL (real) ───────────────────────────────── */}
         <div className="mt-1">
-          <FeaturedStoresRail selectedStores={selectedStores} toggleStore={toggleStore} />
+          <FeaturedStoresRail
+            stores={nearbyStores.map(s => ({ _id: s._id, storeName: s.storeName, averageRating: s.averageRating, logoUrl: s.logoUrl }))}
+            loading={storesLoading}
+            selectedStoreIds={selectedStoreIds}
+            toggleStore={toggleStore}
+          />
         </div>
 
         {/* ── PRODUCT LIST HEADER with Sort & View Toggle ────────────────── */}
@@ -946,7 +897,7 @@ export default function MarketplaceFinal() {
             <h2 className="text-lg font-bold" style={{ fontFamily:"'Playfair Display',serif", color: C.primary }}>
               Products
               <span className="ml-2 text-sm font-normal" style={{ color: C.onSurfaceVar }}>
-                ({filtered.length})
+                ({totalProducts})
               </span>
             </h2>
           </div>
@@ -971,26 +922,49 @@ export default function MarketplaceFinal() {
 
         <div className="h-px" style={{ backgroundColor: C.outlineVar }} />
 
-        {/* ── PRODUCT COMPARISON LIST ──────────────────────────────────────── */}
-        <div className="space-y-8 mt-8">
-          <AnimatePresence>
-            {filtered.length > 0 ? filtered.map((p, i) => (
-              <div key={p.id}>
-                <ProductSection product={p} viewMode={viewMode}/>
-                {i < filtered.length-1 && (
-                  <div className="mt-8 h-px" style={{ backgroundColor: C.outlineVar }}/>
-                )}
+        {/* ── PRODUCT GRID / LIST ──────────────────────────────────────────── */}
+        <div className="mt-8">
+          {loadingProducts ? (
+            <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5" : "flex flex-col gap-3"}>
+              {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} viewMode={viewMode} />)}
+            </div>
+          ) : products.length > 0 ? (
+            <>
+              <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5" : "flex flex-col gap-3"}>
+                <AnimatePresence>
+                  {products.map(p => (
+                    <ProductCard key={p._id} product={p} viewMode={viewMode} onOpen={() => goToProduct(p)} />
+                  ))}
+                </AnimatePresence>
               </div>
-            )) : (
-              <motion.div
-                initial={{ opacity:0 }} animate={{ opacity:1 }}
-                className="flex flex-col items-center justify-center py-24 text-center"
-              >
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: C.surfaceCtx }}>
-                  <Search size={22} color={C.outline}/>
+
+              {products.length < totalProducts && (
+                <div className="flex justify-center mt-8">
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="px-6 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-60"
+                    style={{ borderColor: C.outlineVar, color: C.primary, backgroundColor: C.surface }}
+                  >
+                    {loadingMore ? <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin"/> Loading…</span> : "Load more"}
+                  </motion.button>
                 </div>
-                <h3 className="font-bold" style={{ color: C.onSurface }}>No products found</h3>
-                <p className="text-sm mt-1" style={{ color: C.onSurfaceVar }}>Try adjusting your filters or search terms</p>
+              )}
+            </>
+          ) : (
+            <motion.div
+              initial={{ opacity:0 }} animate={{ opacity:1 }}
+              className="flex flex-col items-center justify-center py-24 text-center"
+            >
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: C.surfaceCtx }}>
+                <Search size={22} color={C.outline}/>
+              </div>
+              <h3 className="font-bold" style={{ color: C.onSurface }}>No products found</h3>
+              <p className="text-sm mt-1" style={{ color: C.onSurfaceVar }}>
+                {activeCoords ? "Try adjusting your filters or search terms" : "Set your delivery location to see products near you"}
+              </p>
+              {(search || totalActiveFilters > 0) && (
                 <motion.button
                   whileTap={{ scale:0.95 }}
                   onClick={()=>{ setSearch(""); clearAll(); }}
@@ -999,9 +973,9 @@ export default function MarketplaceFinal() {
                 >
                   Clear filters
                 </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </motion.div>
+          )}
         </div>
 
         {/* ── DISCOVER MORE LOCALLY ────────────────────────────────────────── */}
@@ -1019,38 +993,26 @@ export default function MarketplaceFinal() {
               whileInView={{ opacity:1, x:0 }}
               viewport={{ once:true }}
               transition={{ duration:0.5 }}
-              className="relative rounded-2xl overflow-hidden cursor-pointer group flex flex-col justify-end"
-              style={{ gridColumn:"span 8", background:"linear-gradient(135deg,#1A3D2B 0%,#2D6B4A 40%,#4A9B6F 70%,#6AB88A 100%)" }}
+              className="relative rounded-2xl overflow-hidden cursor-pointer flex flex-col justify-center bg-white border"
+              style={{ gridColumn:"span 8", borderColor: C.outlineVar, padding: 48 }}
             >
-              <div
-                className="absolute inset-0 transition-transform duration-700 group-hover:scale-[1.04]"
-                style={{ background:"linear-gradient(135deg,#1A3D2B 0%,#2D6B4A 40%,#4A9B6F 70%,#6AB88A 100%)" }}
-              />
-              <motion.div animate={{ y:[0,-7,0] }} transition={{ duration:4, repeat:Infinity, ease:"easeInOut" }}
-                className="absolute top-8 right-16 text-8xl opacity-25 select-none pointer-events-none">🥬</motion.div>
-              <motion.div animate={{ y:[0,6,0] }} transition={{ duration:5.5, repeat:Infinity, ease:"easeInOut", delay:1 }}
-                className="absolute top-12 right-36 text-5xl opacity-20 select-none pointer-events-none">🍅</motion.div>
-              <motion.div animate={{ y:[0,-5,0] }} transition={{ duration:3.8, repeat:Infinity, ease:"easeInOut", delay:0.5 }}
-                className="absolute bottom-24 right-10 text-6xl opacity-15 select-none pointer-events-none">🌿</motion.div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"/>
-
-              <div className="relative z-10 p-8 max-w-sm">
+              <div className="max-w-sm">
                 <span
-                  className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider mb-3 text-white"
-                  style={{ backgroundColor: C.tertiary }}
+                  className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider mb-3"
+                  style={{ backgroundColor: C.secondaryCont, color: C.primary }}
                 >
                   Flash Deal
                 </span>
-                <h4 className="text-2xl font-bold text-white mb-2" style={{ fontFamily:"'Playfair Display',serif" }}>
+                <h4 className="text-2xl font-bold mb-2" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
                   Artisanal Organic Week
                 </h4>
-                <p className="text-white/75 text-sm leading-relaxed mb-5">
-                  Get up to 40% off on verified organic farm products from Green Basket and Fresh Mart.
+                <p className="text-sm leading-relaxed mb-5" style={{ color: C.onSurfaceVar }}>
+                  Get up to 40% off on verified organic farm products from local partner stores.
                 </p>
                 <motion.button
                   whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold"
-                  style={{ backgroundColor: C.tertiary, color:"#FFFFFF" }}
+                  style={{ backgroundColor: C.primary, color:"#FFFFFF" }}
                 >
                   Shop the Collection <ArrowRight size={13}/>
                 </motion.button>
@@ -1062,31 +1024,29 @@ export default function MarketplaceFinal() {
               whileInView={{ opacity:1, x:0 }}
               viewport={{ once:true }}
               transition={{ duration:0.5, delay:0.1 }}
-              className="relative rounded-2xl flex flex-col items-center justify-center text-center p-8"
-              style={{ gridColumn:"span 4", backgroundColor: C.secondaryCont }}
+              className="relative rounded-2xl flex flex-col items-center justify-center text-center p-8 bg-white border"
+              style={{ gridColumn:"span 4", borderColor: C.outlineVar }}
             >
-              <div className="absolute top-4 right-4 w-24 h-24 rounded-full blur-2xl opacity-40" style={{ backgroundColor: C.primaryCont }}/>
-
               <motion.div
                 whileHover={{ scale:1.08, rotate:5 }}
                 transition={{ duration:0.3 }}
-                className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-5 relative z-10"
-                style={{ boxShadow:"0 4px 20px rgba(115,90,62,0.18)" }}
+                className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
+                style={{ backgroundColor: C.secondaryCont }}
               >
                 <BadgePercent size={36} color={C.primary}/>
               </motion.div>
 
-              <h4 className="text-lg font-bold mb-2 relative z-10" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
+              <h4 className="text-lg font-bold mb-2" style={{ fontFamily:"'Playfair Display',serif", color: C.onSurface }}>
                 Market Rewards
               </h4>
-              <p className="text-sm leading-relaxed mb-5 relative z-10" style={{ color: C.onSecondaryCont }}>
-                Earn points for every purchase from local Bengaluru merchants.
+              <p className="text-sm leading-relaxed mb-5" style={{ color: C.onSurfaceVar }}>
+                Earn points for every purchase from local merchants.
               </p>
               <motion.a
                 href="#"
                 whileHover={{ letterSpacing:"0.04em" }}
                 transition={{ duration:0.2 }}
-                className="text-sm font-black underline decoration-2 underline-offset-4 relative z-10"
+                className="text-sm font-black underline decoration-2 underline-offset-4"
                 style={{ color: C.primary }}
               >
                 Learn More
@@ -1096,53 +1056,19 @@ export default function MarketplaceFinal() {
         </section>
       </main>
 
-      {/* ── FOOTER ───────────────────────────────────────────────────────── */}
-      <footer className="border-t py-8" style={{ borderColor: C.outlineVar, backgroundColor: C.surfaceCtxLow }}>
-        <div className="mx-auto flex flex-col md:flex-row items-center justify-between gap-4 px-10" style={{ maxWidth:1200 }}>
-          <div>
-            <span className="text-base font-bold italic" style={{ fontFamily:"'Playfair Display',serif", color: C.primary }}>
-              QuickKart
-            </span>
-            <p className="text-xs mt-0.5" style={{ color: C.onSurfaceVar }}>
-              © 2026 QuickKart Neighborhood Market. All rights reserved.
-            </p>
-          </div>
-          <div className="flex gap-6">
-            {["About Us","Contact","Privacy Policy","Terms of Service"].map(l => (
-              <motion.a
-                key={l} href="#"
-                whileHover={{ color: C.primary }}
-                className="text-xs transition-colors"
-                style={{ color: C.onSurfaceVar }}
-              >{l}</motion.a>
-            ))}
-          </div>
-        </div>
-      </footer>
-
-      {/* Mobile FAB */}
-      <motion.button
-        whileHover={{ scale:1.06 }} whileTap={{ scale:0.92 }}
-        onClick={() => setDrawerOpen(true)}
-        className="fixed bottom-5 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-40 md:hidden"
-        style={{ backgroundColor: C.primary, color: C.onPrimary }}
-        aria-label="Open filters"
-      >
-        <SlidersHorizontal size={20}/>
-      </motion.button>
-
-      {/* Filter drawer */}
       <FilterDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        selectedStores={selectedStores}
+        stores={nearbyStores.map(s => ({ _id: s._id, storeName: s.storeName }))}
+        selectedStoreIds={selectedStoreIds}
         toggleStore={toggleStore}
-        selectedCategories={selectedCategories}
+        categories={categories}
+        selectedCategoryIds={selectedCategoryIds}
         toggleCategory={toggleCategory}
         minRating={minRating}
         setMinRating={setMinRating}
-        maxDistance={maxDistance}
-        setMaxDistance={setMaxDistance}
+        maxDistanceKm={maxDistanceKm}
+        setMaxDistanceKm={setMaxDistanceKm}
         openNow={openNow}
         setOpenNow={setOpenNow}
         onClear={clearAll}
