@@ -13,6 +13,7 @@ const {
     getPopularProducts,
     getTrendingProducts,
     getCategories,
+    searchProducts,
 } = require("../../controllers/customer/customerController");
 
 const {
@@ -74,6 +75,7 @@ router.get("/stores/nearby", protectRoutes, authorizeRoles("CUSTOMER"), getNearb
 router.get("/products/popular", protectRoutes, authorizeRoles("CUSTOMER"), getPopularProducts);
 router.get("/home/recent-orders", protectRoutes, authorizeRoles("CUSTOMER"), getRecentlyOrdered);
 router.get("/products/trending", protectRoutes, authorizeRoles("CUSTOMER"), getTrendingProducts);
+router.get("/products/search", protectRoutes, authorizeRoles("CUSTOMER"), searchProducts);
 router.get("/categories", getCategories); // public
 
 // ─── Cart routes must stay before the dynamic /:storeId route ──────────────

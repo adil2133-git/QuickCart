@@ -229,6 +229,151 @@ const getCategories = async (req, res) => {
     }
 };
 
+// ─── GET /api/customer/products/search ───────────────────────────────────────
+// Real product search/browse across nearby stores — replaces the old mock
+// "compare one product across stores" concept from the frontend prototype,
+// which had no basis in the schema (a Product belongs to exactly one store,
+// so there's no way to link "the same item" across different stores' catalogs).
+// This instead returns real products, each with its own real store/price,
+// filterable by search text, category, store, rating, and distance.
+//
+// Query params (all optional except when noted):
+//   lat, lng        — customer location. If both given, distance is computed
+//                      and maxDistanceKm / distance sorting become available.
+//                      If omitted, distance-based filtering/sorting is skipped.
+//   radius          — used only to pre-select which stores count as "nearby"
+//                      when lat/lng are given (default 10 km, same as
+//                      getNearbyStores) — separate from maxDistanceKm below,
+//                      which further narrows the already-nearby set.
+//   search          — case-insensitive substring match on productName.
+//   categoryIds     — comma-separated list of category _ids.
+//   storeIds        — comma-separated list of store _ids to filter to.
+//   minRating       — minimum store averageRating.
+//   maxDistanceKm   — maximum store distance (requires lat/lng).
+//   openNow         — "true" to only include currently-open stores.
+//   sortBy          — one of: "bestMatch" (default, newest first),
+//                      "distance", "rating", "priceLow", "priceHigh".
+//   page, limit     — pagination (default page=1, limit=20).
+const searchProducts = async (req, res) => {
+    try {
+        const lat = req.query.lat !== undefined ? parseFloat(req.query.lat) : null;
+        const lng = req.query.lng !== undefined ? parseFloat(req.query.lng) : null;
+        const hasCoords = lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng);
+        const radiusKm = parseFloat(req.query.radius) || 10;
+
+        const search = (req.query.search || "").trim();
+        const categoryIdsParam = (req.query.categoryIds || "").trim();
+        const storeIdsParam = (req.query.storeIds || "").trim();
+        const minRating = req.query.minRating !== undefined ? parseFloat(req.query.minRating) : null;
+        const maxDistanceKm = req.query.maxDistanceKm !== undefined ? parseFloat(req.query.maxDistanceKm) : null;
+        const openNow = req.query.openNow === "true";
+        const sortBy = req.query.sortBy || "bestMatch";
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
+
+        // Step 1: approved + active stores only (same gate as getNearbyStores).
+        const approvedUsers = await User.find({ role: "STORE", status: "ACTIVE" }).select("_id").lean();
+        const approvedUserIds = approvedUsers.map((u) => u._id);
+
+        let stores = await StoreProfile.find({ userId: { $in: approvedUserIds } })
+            .select("storeName address coordinates logoUrl averageRating operatingHours isManuallyClosed storeStatus")
+            .lean();
+
+        // Step 2: attach live status + distance (when we have customer coords).
+        stores = stores.map((store) => {
+            const liveStatus = getLiveStoreStatus(store);
+            const distanceKm = hasCoords ? distanceInKm({ lat, lng }, store.coordinates) : null;
+            return { ...store, liveStatus: liveStatus.status, distanceKm };
+        });
+
+        // Step 3: narrow the store set by distance/rating/openNow/storeIds filters.
+        if (hasCoords) {
+            stores = stores.filter((s) => s.distanceKm !== null && s.distanceKm <= radiusKm);
+        }
+        if (maxDistanceKm !== null && !isNaN(maxDistanceKm) && hasCoords) {
+            stores = stores.filter((s) => s.distanceKm !== null && s.distanceKm <= maxDistanceKm);
+        }
+        if (minRating !== null && !isNaN(minRating)) {
+            stores = stores.filter((s) => s.averageRating >= minRating);
+        }
+        if (openNow) {
+            stores = stores.filter((s) => s.liveStatus === "OPEN");
+        }
+        if (storeIdsParam) {
+            const wanted = new Set(storeIdsParam.split(",").map((id) => id.trim()));
+            stores = stores.filter((s) => wanted.has(String(s._id)));
+        }
+
+        const storeById = new Map(stores.map((s) => [String(s._id), s]));
+        const storeIds = stores.map((s) => s._id);
+
+        if (storeIds.length === 0) {
+            return res.status(200).json({ success: true, products: [], total: 0, page, limit });
+        }
+
+        // Step 4: query products belonging only to the filtered store set.
+        const productFilter = {
+            storeId: { $in: storeIds },
+            availabilityStatus: "AVAILABLE",
+        };
+        if (categoryIdsParam) {
+            const wantedCategoryIds = categoryIdsParam.split(",").map((id) => id.trim());
+            productFilter.categoryId = { $in: wantedCategoryIds };
+        }
+        if (search) productFilter.productName = { $regex: search, $options: "i" };
+
+        let products = await Product.find(productFilter)
+            .populate("categoryId", "categoryName image")
+            .lean();
+
+        // Step 5: attach each product's own store info (name/rating/distance),
+        // since the frontend renders one card per product with its store inline.
+        products = products.map((p) => {
+            const store = storeById.get(String(p.storeId));
+            return {
+                ...p,
+                store: store
+                    ? {
+                          _id: store._id,
+                          storeName: store.storeName,
+                          averageRating: store.averageRating,
+                          distanceKm: store.distanceKm !== null ? Math.round(store.distanceKm * 10) / 10 : null,
+                          status: store.liveStatus,
+                      }
+                    : null,
+            };
+        });
+
+        // Step 6: sort.
+        switch (sortBy) {
+            case "distance":
+                products.sort((a, b) => (a.store?.distanceKm ?? Infinity) - (b.store?.distanceKm ?? Infinity));
+                break;
+            case "rating":
+                products.sort((a, b) => (b.store?.averageRating ?? 0) - (a.store?.averageRating ?? 0));
+                break;
+            case "priceLow":
+                products.sort((a, b) => a.price - b.price);
+                break;
+            case "priceHigh":
+                products.sort((a, b) => b.price - a.price);
+                break;
+            default: // bestMatch — newest listings first
+                products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
+        // Step 7: paginate after sort/filter so the count/page math is correct.
+        const total = products.length;
+        const start = (page - 1) * limit;
+        const paged = products.slice(start, start + limit);
+
+        return res.status(200).json({ success: true, products: paged, total, page, limit });
+    } catch (err) {
+        console.error("SEARCH PRODUCTS ERROR:", err);
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
 module.exports = {
     getProfile,
     addAddress,
@@ -238,4 +383,5 @@ module.exports = {
     getPopularProducts,
     getTrendingProducts,
     getCategories,
+    searchProducts,
 };

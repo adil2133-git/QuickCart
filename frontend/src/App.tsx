@@ -131,10 +131,10 @@ function App() {
           <Route path="orders" element={<MyOrdersPage />} />
           <Route path="wallet" element={<WalletPage />} />
           <Route path="profile" element={<CustomerProfilePage />} />
+          <Route path="discovery" element={<ProductDiscoveryPage />} />
         </Route>
 
-        {/* these two stay outside the shell — they manage their own header */}
-        <Route path="/customer/discovery" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><ProductDiscoveryPage /></ProtectedRoute>} />
+        {/* these stay outside the shell — they manage their own header */}
         <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute>} />
         <Route path="/customer/track/:orderId" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><OrderTrackingPage /></ProtectedRoute>} />
 
