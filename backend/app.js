@@ -4,6 +4,10 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
+// Trust reverse proxy (AWS ALB / Nginx / App Runner) for HTTPS cookie recognition
+app.set("trust proxy", 1);
+
+
 // Parse allowed CORS origins from environment
 const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
     .split(",")
