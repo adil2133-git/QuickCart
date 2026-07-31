@@ -23,7 +23,7 @@ export function StoreShell({
   useStoreOrderSocket();
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#FBF1E9]">
+    <div className="flex h-screen w-full overflow-hidden bg-white text-[#16241D]">
       <Sidebar storeName="QuickKart" />
       <div className="flex h-full flex-1 flex-col overflow-hidden">
         <Topbar />

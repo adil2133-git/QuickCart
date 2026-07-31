@@ -71,7 +71,7 @@ export default function CustomerRegistration() {
       {/* ── Left Panel ─────────────────────────────────────────────────── */}
       <div
         className="hidden md:flex flex-col justify-between w-[42%] min-h-screen px-8 py-8"
-        style={{ backgroundColor: "#2C1A0E" }}
+        style={{ backgroundColor: "#145C43" }}
       >
         <div className="flex items-center gap-2">
           <svg
@@ -79,7 +79,7 @@ export default function CustomerRegistration() {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#C9A97A"
+            stroke="white"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -455,8 +455,7 @@ export default function CustomerRegistration() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-opacity hover:opacity-90 active:opacity-80 mb-4 flex items-center justify-center gap-2 disabled:opacity-70"
-              style={{ backgroundColor: "#C9A97A" }}
+              className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-all bg-[#145C43] hover:bg-[#114E39] active:bg-[#0E4433] mb-4 flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {loading && (
                 <svg

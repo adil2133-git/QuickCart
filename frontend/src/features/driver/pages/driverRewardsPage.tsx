@@ -50,9 +50,9 @@ const TIER_META: Record<
   },
   PLATINUM: {
     icon: Crown,
-    gradient: "from-indigo-400 to-indigo-700",
-    textColor: "text-indigo-500",
-    ringColor: "ring-indigo-400/30",
+    gradient: "from-[#145C43] to-[#0E4433]",
+    textColor: "text-[#145C43]",
+    ringColor: "ring-[#145C43]/30",
   },
 };
 
@@ -145,7 +145,7 @@ function TierHeroCard() {
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-600">
+          <div className="flex items-center gap-2 rounded-xl bg-[#145C43]/10 px-4 py-2.5 text-sm font-semibold text-[#145C43]">
             <Crown className="h-4 w-4" />
             You've reached the highest tier — Platinum Partner!
           </div>

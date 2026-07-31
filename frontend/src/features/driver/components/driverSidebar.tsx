@@ -57,42 +57,39 @@ export default function DriverSidebar({
         className={[
           "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors",
           isActive
-            ? "bg-[#3D2A18] text-white"
-            : "text-[#C9BCAC] hover:bg-[#3D2A18]/60 hover:text-white",
+            ? "bg-[#145C43] text-white font-semibold shadow-sm"
+            : "text-[#5F7166] hover:bg-[#F0F7F4] hover:text-[#145C43]",
         ].join(" ")}
       >
-        {isActive && (
-          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[#C9A97A]" />
-        )}
-        <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-[#C9A97A]" : ""}`} />
+        <item.icon className="h-4 w-4 flex-shrink-0" />
         {item.label}
       </motion.button>
     );
   };
 
   return (
-    <aside className="flex h-full w-60 flex-shrink-0 flex-col bg-[#2F1B12] px-3 py-5">
+    <aside className="flex h-full w-60 flex-shrink-0 flex-col bg-white border-r border-[#E3E7E1] px-3 py-5">
       {/* Brand */}
       <div className="mb-6 px-3">
-        <p className="text-base font-bold text-white tracking-tight">QuickKart</p>
-        <p className="text-[11px] text-[#C9A97A] font-medium">Driver Portal</p>
+        <p className="text-base font-bold text-[#145C43] tracking-tight">QuickKart</p>
+        <p className="text-[11px] text-[#6E7C74] font-medium uppercase tracking-wider">Driver Portal</p>
       </div>
 
       {/* Driver card */}
-      <div className="mb-6 flex items-center gap-2.5 rounded-xl bg-white/8 px-3 py-2.5">
+      <div className="mb-6 flex items-center gap-2.5 rounded-xl bg-[#F5F7F3] border border-[#E3E7E1] px-3 py-2.5">
         <div className="relative h-8 w-8 flex-shrink-0">
           {avatarUrl ? (
             <img src={avatarUrl} alt={driverName} className="h-full w-full rounded-full object-cover" />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#C9A97A] text-xs font-bold text-[#2B1B0E]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#145C43] text-xs font-bold text-white">
               {driverName.charAt(0).toUpperCase()}
             </div>
           )}
-          <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-[#2F1B12] bg-emerald-400" />
+          <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-white bg-emerald-500" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-white leading-tight">{driverName}</p>
-          <p className="text-[10px] text-[#C9A97A] font-medium">{driverLevel} Partner</p>
+          <p className="truncate text-[13px] font-semibold text-[#16241D] leading-tight">{driverName}</p>
+          <p className="text-[10px] text-[#145C43] font-semibold">{driverLevel} Partner</p>
         </div>
       </div>
 
@@ -104,7 +101,7 @@ export default function DriverSidebar({
       </nav>
 
       {/* Bottom nav */}
-      <div className="mt-4 space-y-0.5 border-t border-white/10 pt-4">
+      <div className="mt-4 space-y-0.5 border-t border-[#E3E7E1] pt-4">
         {BOTTOM_ITEMS.map((item) => (
           <NavLink key={item.key} item={item} />
         ))}
@@ -113,7 +110,7 @@ export default function DriverSidebar({
           whileTap={{ scale: 0.98 }}
           onClick={logout}
           disabled={isLoggingOut}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
           {isLoggingOut ? "Logging out…" : "Logout"}

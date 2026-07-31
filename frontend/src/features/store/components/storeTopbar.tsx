@@ -60,8 +60,8 @@ export default function Topbar({ onNotificationClick }: TopbarProps) {
   }, [setOpen]);
 
   return (
-    <header className="flex h-[72px] flex-shrink-0 items-center justify-between border-b border-[#EADFD3] bg-[#FBF1E9] px-8">
-      <h2 className="text-2xl font-bold text-[#2B1B0E]">{title}</h2>
+    <header className="flex h-[72px] flex-shrink-0 items-center justify-between border-b border-[#E3E7E1] bg-white px-8">
+      <h2 className="text-2xl font-bold text-[#16241D]">{title}</h2>
 
       <div className="relative">
         <button
@@ -74,11 +74,11 @@ export default function Topbar({ onNotificationClick }: TopbarProps) {
           aria-label={
             unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
           }
-          className="relative rounded-full p-2 text-[#2B1B0E] transition-colors hover:bg-black/5"
+          className="relative rounded-full p-2 text-[#16241D] transition-colors hover:bg-slate-100"
         >
           <Bell className="h-6 w-6" />
           {unreadCount > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-[#FBF1E9]">
+            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}

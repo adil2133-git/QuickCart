@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-green: #145C43;
+  --color-brand-green-hover: #114E39;
+  --color-brand-green-light: #F0F7F4;
+  --color-brand-green-border: #E3E7E1;
+  --color-brand-bg: #FFFFFF;
+  --color-brand-surface: #FAFCFA;
+  --color-brand-text: #16241D;
+  --color-brand-muted: #5F7166;
+}
+
+body {
+  background-color: #ffffff;
+  color: #16241D;
+}
+
 /* Tailwind's base reset sets `img { max-width: 100%; height: auto }`, which
    breaks Leaflet's absolutely-positioned tile images (they need their real
    pixel width/height to tile correctly) — without this override, every map

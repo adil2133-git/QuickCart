@@ -457,14 +457,14 @@ export default function ProductsPage() {
         {/* Page heading + primary action */}
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-[#2B1B0E]">Products</h1>
-            <p className="text-sm text-[#2B1B0E]/50">
+            <h1 className="text-lg font-semibold text-[#16241D]">Products</h1>
+            <p className="text-sm text-[#5F7166]">
               {total} product{total === 1 ? "" : "s"} in your catalogue
             </p>
           </div>
           <button
             onClick={() => navigate("/store/products/new")}
-            className="inline-flex items-center gap-2 rounded-full bg-[#C2825A] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 rounded-full bg-[#145C43] hover:bg-[#114E39] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5"
           >
             <Plus size={16} /> Add product
           </button>

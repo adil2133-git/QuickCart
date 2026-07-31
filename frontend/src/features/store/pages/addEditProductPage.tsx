@@ -443,14 +443,14 @@ export default function AddEditProductPage() {
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-[#2B1B0E]/[0.06] pt-6">
             <button
               onClick={() => navigate("/store/products")}
-              className="rounded-full border border-[#2B1B0E]/15 px-5 py-2.5 text-sm font-semibold text-[#2B1B0E] hover:bg-[#FBF1E9]"
+              className="rounded-full border border-[#E3E7E1] px-5 py-2.5 text-sm font-semibold text-[#5F7166] hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-full bg-[#C2825A] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-[#145C43] hover:bg-[#114E39] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 disabled:opacity-60"
             >
               {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
               {saving ? "Saving…" : isEditMode ? "Save changes" : "Save product"}

@@ -89,23 +89,23 @@ export default function CreateAccountModal() {
                 onClick={() => setSelected(opt.id)}
                 className="flex items-center gap-3 w-full text-left rounded-xl px-4 py-3 transition-all"
                 style={{
-                  border: isSelected ? "1.5px solid #C9A97A" : "1.5px solid #EAE0D5",
-                  backgroundColor: isSelected ? "#FBF7F2" : "#FDFCFB",
+                  border: isSelected ? "1.5px solid #145C43" : "1.5px solid #E3E7E1",
+                  backgroundColor: isSelected ? "#F0F7F4" : "#FFFFFF",
                 }}
               >
-                <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#F5EDE0" }}>
+                <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-[#145C43]/10 text-[#145C43]">
                   {opt.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">{opt.label}</p>
+                  <p className="text-sm font-semibold text-[#16241D]">{opt.label}</p>
                   <p className="text-xs text-gray-500 leading-snug mt-0.5">{opt.description}</p>
                 </div>
                 <div
                   className="flex-shrink-0 rounded-full border-2 flex items-center justify-center"
-                  style={{ width: 18, height: 18, borderColor: isSelected ? "#C9A97A" : "#C8B9A8", backgroundColor: "white" }}
+                  style={{ width: 18, height: 18, borderColor: isSelected ? "#145C43" : "#D1D5DB", backgroundColor: "white" }}
                 >
                   {isSelected && (
-                    <div className="rounded-full" style={{ width: 9, height: 9, backgroundColor: "#C9A97A" }} />
+                    <div className="rounded-full" style={{ width: 9, height: 9, backgroundColor: "#145C43" }} />
                   )}
                 </div>
               </button>
@@ -117,11 +117,10 @@ export default function CreateAccountModal() {
         <button
           disabled={!selected}
           onClick={handleContinue}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
+          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all text-white disabled:opacity-50"
           style={{
-            backgroundColor: selected ? "#C9A97A" : "#DDD0C0",
-            color: selected ? "#fff" : "#A8967E",
-            cursor: selected ? "pointer" : "default",
+            backgroundColor: selected ? "#145C43" : "#9CA3AF",
+            cursor: selected ? "pointer" : "not-allowed",
           }}
         >
           Continue
@@ -132,8 +131,7 @@ export default function CreateAccountModal() {
           <span className="text-gray-500">Already have an account? </span>
           <button
             onClick={() => navigate("/login")}
-            className="font-medium hover:underline"
-            style={{ color: "#C9A97A" }}
+            className="font-medium hover:underline text-[#145C43]"
           >
             Login
           </button>

@@ -49,15 +49,15 @@ export default function TopBar({
     }, []);
 
     return (
-        <header className="flex h-[76px] w-full items-center justify-between gap-6 border-b border-[#EBE1D2] bg-[#FBF6EE] px-7">
+        <header className="flex h-[76px] w-full items-center justify-between gap-6 border-b border-[#E3E7E1] bg-white px-7">
             {/* Left: page title + optional search — only these change per page */}
             <div className="flex flex-1 items-center gap-6">
-                <h1 className="whitespace-nowrap text-[22px] font-semibold tracking-tight text-[#3A2C20]">
+                <h1 className="whitespace-nowrap text-[22px] font-semibold tracking-tight text-[#16241D]">
                     {pageTitle}
                 </h1>
                 {showSearch && (
-            <div className="flex w-full max-w-[280px] items-center gap-2.5 rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5">
-                        <Search size={16} className="shrink-0 text-[#8C7C6B]" />
+            <div className="flex w-full max-w-[280px] items-center gap-2.5 rounded-xl border border-[#E3E7E1] bg-[#FAFCFA] px-3.5 py-2.5">
+                        <Search size={16} className="shrink-0 text-[#5F7166]" />
                         <input
                             type="text"
                             placeholder={searchPlaceholder}

@@ -54,11 +54,11 @@ export default function Sidebar({ storeName = "QuickKart" }: SidebarProps) {
   )?.key;
 
   return (
-    <aside className="flex h-full w-64 flex-shrink-0 flex-col bg-[#2B1B0E] px-4 py-6">
+    <aside className="flex h-full w-64 flex-shrink-0 flex-col bg-white border-r border-[#E3E7E1] px-4 py-6">
       {/* Brand */}
       <div className="mb-8 px-2">
-        <h1 className="text-2xl font-bold tracking-tight text-white">{storeName}</h1>
-        <p className="mt-0.5 text-sm text-[#A38F7D]">Store Panel</p>
+        <h1 className="text-2xl font-bold tracking-tight text-[#145C43]">{storeName}</h1>
+        <p className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-[#6E7C74]">Store Panel</p>
       </div>
 
       {/* Primary nav */}
@@ -72,10 +72,10 @@ export default function Sidebar({ storeName = "QuickKart" }: SidebarProps) {
               onClick={() => navigate(path)}
               aria-current={isActive ? "page" : undefined}
               className={[
-                "flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
+                "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-[#C8A37E] text-[#2B1B0E]"
-                  : "text-[#D9CCBE] hover:bg-white/5 hover:text-white",
+                  ? "bg-[#145C43] text-white font-semibold shadow-sm"
+                  : "text-[#5F7166] hover:bg-[#F0F7F4] hover:text-[#145C43]",
               ].join(" ")}
             >
               <Icon className="h-[18px] w-[18px] flex-shrink-0" />
@@ -86,15 +86,15 @@ export default function Sidebar({ storeName = "QuickKart" }: SidebarProps) {
       </nav>
 
       {/* Footer actions */}
-      <div className="space-y-1 border-t border-white/10 pt-4">
+      <div className="space-y-1 border-t border-[#E3E7E1] pt-4">
         <button
           type="button"
           onClick={() => navigate("/store/settings")}
           className={[
-            "flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
+            "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
             pathname === "/store/settings"
-              ? "bg-[#C8A37E] text-[#2B1B0E]"
-              : "text-[#D9CCBE] hover:bg-white/5 hover:text-white",
+              ? "bg-[#145C43] text-white font-semibold shadow-sm"
+              : "text-[#5F7166] hover:bg-[#F0F7F4] hover:text-[#145C43]",
           ].join(" ")}
         >
           <Settings className="h-[18px] w-[18px]" />
@@ -105,10 +105,10 @@ export default function Sidebar({ storeName = "QuickKart" }: SidebarProps) {
           type="button"
           onClick={() => navigate("/store/profile")}
           className={[
-            "flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
+            "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
             pathname === "/store/profile"
-              ? "bg-[#C8A37E] text-[#2B1B0E]"
-              : "text-[#D9CCBE] hover:bg-white/5 hover:text-white",
+              ? "bg-[#145C43] text-white font-semibold shadow-sm"
+              : "text-[#5F7166] hover:bg-[#F0F7F4] hover:text-[#145C43]",
           ].join(" ")}
         >
           <UserCircle className="h-[18px] w-[18px]" />
@@ -119,7 +119,7 @@ export default function Sidebar({ storeName = "QuickKart" }: SidebarProps) {
           type="button"
           onClick={logout}
           disabled={isLoggingOut}
-          className="flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-[#D9CCBE] transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-[#5F7166] transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
         >
           <LogOut className="h-[18px] w-[18px]" />
           <span>{isLoggingOut ? "Logging out…" : "Logout"}</span>

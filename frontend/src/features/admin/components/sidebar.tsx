@@ -168,14 +168,14 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className="flex h-screen w-[264px] flex-col justify-between border-r border-black/20 bg-[#211712]">
+        <aside className="flex h-screen w-[264px] flex-col justify-between border-r border-[#E3E7E1] bg-white">
             {/* Top: Logo */}
             <div>
                 <div className="px-4 py-5">
-                    <p className="font-serif text-[17px] font-semibold tracking-tight text-[#F4EDE2]">
+                    <p className="font-serif text-[17px] font-bold tracking-tight text-[#145C43]">
                         QuickKart
                     </p>
-                    <p className="text-[11px] text-[#8C7C6B]">Admin Panel</p>
+                    <p className="text-[11px] text-[#6E7C74] uppercase tracking-wider font-semibold">Admin Panel</p>
                 </div>
 
                 {/* Nav */}
@@ -195,8 +195,8 @@ export default function Sidebar() {
                                     onClick={() => handleGroupClick(item)}
                                     className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition-colors ${
                                         isActive
-                                            ? "bg-[#3A2C20] text-[#F4EDE2]"
-                                            : "text-[#C9BCAC] hover:bg-[#2E231C] hover:text-[#F4EDE2]"
+                                            ? "bg-[#145C43] text-white font-semibold shadow-sm"
+                                            : "text-[#5F7166] hover:bg-[#F0F7F4] hover:text-[#145C43]"
                                     }`}
                                 >
                                     <span className="flex items-center gap-3">

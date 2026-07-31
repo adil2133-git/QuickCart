@@ -3,8 +3,8 @@ import type { FocusEvent } from "react";
 type FocusTheme = "gold" | "muted";
 
 const THEMES: Record<FocusTheme, { focus: string; shadow: string; blur: string }> = {
-  gold:  { focus: "#C9A97A", shadow: "0 0 0 2px #C9A97A33",          blur: "#D6C5B0" },
-  muted: { focus: "#c2a383", shadow: "0 0 0 2px rgba(194,163,131,0.2)", blur: "#d2c4b9" },
+  gold:  { focus: "#145C43", shadow: "0 0 0 2px rgba(20,92,67,0.18)", blur: "#E3E7E1" },
+  muted: { focus: "#145C43", shadow: "0 0 0 2px rgba(20,92,67,0.18)", blur: "#E3E7E1" },
 };
 
 export function useInputFocusStyle(theme: FocusTheme = "gold") {

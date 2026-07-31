@@ -27,7 +27,7 @@ export default function DriverShell() {
   }, [fetchRewardsSummary]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#FDF8F1] font-[Inter,sans-serif]">
+    <div className="flex h-screen overflow-hidden bg-white text-[#16241D] font-[Inter,sans-serif]">
       <DriverSidebar
         driverName={user?.name ?? "Driver"}
         driverLevel={rewardsSummary?.currentLevelLabel ?? "Bronze"}

@@ -86,10 +86,10 @@ export default function QuickKartLogin() {
       {/* Left Panel */}
       <div
         className="hidden md:flex flex-col justify-between w-[42%] min-h-screen px-8 py-8"
-        style={{ backgroundColor: "#2C1A0E" }}
+        style={{ backgroundColor: "#145C43" }}
       >
         <div className="flex items-center gap-2">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
             <line x1="3" y1="6" x2="21" y2="6" />
             <path d="M16 10a4 4 0 01-8 0" />
@@ -98,8 +98,8 @@ export default function QuickKartLogin() {
         </div>
 
         <div className="flex flex-col gap-8 mt-4">
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#C9A97A33" }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-white/10">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
@@ -109,7 +109,7 @@ export default function QuickKartLogin() {
             <h1 className="text-white text-3xl font-bold leading-tight mb-3">
               Your neighbourhood<br />grocery, delivered fast.
             </h1>
-            <p style={{ color: "#A08060" }} className="text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-white/80">
               Connecting customers with nearby supermarkets<br />in real time.
             </p>
           </div>
@@ -121,24 +121,24 @@ export default function QuickKartLogin() {
               { icon: <polyline points="20 6 9 17 4 12" />, label: "Fast delivery" },
             ].map(({ icon, label }, i) => (
               <div key={i} className="flex items-center gap-3">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   {icon}
                 </svg>
-                <span style={{ color: "#D4B896" }} className="text-sm">{label}</span>
+                <span className="text-sm text-white/90">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div className="flex items-center justify-between mt-8">
-          <span style={{ color: "#6B4F35" }} className="text-xs">© 2024 QuickKart</span>
+          <span className="text-xs text-white/60">© 2024 QuickKart</span>
           <div className="flex items-center gap-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B4F35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white/60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
               <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
               <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
             </svg>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B4F35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white/60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0022.43.36a9 9 0 01-2.88 1.1A4.52 4.52 0 0016.11 0c-2.5 0-4.52 2-4.52 4.5 0 .35.04.7.11 1.03C7.69 5.37 4.07 3.58 1.64.9a4.5 4.5 0 00-.61 2.27c0 1.56.8 2.94 2 3.75A4.49 4.49 0 011 6.13v.06c0 2.19 1.56 4.01 3.63 4.42a4.52 4.52 0 01-2.04.08c.57 1.8 2.24 3.1 4.21 3.13A9.05 9.05 0 011 15.54a12.77 12.77 0 006.92 2.03c8.3 0 12.84-6.88 12.84-12.85 0-.2 0-.39-.01-.58A9.17 9.17 0 0023 3z" />
             </svg>
           </div>
@@ -192,8 +192,7 @@ export default function QuickKartLogin() {
                 <button
                   type="button"
                   onClick={() => setShowForgot(true)}
-                  className="text-xs hover:underline"
-                  style={{ color: "#C9A97A" }}
+                  className="text-xs hover:underline text-[#145C43] font-semibold"
                 >
                   Forgot password?
                 </button>
@@ -242,8 +241,7 @@ export default function QuickKartLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-opacity hover:opacity-90 active:opacity-80 flex items-center justify-center gap-2 disabled:opacity-70"
-              style={{ backgroundColor: "#C9A97A" }}
+              className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-all bg-[#145C43] hover:bg-[#114E39] active:bg-[#0E4433] flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {loading && (
                 <svg className="animate-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

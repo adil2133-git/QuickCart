@@ -65,16 +65,16 @@ export default function DriverTopbar() {
   };
 
   return (
-    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-[#E8DCCF] bg-[#FDF8F1] px-6">
-      <h1 className="text-[15px] font-semibold text-[#2B2B2B] tracking-tight">{title}</h1>
+    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-[#E3E7E1] bg-white px-6">
+      <h1 className="text-[15px] font-semibold text-[#16241D] tracking-tight">{title}</h1>
 
       <div className="flex items-center gap-2">
         {isOnline && (
-          <div className="flex items-center gap-1.5 rounded-full bg-white border border-[#E8DCCF] px-3 py-1.5">
+          <div className="flex items-center gap-1.5 rounded-full bg-[#F5F7F3] border border-[#E3E7E1] px-3 py-1.5">
             <span className={`h-1.5 w-1.5 rounded-full ${
               locationStatus === "active" ? "bg-emerald-500" : "bg-amber-400 animate-pulse"
             }`} />
-            <span className="text-[11px] font-medium text-[#8A7C72]">
+            <span className="text-[11px] font-medium text-[#5F7166]">
               {locationStatus === "active" ? "GPS" : "Locating…"}
             </span>
           </div>
@@ -86,11 +86,11 @@ export default function DriverTopbar() {
           className={[
             "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all",
             isOnline
-              ? "bg-emerald-500 text-white shadow-sm shadow-emerald-200"
-              : "bg-[#E8DCCF] text-[#6F4E37]",
+              ? "bg-[#145C43] text-white shadow-sm"
+              : "bg-slate-100 text-[#5F7166]",
           ].join(" ")}
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-white" : "bg-[#8A7C72]"}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-white" : "bg-slate-400"}`} />
           {isOnline ? "ONLINE" : "OFFLINE"}
         </button>
 
