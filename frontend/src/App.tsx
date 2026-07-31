@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import ProtectedRoute from './router/protectedRoute'
@@ -6,52 +6,53 @@ import NotFound from './router/notFound'
 import { connectSocket, disconnectSocket } from "./lib/socket";
 import { useAuthStore, type UserRole } from './features/auth/state/authState'
 
-import QuickKartLogin from './features/auth/pages/login'
-import CreateAccountModal from './features/auth/components/createAccountModal'
-import CustomerRegistration from './features/auth/pages/customerRegistration'
-import StoreRegistration from './features/auth/pages/storeRegistration'
-import DeliveryPartnerRegistration from './features/auth/pages/deliveryPartnerRegistration'
-import PendingApproval from './features/auth/pages/pendingApproval'
+// Lazy load route pages for code-splitting and faster initial page loads
+const QuickKartLogin = lazy(() => import('./features/auth/pages/login'))
+const CreateAccountModal = lazy(() => import('./features/auth/components/createAccountModal'))
+const CustomerRegistration = lazy(() => import('./features/auth/pages/customerRegistration'))
+const StoreRegistration = lazy(() => import('./features/auth/pages/storeRegistration'))
+const DeliveryPartnerRegistration = lazy(() => import('./features/auth/pages/deliveryPartnerRegistration'))
+const PendingApproval = lazy(() => import('./features/auth/pages/pendingApproval'))
 
-import CustomerHome from './features/customer/pages/customerHome'
-import FreshMartStorePage from './features/customer/pages/singleStore'
-import ProductDiscoveryPage from './features/customer/pages/productDiscovery'
+const CustomerHome = lazy(() => import('./features/customer/pages/customerHome'))
+const FreshMartStorePage = lazy(() => import('./features/customer/pages/singleStore'))
+const ProductDiscoveryPage = lazy(() => import('./features/customer/pages/productDiscovery'))
+const ProductDetailPage = lazy(() => import('./features/customer/pages/prductDetailsPage'))
+const StoresPage = lazy(() => import('./features/customer/pages/storesPage'))
+const CartPage = lazy(() => import('./features/customer/pages/cartPage'))
+const CheckoutPage = lazy(() => import('./features/customer/pages/checkoutPage'))
+const MyOrdersPage = lazy(() => import('./features/customer/pages/myOrdersPage'))
+const OrderTrackingPage = lazy(() => import('./features/customer/pages/orderTrackingPage'))
+const CustomerProfilePage = lazy(() => import('./features/customer/pages/customerProfile'))
+const WalletPage = lazy(() => import('./features/customer/pages/walletPage'))
+const CustomerShell = lazy(() => import('./features/customer/pages/customerShell'))
 
-import DriverShell from './features/driver/pages/driverShell'
-import QuickKartDashboard from './features/driver/pages/driverDashboard'
-import DriverDeliveriesPage from './features/driver/pages/driverDeliveryPage'
-import DriverEarningsPage from './features/driver/pages/driverEarningsPage'
-import DriverWalletPage from './features/driver/pages/driverWalletPage'
-import DriverRewardsPage from './features/driver/pages/driverRewardsPage'
+const DriverShell = lazy(() => import('./features/driver/pages/driverShell'))
+const QuickKartDashboard = lazy(() => import('./features/driver/pages/driverDashboard'))
+const DriverDeliveriesPage = lazy(() => import('./features/driver/pages/driverDeliveryPage'))
+const DriverEarningsPage = lazy(() => import('./features/driver/pages/driverEarningsPage'))
+const DriverWalletPage = lazy(() => import('./features/driver/pages/driverWalletPage'))
+const DriverRewardsPage = lazy(() => import('./features/driver/pages/driverRewardsPage'))
 
-import DashboardPage from './features/store/pages/storeDashboardPage'
-import AddProductPage from './features/store/pages/addEditProductPage'
-import ProductsPage from './features/store/pages/productsPage'
-import StoreProfilePage from './features/store/pages/storeProfile'
-import StoreSettingsPage from './features/store/pages/storeSettingsPage'
-import { StoreShell } from './features/store/pages/storeShell'
+const DashboardPage = lazy(() => import('./features/store/pages/storeDashboardPage'))
+const AddProductPage = lazy(() => import('./features/store/pages/addEditProductPage'))
+const ProductsPage = lazy(() => import('./features/store/pages/productsPage'))
+const StoreProfilePage = lazy(() => import('./features/store/pages/storeProfile'))
+const StoreSettingsPage = lazy(() => import('./features/store/pages/storeSettingsPage'))
+const OrdersPage = lazy(() => import('./features/store/pages/ordersList'))
+const OrderDetailPage = lazy(() => import('./features/store/pages/orderDetail'))
+const PackingChecklistPage = lazy(() => import('./features/store/pages/packingCheckList'))
+const PackingCompletePage = lazy(() => import('./features/store/pages/packingComplete'))
+const StoreShell = lazy(() => import('./features/store/pages/storeShell').then(m => ({ default: m.StoreShell })))
 
-import Dashboard from './features/admin/pages/dashboard'
-import StoreApplicationsPage from './features/admin/pages/storeApplications'
-import StoreApplicationReview from './features/admin/pages/storeReview'
-import DriverApplicationsPage from './features/admin/pages/driverApplications'
-import DriverApplicationReview from './features/admin/pages/driverReview'
+const Dashboard = lazy(() => import('./features/admin/pages/dashboard'))
+const StoreApplicationsPage = lazy(() => import('./features/admin/pages/storeApplications'))
+const StoreApplicationReview = lazy(() => import('./features/admin/pages/storeReview'))
+const DriverApplicationsPage = lazy(() => import('./features/admin/pages/driverApplications'))
+const DriverApplicationReview = lazy(() => import('./features/admin/pages/driverReview'))
 
-import QuickKartLanding from './features/marketing/pages/landing'
-import QuickKartAbout from './features/marketing/pages/about'
-import ProductDetailPage from './features/customer/pages/prductDetailsPage'
-import StoresPage from './features/customer/pages/storesPage'
-import CartPage from './features/customer/pages/cartPage'
-import CheckoutPage from './features/customer/pages/checkoutPage'
-import MyOrdersPage from './features/customer/pages/myOrdersPage'
-import OrderTrackingPage from './features/customer/pages/orderTrackingPage'
-import CustomerProfilePage from './features/customer/pages/customerProfile'
-import WalletPage from './features/customer/pages/walletPage'
-import OrdersPage from './features/store/pages/ordersList'
-import OrderDetailPage from './features/store/pages/orderDetail'
-import PackingChecklistPage from './features/store/pages/packingCheckList'
-import PackingCompletePage from './features/store/pages/packingComplete'
-import CustomerShell from './features/customer/pages/customerShell'
+const QuickKartLanding = lazy(() => import('./features/marketing/pages/landing'))
+const QuickKartAbout = lazy(() => import('./features/marketing/pages/about'))
 
 const ROLE_HOME: Record<UserRole, string> = {
   CUSTOMER: '/customer/home',
@@ -59,6 +60,12 @@ const ROLE_HOME: Record<UserRole, string> = {
   DRIVER: '/driver/dashboard',
   STORE: '/store/dashboard',
 }
+
+const PageLoader = () => (
+  <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff8f4' }}>
+    <span style={{ color: '#c9a96e', fontWeight: 600, fontSize: 18 }}>QuickKart...</span>
+  </div>
+)
 
 // keeps a logged-in user off the public login/landing pages, bouncing them to their home instead
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
@@ -90,89 +97,87 @@ function App() {
   }, [user]);
 
   if (!ready) {
-    return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff8f4' }}>
-        <span style={{ color: '#c9a96e', fontWeight: 600, fontSize: 18 }}>QuickKart</span>
-      </div>
-    )
+    return <PageLoader />
   }
 
   return (
     <BrowserRouter>
       <Toaster position="top-right" richColors closeButton expand gap={10} visibleToasts={4} />
-      <Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
 
-        {/* public routes */}
-        <Route path="/" element={<Navigate to="/landing" replace />} />
-        <Route path="/landing" element={<PublicOnlyRoute><QuickKartLanding /></PublicOnlyRoute>} />
-        <Route path="/login" element={<PublicOnlyRoute><QuickKartLogin /></PublicOnlyRoute>} />
-        <Route path="/about" element={<QuickKartAbout />} />
-        <Route path="/create-account" element={<CreateAccountModal />} />
-        <Route path="/register/customer" element={<CustomerRegistration />} />
-        <Route path="/register/store" element={<StoreRegistration />} />
-        <Route path="/register/delivery" element={<DeliveryPartnerRegistration />} />
-        <Route path="/driver/pending" element={<PendingApproval role="driver" />} />
-        <Route path="/store/pending" element={<PendingApproval role="store" />} />
+          {/* public routes */}
+          <Route path="/" element={<Navigate to="/landing" replace />} />
+          <Route path="/landing" element={<PublicOnlyRoute><QuickKartLanding /></PublicOnlyRoute>} />
+          <Route path="/login" element={<PublicOnlyRoute><QuickKartLogin /></PublicOnlyRoute>} />
+          <Route path="/about" element={<QuickKartAbout />} />
+          <Route path="/create-account" element={<CreateAccountModal />} />
+          <Route path="/register/customer" element={<CustomerRegistration />} />
+          <Route path="/register/store" element={<StoreRegistration />} />
+          <Route path="/register/delivery" element={<DeliveryPartnerRegistration />} />
+          <Route path="/driver/pending" element={<PendingApproval role="driver" />} />
+          <Route path="/store/pending" element={<PendingApproval role="store" />} />
 
-        {/* customer routes — most wrapped in CustomerShell */}
-        <Route
-          path="/customer"
-          element={
-            <ProtectedRoute allowedRoles={['CUSTOMER']}>
-              <CustomerShell />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="home" element={<CustomerHome />} />
-          <Route path="stores" element={<StoresPage />} />
-          <Route path="store/:storeId" element={<FreshMartStorePage />} />
-          <Route path="store/:storeId/product/:productId" element={<ProductDetailPage />} />
-          <Route path="cart" element={<CartPage />} />
-          <Route path="orders" element={<MyOrdersPage />} />
-          <Route path="wallet" element={<WalletPage />} />
-          <Route path="profile" element={<CustomerProfilePage />} />
-          <Route path="discovery" element={<ProductDiscoveryPage />} />
-        </Route>
+          {/* customer routes — most wrapped in CustomerShell */}
+          <Route
+            path="/customer"
+            element={
+              <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                <CustomerShell />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="home" element={<CustomerHome />} />
+            <Route path="stores" element={<StoresPage />} />
+            <Route path="store/:storeId" element={<FreshMartStorePage />} />
+            <Route path="store/:storeId/product/:productId" element={<ProductDetailPage />} />
+            <Route path="cart" element={<CartPage />} />
+            <Route path="orders" element={<MyOrdersPage />} />
+            <Route path="wallet" element={<WalletPage />} />
+            <Route path="profile" element={<CustomerProfilePage />} />
+            <Route path="discovery" element={<ProductDiscoveryPage />} />
+          </Route>
 
-        {/* these stay outside the shell — they manage their own header */}
-        <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute>} />
-        <Route path="/customer/track/:orderId" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><OrderTrackingPage /></ProtectedRoute>} />
+          {/* these stay outside the shell — they manage their own header */}
+          <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute>} />
+          <Route path="/customer/track/:orderId" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><OrderTrackingPage /></ProtectedRoute>} />
 
-        {/* driver routes — all wrapped in DriverShell */}
-        <Route
-          path="/driver"
-          element={<ProtectedRoute allowedRoles={['DRIVER']}><DriverShell /></ProtectedRoute>}
-        >
-          <Route path="dashboard" element={<QuickKartDashboard />} />
-          <Route path="deliveries" element={<DriverDeliveriesPage />} />
-          <Route path="earnings" element={<DriverEarningsPage />} />
-          <Route path="wallet" element={<DriverWalletPage />} />
-          <Route path="rewards" element={<DriverRewardsPage />} />
-        </Route>
+          {/* driver routes — all wrapped in DriverShell */}
+          <Route
+            path="/driver"
+            element={<ProtectedRoute allowedRoles={['DRIVER']}><DriverShell /></ProtectedRoute>}
+          >
+            <Route path="dashboard" element={<QuickKartDashboard />} />
+            <Route path="deliveries" element={<DriverDeliveriesPage />} />
+            <Route path="earnings" element={<DriverEarningsPage />} />
+            <Route path="wallet" element={<DriverWalletPage />} />
+            <Route path="rewards" element={<DriverRewardsPage />} />
+          </Route>
 
-        {/* store routes — all wrapped in StoreShell */}
-        <Route path="/store/dashboard" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><DashboardPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/products/new" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><AddProductPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/products" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><ProductsPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/products/:id/edit" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><AddProductPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/profile" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><StoreProfilePage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/settings" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><StoreSettingsPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/orders" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><OrdersPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/orders/:id" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><OrderDetailPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/orders/:id/packing" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><PackingChecklistPage /></StoreShell></ProtectedRoute>} />
-        <Route path="/store/orders/:id/complete" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><PackingCompletePage /></StoreShell></ProtectedRoute>} />
+          {/* store routes — all wrapped in StoreShell */}
+          <Route path="/store/dashboard" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><DashboardPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/products/new" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><AddProductPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/products" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><ProductsPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/products/:id/edit" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><AddProductPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/profile" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><StoreProfilePage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/settings" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><StoreSettingsPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/orders" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><OrdersPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/orders/:id" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><OrderDetailPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/orders/:id/packing" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><PackingChecklistPage /></StoreShell></ProtectedRoute>} />
+          <Route path="/store/orders/:id/complete" element={<ProtectedRoute allowedRoles={['STORE']}><StoreShell><PackingCompletePage /></StoreShell></ProtectedRoute>} />
 
-        {/* admin routes */}
-        <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><Dashboard /></ProtectedRoute>} />
-        <Route path="/admin/approvals/store" element={<ProtectedRoute allowedRoles={['ADMIN']}><StoreApplicationsPage /></ProtectedRoute>} />
-        <Route path="/admin/approvals/store/:id" element={<ProtectedRoute allowedRoles={['ADMIN']}><StoreApplicationReview /></ProtectedRoute>} />
-        <Route path="/admin/approvals/drivers" element={<ProtectedRoute allowedRoles={['ADMIN']}><DriverApplicationsPage /></ProtectedRoute>} />
-        <Route path="/admin/approvals/driver/:id" element={<ProtectedRoute allowedRoles={['ADMIN']}><DriverApplicationReview /></ProtectedRoute>} />
+          {/* admin routes */}
+          <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/admin/approvals/store" element={<ProtectedRoute allowedRoles={['ADMIN']}><StoreApplicationsPage /></ProtectedRoute>} />
+          <Route path="/admin/approvals/store/:id" element={<ProtectedRoute allowedRoles={['ADMIN']}><StoreApplicationReview /></ProtectedRoute>} />
+          <Route path="/admin/approvals/drivers" element={<ProtectedRoute allowedRoles={['ADMIN']}><DriverApplicationsPage /></ProtectedRoute>} />
+          <Route path="/admin/approvals/driver/:id" element={<ProtectedRoute allowedRoles={['ADMIN']}><DriverApplicationReview /></ProtectedRoute>} />
 
-        {/* catch-all */}
-        <Route path="*" element={<NotFound />} />
+          {/* catch-all */}
+          <Route path="*" element={<NotFound />} />
 
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }
