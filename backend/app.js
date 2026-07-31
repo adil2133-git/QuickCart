@@ -15,10 +15,12 @@ const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
 
 // Body parser with raw body retention for webhook verification (e.g. Razorpay)
 app.use(express.json({
+    limit: "50mb",
     verify: (req, res, buf) => {
         req.rawBody = buf;
     },
 }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
 
 // Route Imports
