@@ -232,7 +232,7 @@ const OrderSummary: React.FC<{
       <button
         onClick={onCheckout}
         disabled={isLoading || subtotal === 0}
-        className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-[#145C43] hover:bg-[#114E39] text-white text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+        className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] text-[#16241D] text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
       >
         {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin" />

@@ -450,7 +450,7 @@ export default function AddEditProductPage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-full bg-[#145C43] hover:bg-[#114E39] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] px-6 py-2.5 text-sm font-bold text-[#16241D] shadow-sm transition-all hover:-translate-y-0.5 disabled:opacity-60"
             >
               {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
               {saving ? "Saving…" : isEditMode ? "Save changes" : "Save product"}

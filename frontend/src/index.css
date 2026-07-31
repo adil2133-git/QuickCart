@@ -1,19 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-green: #145C43;
-  --color-brand-green-hover: #114E39;
-  --color-brand-green-light: #F0F7F4;
-  --color-brand-green-border: #E3E7E1;
-  --color-brand-bg: #FFFFFF;
-  --color-brand-surface: #FAFCFA;
-  --color-brand-text: #16241D;
-  --color-brand-muted: #5F7166;
+  --color-paper: #F7F8F5;
+  --color-brand-green: #1F4D3D;
+  --color-brand-green-hover: #163D30;
+  --color-brand-green-active: #0F2921;
+  --color-brand-soft: #E7EFEA;
+  --color-brand-border: #E3E7E1;
+  --color-ink: #16241D;
+  --color-ink-muted: #6E7C74;
+  --color-field-muted: #F5F7F3;
+  --color-placeholder: #9BAAA1;
+
+  --color-citrus: #A9CC3B;
+  --color-citrus-hover: #98B933;
+  --color-citrus-active: #87A62C;
 }
 
 body {
-  background-color: #ffffff;
+  background-color: #F7F8F5;
   color: #16241D;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* Tailwind's base reset sets `img { max-width: 100%; height: auto }`, which

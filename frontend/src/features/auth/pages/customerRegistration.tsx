@@ -455,7 +455,7 @@ export default function CustomerRegistration() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 text-sm font-semibold rounded-md text-white transition-all bg-[#145C43] hover:bg-[#114E39] active:bg-[#0E4433] mb-4 flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full py-2.5 text-sm font-bold rounded-md text-[#16241D] transition-all bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] mb-4 flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {loading && (
                 <svg

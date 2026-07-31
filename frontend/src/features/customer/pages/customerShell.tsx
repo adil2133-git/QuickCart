@@ -8,7 +8,7 @@ export default function CustomerShell() {
   useNotificationsSync();
   useCustomerOrderSocket();
   return (
-    <div className="min-h-screen bg-white text-[#16241D]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-[#F7F8F5] text-[#16241D]" style={{ fontFamily: "'Inter', sans-serif" }}>
       <NavBar />
       <Outlet />
       <ConflictModal />

@@ -355,7 +355,7 @@ function OrderSummary() {
         <button
           onClick={handlePlaceOrder}
           disabled={isEmpty || isPlacingOrder || isBlocked}
-          className="mt-5 w-full bg-[#145C43] hover:bg-[#114E39] active:bg-[#0E4433] text-white rounded-xl py-3.5 text-sm font-bold tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-[#145C43]/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="mt-5 w-full bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] text-[#16241D] rounded-xl py-3.5 text-sm font-bold tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-[#A9CC3B]/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isPlacingOrder && <Loader2 size={16} className="animate-spin" />}
           {isPlacingOrder

@@ -24,7 +24,7 @@ import ActionRail from "../components/dashboard/actionRail";
 
 export default function Dashboard() {
     return (
-        <div className="flex h-screen w-full bg-white text-[#16241D]">
+        <div className="flex h-screen w-full bg-[#F7F8F5] text-[#16241D]">
             <Sidebar />
 
             <div className="flex h-screen flex-1 flex-col overflow-hidden">

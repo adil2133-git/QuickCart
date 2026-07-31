@@ -462,7 +462,7 @@ const ProductDetailPage: React.FC = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={handleAddToCart}
-                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-semibold text-sm bg-[#145C43] text-white hover:bg-[#114E39] transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-semibold text-sm bg-[#1F4D3D] text-white hover:bg-[#163D30] transition-all"
                   >
                     <ShoppingCart className="w-4 h-4" />
                     Add to Cart
@@ -473,7 +473,7 @@ const ProductDetailPage: React.FC = () => {
                     )}
                   </button>
 
-                  <button className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm bg-[#145C43] hover:bg-[#114E39] active:bg-[#0E4433] text-white transition-all">
+                  <button className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] text-[#16241D] transition-all">
                     <Zap className="w-4 h-4" /> Buy Now
                   </button>
 
