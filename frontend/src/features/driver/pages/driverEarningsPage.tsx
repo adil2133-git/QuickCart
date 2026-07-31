@@ -31,11 +31,13 @@ const card: Variants = {
 };
 
 // ── Formatting helpers ──────────────────────────────────────────────────────────
-const formatINR = (value: number) =>
-  `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const formatINR = (value?: number | null) =>
+  `₹${(value ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-const formatDateTime = (iso: string) => {
+const formatDateTime = (iso?: string | null) => {
+  if (!iso) return { date: "N/A", time: "" };
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return { date: "N/A", time: "" };
   const date = d.toLocaleDateString("en-IN", { month: "short", day: "2-digit", year: "numeric" });
   const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
   return { date, time };
@@ -366,11 +368,11 @@ function RecentEarningsTable() {
 // ── Weekly challenge banner ──────────────────────────────────────────────────────
 function WeeklyChallengeBanner() {
   const summary = useDriverEarningsStore((s) => s.summary);
-  if (!summary) return null;
+  if (!summary || !summary.weeklyChallenge) return null;
 
-  const { current, target, bonus } = summary.weeklyChallenge;
+  const { current = 0, target = 0, bonus = 0 } = summary.weeklyChallenge;
   const remaining = Math.max(0, target - current);
-  const pct = Math.min(100, (current / target) * 100);
+  const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
   const unlocked = current >= target;
 
   return (
