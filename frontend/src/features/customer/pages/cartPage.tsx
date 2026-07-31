@@ -198,7 +198,7 @@ const OrderSummary: React.FC<{
       <div className="space-y-3 text-sm">
         <div className="flex justify-between text-[#153A2C]">
           <span>Subtotal</span>
-          <span className="font-medium">₹{subtotal.toLocaleString("en-IN")}</span>
+          <span className="font-medium">₹{(subtotal ?? 0).toLocaleString("en-IN")}</span>
         </div>
         <div className="flex justify-between text-[#153A2C]">
           <span>Delivery Charge</span>

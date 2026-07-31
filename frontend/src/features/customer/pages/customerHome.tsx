@@ -935,7 +935,7 @@ const { ref: recentRowRef, canScrollRight: recentCanScrollRight } = useHorizonta
                                                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                                                         {s.averageRating > 0 && <StarRating rating={s.averageRating} />}
                                                         {reviewCount != null && (
-                                                            <span className="text-xs" style={{ color: "#9BAAA1" }}>({reviewCount.toLocaleString()} reviews)</span>
+                                                            <span className="text-xs" style={{ color: "#9BAAA1" }}>({(reviewCount ?? 0).toLocaleString()} reviews)</span>
                                                         )}
                                                         <span style={{ color: "#9BAAA1" }}>·</span>
                                                         <Clock size={12} color="#16241D" />

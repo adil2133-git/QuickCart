@@ -22,10 +22,10 @@ function CompletedRow({ delivery }: { delivery: CompletedDelivery }) {
 
       <div className="flex items-center gap-2 text-xs text-[#A38F7D]">
         <CalendarClock className="h-3.5 w-3.5" />
-        {new Date(delivery.completedAt).toLocaleString([], {
+        {delivery.completedAt ? new Date(delivery.completedAt).toLocaleString([], {
           dateStyle: "medium",
           timeStyle: "short",
-        })}
+        }) : "N/A"}
       </div>
 
       <div className="flex items-center gap-1 text-sm font-bold text-[#2B7A3E]">

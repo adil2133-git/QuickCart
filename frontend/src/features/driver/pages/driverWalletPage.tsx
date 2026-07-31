@@ -33,18 +33,23 @@ const card: Variants = {
 };
 
 // ── Formatting helpers ──────────────────────────────────────────────────────────
-const formatINR = (value: number) =>
-  `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const formatINR = (value?: number | null) =>
+  `₹${(value ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-const formatDateTime = (iso: string) => {
+const formatDateTime = (iso?: string | null) => {
+  if (!iso) return "N/A";
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return "N/A";
   const date = d.toLocaleDateString("en-IN", { month: "short", day: "2-digit", year: "numeric" });
   const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
   return `${date}, ${time}`;
 };
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-IN", { month: "short", day: "2-digit", year: "numeric" });
+const formatDate = (iso?: string | null) => {
+  if (!iso) return "N/A";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "N/A" : d.toLocaleDateString("en-IN", { month: "short", day: "2-digit", year: "numeric" });
+};
 
 // ── Transaction type presentation ───────────────────────────────────────────────
 const TXN_META: Record<

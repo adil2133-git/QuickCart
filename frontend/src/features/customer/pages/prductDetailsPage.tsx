@@ -423,7 +423,7 @@ const ProductDetailPage: React.FC = () => {
             {/* Price + availability */}
             <div className="flex items-center gap-3">
               <span className="text-3xl font-bold text-[#16241D]">
-                ₹{product.price.toLocaleString("en-IN")}
+                ₹{(product.price ?? 0).toLocaleString("en-IN")}
               </span>
               <span
                 className={`inline-flex items-center gap-1.5 text-xs font-medium ${

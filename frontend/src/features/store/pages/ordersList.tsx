@@ -5,21 +5,26 @@ import { useStoreOrdersStore } from "../state/storeOrdersState";
 import { useFetchStoreOrders, useUpdateOrderStatus } from "../hooks/useStoreOrders";
 import type { OrderFilterTab, StoreOrder } from "../types/storeOrders";
 
-function getInitials(name: string): string {
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+function getInitials(name?: string | null): string {
+    if (!name) return "ST";
+    return name.split(" ").map((n) => n[0]).filter(Boolean).join("").toUpperCase().slice(0, 2) || "ST";
 }
 
-function formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+function formatTime(iso?: string | null): string {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
 }
 
-function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+function formatDate(iso?: string | null): string {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 // ── Currency formatter ────────────────────────────────────────────────────────
-function formatINR(amount: number): string {
-    return "₹" + amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function formatINR(amount?: number | null): string {
+    return "₹" + (amount ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 const STATUS_STYLES: Record<string, string> = {
