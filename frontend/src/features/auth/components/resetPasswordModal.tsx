@@ -71,25 +71,25 @@ export default function ResetPasswordModal({
   };
 
   const inputBase =
-    "w-full h-11 pl-10 pr-10 text-sm border rounded-lg outline-none text-gray-800 placeholder-gray-400 transition-all";
-  const inputStyle = { borderColor: "#d2c4b9", backgroundColor: "white" };
+    "w-full h-11 pl-10 pr-10 text-sm border rounded-lg outline-none text-[#16241D] placeholder-[#9BAAA1] transition-all";
+  const inputStyle = { borderColor: "#DCE3DC", backgroundColor: "white" };
 
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(42,26,10,0.50)", backdropFilter: "blur(4px)" }}
+      style={{ backgroundColor: "rgba(22,36,29,0.50)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="relative w-full max-w-md rounded-xl shadow-2xl px-10 py-10 flex flex-col"
-        style={{ backgroundColor: "#fff8f4" }}
+        style={{ backgroundColor: "#FFFFFF" }}
       >
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 transition-colors hover:text-amber-700"
-          style={{ color: "#80756b" }}
+          className="absolute top-4 right-4 transition-colors hover:text-[#145C43]"
+          style={{ color: "#6E7C74" }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -97,39 +97,39 @@ export default function ResetPasswordModal({
         </button>
 
         {/* Icon */}
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ backgroundColor: "#f1e0ca" }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#735a3e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ backgroundColor: "#E8EFEC" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
         </div>
 
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Set New Password</h2>
-          <p className="text-sm leading-relaxed" style={{ color: "#4e453d" }}>
+          <h2 className="text-2xl font-bold text-[#16241D] mb-2 leading-tight">Set New Password</h2>
+          <p className="text-sm leading-relaxed" style={{ color: "#6E7C74" }}>
             Create a strong password for{" "}
-            <span className="font-semibold text-gray-800">{email}</span>
+            <span className="font-semibold text-[#16241D]">{email}</span>
           </p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 rounded-md px-4 py-3 mb-4 bg-red-50 border border-red-200">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex items-center gap-2 rounded-md px-4 py-3 mb-4 bg-[#FBEAEA] border border-[#BA1A1A]/30">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BA1A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-[#BA1A1A]">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* New Password */}
           <div>
-            <label className="block text-xs font-semibold tracking-wide text-gray-500 mb-1.5 ml-0.5">
+            <label className="block text-xs font-semibold tracking-wide text-[#6E7C74] mb-1.5 ml-0.5">
               New Password
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#80756b" }}>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#9BAAA1" }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
@@ -149,7 +149,7 @@ export default function ResetPasswordModal({
                 type="button"
                 onClick={() => setShowNew(!showNew)}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: "#80756b" }}
+                style={{ color: "#9BAAA1" }}
               >
                 <EyeIcon open={showNew} />
               </button>
@@ -163,7 +163,7 @@ export default function ResetPasswordModal({
                     <div
                       key={i}
                       className="h-1 flex-1 rounded-full transition-all duration-300"
-                      style={{ backgroundColor: i <= strength ? strengthColor : "#e5e7eb" }}
+                      style={{ backgroundColor: i <= strength ? strengthColor : "#E3E7E1" }}
                     />
                   ))}
                 </div>
@@ -174,11 +174,11 @@ export default function ResetPasswordModal({
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-xs font-semibold tracking-wide text-gray-500 mb-1.5 ml-0.5">
+            <label className="block text-xs font-semibold tracking-wide text-[#6E7C74] mb-1.5 ml-0.5">
               Confirm New Password
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#80756b" }}>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#9BAAA1" }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
@@ -198,7 +198,7 @@ export default function ResetPasswordModal({
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: "#80756b" }}
+                style={{ color: "#9BAAA1" }}
               >
                 <EyeIcon open={showConfirm} />
               </button>
@@ -206,7 +206,7 @@ export default function ResetPasswordModal({
 
             {/* Match indicator */}
             {confirmPassword.length > 0 && (
-              <p className="text-xs mt-1.5" style={{ color: confirmPassword === newPassword ? "#16a34a" : "#ef4444" }}>
+              <p className="text-xs mt-1.5" style={{ color: confirmPassword === newPassword ? "#145C43" : "#BA1A1A" }}>
                 {confirmPassword === newPassword ? "✓ Passwords match" : "✗ Passwords do not match"}
               </p>
             )}
@@ -215,8 +215,8 @@ export default function ResetPasswordModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 font-bold text-sm rounded-lg flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-70"
-            style={{ backgroundColor: "#c2a383", color: "#2a1a0a" }}
+            className="w-full h-12 font-bold text-sm rounded-lg flex items-center justify-center gap-2 transition-all hover:bg-[#98B933] active:bg-[#87A62C] disabled:opacity-70"
+            style={{ backgroundColor: "#A9CC3B", color: "#16241D" }}
           >
             {loading ? (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin">
@@ -234,11 +234,11 @@ export default function ResetPasswordModal({
         </form>
 
         {/* Info */}
-        <div className="mt-5 flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: "#FBF7F2", borderLeft: "3px solid #C9A97A", borderRadius: "0 8px 8px 0" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
+        <div className="mt-5 flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: "#F5F7F3", borderLeft: "3px solid #145C43", borderRadius: "0 8px 8px 0" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
             <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
-          <p className="text-xs text-gray-600 leading-relaxed">
+          <p className="text-xs text-[#6E7C74] leading-relaxed">
             Use a mix of uppercase, lowercase, numbers, and symbols for a stronger password.
           </p>
         </div>

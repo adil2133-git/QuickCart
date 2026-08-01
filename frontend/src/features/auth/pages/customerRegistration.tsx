@@ -126,21 +126,21 @@ export default function CustomerRegistration() {
                   height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#C9A97A"
+                  stroke="#8FCDB0"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   {icon}
                 </svg>
-                <span style={{ color: "#D4B896" }} className="text-sm">
+                <span style={{ color: "#8FCDB0" }} className="text-sm">
                   {label}
                 </span>
               </div>
             ))}
           </div>
         </div>
-        <span style={{ color: "#6B4F35" }} className="text-xs">
+        <span style={{ color: "#8FCDB0" }} className="text-xs">
           © 2024 QuickKart
         </span>
       </div>
@@ -151,7 +151,7 @@ export default function CustomerRegistration() {
           <button
             onClick={() => navigate("/login")}
             className="hover:underline"
-            style={{ color: "#C9A97A" }}
+            style={{ color: "#145C43" }}
           >
             Login
           </button>
@@ -168,7 +168,7 @@ export default function CustomerRegistration() {
           <button
             onClick={() => navigate("/create-account")}
             className="hover:underline"
-            style={{ color: "#C9A97A" }}
+            style={{ color: "#145C43" }}
           >
             Create Account
           </button>
@@ -428,8 +428,8 @@ export default function CustomerRegistration() {
             <div
               className="flex items-start gap-3 rounded-lg px-4 py-3 mb-5"
               style={{
-                backgroundColor: "#FBF7F2",
-                borderLeft: "3px solid #C9A97A",
+                backgroundColor: "#F5F7F3",
+                borderLeft: "3px solid #145C43",
               }}
             >
               <svg
@@ -437,7 +437,7 @@ export default function CustomerRegistration() {
                 height="16"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#C9A97A"
+                stroke="#145C43"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -478,8 +478,7 @@ export default function CustomerRegistration() {
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="font-semibold hover:underline"
-              style={{ color: "#2C1A0E" }}
+              className="font-semibold hover:underline text-[#145C43]"
             >
               Login
             </button>

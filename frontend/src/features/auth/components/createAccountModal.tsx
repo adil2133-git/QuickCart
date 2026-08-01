@@ -19,7 +19,7 @@ export default function CreateAccountModal() {
       label: "Customer",
       description: "Shop for groceries from nearby stores",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
           <circle cx="12" cy="7" r="4" />
         </svg>
@@ -30,7 +30,7 @@ export default function CreateAccountModal() {
       label: "Delivery Partner",
       description: "Deliver orders and earn commissions",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="5.5" cy="17.5" r="2.5" />
           <circle cx="17.5" cy="17.5" r="2.5" />
           <path d="M15 6H3v11.5" />
@@ -43,7 +43,7 @@ export default function CreateAccountModal() {
       label: "Store / Supermarket",
       description: "List your store and manage orders online",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9l1-5h16l1 5" />
           <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
           <path d="M9 9v12" />
@@ -57,12 +57,12 @@ export default function CreateAccountModal() {
     /* Backdrop */
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ backgroundColor: "rgba(200,185,170,0.45)" }}
+      style={{ backgroundColor: "rgba(22,36,29,0.45)" }}
     >
       {/* Modal */}
       <div
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 px-7 py-7"
-        style={{ boxShadow: "0 8px 40px rgba(80,50,20,0.18)" }}
+        style={{ boxShadow: "0 8px 40px rgba(22,36,29,0.12)" }}
       >
         {/* Close */}
         <button
@@ -90,7 +90,7 @@ export default function CreateAccountModal() {
                 className="flex items-center gap-3 w-full text-left rounded-xl px-4 py-3 transition-all"
                 style={{
                   border: isSelected ? "1.5px solid #145C43" : "1.5px solid #E3E7E1",
-                  backgroundColor: isSelected ? "#F0F7F4" : "#FFFFFF",
+                  backgroundColor: isSelected ? "#E8EFEC" : "#FFFFFF",
                 }}
               >
                 <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-[#145C43]/10 text-[#145C43]">

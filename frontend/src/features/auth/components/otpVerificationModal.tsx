@@ -157,14 +157,14 @@ export default function OtpVerificationModal({
                   value={digit}
                   onChange={(e) => handleChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
-                  className="w-14 h-14 text-center text-xl font-bold rounded-md outline-none border transition-all"
-                  style={{ borderColor: "#D6C5B0", backgroundColor: "#FAFAF8" }}
+                  className="w-14 h-14 text-center text-xl font-bold rounded-md outline-none border transition-all text-[#16241D]"
+                  style={{ borderColor: "#DCE3DC", backgroundColor: "#F5F7F3" }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = "#C9A97A";
-                    e.target.style.boxShadow = "0 0 0 2px #C9A97A33";
+                    e.target.style.borderColor = "#145C43";
+                    e.target.style.boxShadow = "0 0 0 2px rgba(20,92,67,0.2)";
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = "#D6C5B0";
+                    e.target.style.borderColor = "#DCE3DC";
                     e.target.style.boxShadow = "none";
                   }}
                 />
@@ -172,9 +172,9 @@ export default function OtpVerificationModal({
             </div>
 
             <div className="flex items-center justify-between">
-              <p className={`text-xs font-medium uppercase tracking-widest text-gray-400 transition-opacity ${count <= 0 ? "opacity-30" : ""}`}>
+              <p className={`text-xs font-medium uppercase tracking-widest text-[#6E7C74] transition-opacity ${count <= 0 ? "opacity-30" : ""}`}>
                 {count > 0 ? (
-                  <>RESEND CODE IN <span className="tabular-nums" style={{ color: "#C9A97A" }}>{count}S</span></>
+                  <>RESEND CODE IN <span className="tabular-nums" style={{ color: "#145C43" }}>{count}S</span></>
                 ) : (
                   "YOU CAN RESEND NOW"
                 )}
@@ -184,7 +184,7 @@ export default function OtpVerificationModal({
                 disabled={count > 0 || resending}
                 onClick={handleResend}
                 className={`text-xs font-semibold hover:underline transition-opacity flex items-center gap-1 ${count > 0 || resending ? "opacity-50 cursor-not-allowed" : "opacity-100"}`}
-                style={{ color: "#C9A97A" }}
+                style={{ color: "#145C43" }}
               >
                 {resending && (
                   <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -198,10 +198,9 @@ export default function OtpVerificationModal({
             <button
               type="submit"
               disabled={verifying || verified || otp.some((d) => !d)}
-              className={`w-full py-2.5 text-sm font-semibold rounded-md flex items-center justify-center gap-2 transition-opacity hover:opacity-90 active:opacity-80 ${
-                verified ? "bg-green-100 text-green-800" : "text-white"
+              className={`w-full py-2.5 text-sm font-semibold rounded-md flex items-center justify-center gap-2 transition-all ${
+                verified ? "bg-[#E8EFEC] text-[#145C43]" : "bg-[#A9CC3B] text-[#16241D] hover:bg-[#98B933] active:bg-[#87A62C]"
               } ${verifying ? "opacity-80 pointer-events-none" : ""}`}
-              style={!verified ? { backgroundColor: "#C9A97A" } : {}}
             >
               {verifying && (
                 <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -224,8 +223,8 @@ export default function OtpVerificationModal({
             <span className="text-xs font-medium uppercase tracking-tight">Secure Encryption</span>
           </div>
 
-          <div className="mt-6 flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: "#FBF7F2", borderLeft: "3px solid #C9A97A" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
+          <div className="mt-6 flex items-start gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: "#F5F7F3", borderLeft: "3px solid #145C43" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             <p className="text-xs text-gray-600 leading-relaxed">

@@ -18,10 +18,10 @@ interface SectionHeaderProps {
 function SectionHeader({ icon, label }: SectionHeaderProps) {
   return (
     <div className="flex items-center gap-2 mb-4">
-      <span style={{ color: "#735a3e" }}>{icon}</span>
+      <span style={{ color: "#145C43" }}>{icon}</span>
       <span
         className="text-xs font-bold tracking-widest uppercase"
-        style={{ color: "#735a3e" }}
+        style={{ color: "#145C43" }}
       >
         {label}
       </span>
@@ -58,8 +58,8 @@ function DocumentCard({
       className="relative flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
       style={{
         borderStyle: uploaded ? "solid" : "dashed",
-        borderColor: uploaded ? "#4f6072" : "#d2c4b9",
-        backgroundColor: uploaded ? "rgba(153,170,190,0.08)" : "#faf2ee",
+        borderColor: uploaded ? "#145C43" : "#DCE3DC",
+        backgroundColor: uploaded ? "#E8EFEC" : "#F5F7F3",
       }}
     >
       <input
@@ -73,9 +73,9 @@ function DocumentCard({
       />
       <div
         className="w-10 h-10 flex items-center justify-center rounded-lg flex-shrink-0"
-        style={{ backgroundColor: uploaded ? "#99aabe" : "#e8e1dd" }}
+        style={{ backgroundColor: uploaded ? "#145C43" : "#E8EFEC" }}
       >
-        <span style={{ color: uploaded ? "#2e3f4f" : "#735a3e" }}>{icon}</span>
+        <span style={{ color: uploaded ? "#FFFFFF" : "#145C43" }}>{icon}</span>
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold tracking-wide uppercase text-gray-800">
@@ -84,7 +84,7 @@ function DocumentCard({
         <p
           className="text-xs mt-0.5 truncate"
           style={{
-            color: uploaded ? "#4f6072" : "#80756b",
+            color: uploaded ? "#145C43" : "#6E7C74",
             fontWeight: uploaded ? 600 : 400,
           }}
         >
@@ -142,7 +142,7 @@ export default function DeliveryPartnerRegistration() {
 
   const inputClass =
     "w-full h-11 px-3 bg-white border outline-none text-sm text-gray-800 placeholder-gray-400 rounded-lg transition-all";
-  const inputStyle = { borderColor: "#d2c4b9" };
+  const inputStyle = { borderColor: "#DCE3DC" };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,7 +193,7 @@ export default function DeliveryPartnerRegistration() {
   return (
     <div
       className="flex h-screen w-full overflow-hidden font-sans"
-      style={{ backgroundColor: "#fff8f4" }}
+      style={{ backgroundColor: "#F7F8F5" }}
     >
       {showOtp && (
         <OtpVerificationModal
@@ -206,13 +206,13 @@ export default function DeliveryPartnerRegistration() {
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside
         className="hidden md:flex relative w-[40%] h-full overflow-hidden flex-shrink-0"
-        style={{ backgroundColor: "#291803" }}
+        style={{ backgroundColor: "#0D2B21" }}
       >
         <div
           className="absolute inset-0 z-0"
           style={{
             background:
-              "linear-gradient(rgba(41,24,3,0.4), rgba(41,24,3,0.85))",
+              "linear-gradient(rgba(13,43,33,0.4), rgba(13,43,33,0.85))",
           }}
         />
         <div className="relative z-10 flex flex-col justify-between p-10 w-full text-white">
@@ -223,7 +223,7 @@ export default function DeliveryPartnerRegistration() {
             </h1>
             <p
               className="text-sm leading-relaxed max-w-sm"
-              style={{ color: "#e0d9d4" }}
+              style={{ color: "#8FCDB0" }}
             >
               Join our network and help us bring fresh groceries to every
               doorstep in your neighborhood.
@@ -278,7 +278,7 @@ export default function DeliveryPartnerRegistration() {
             ))}
           </nav>
           <div className="flex items-center gap-1">
-            <span className="text-xs" style={{ color: "#6B4F35" }}>
+            <span className="text-xs" style={{ color: "#8FCDB0" }}>
               © 2024 QuickKart
             </span>
           </div>
@@ -288,7 +288,7 @@ export default function DeliveryPartnerRegistration() {
       {/* ── Right panel ──────────────────────────────────────────────────── */}
       <section
         className="flex-1 h-full overflow-y-auto"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#d2c4b9 #f4ece8" }}
+        style={{ scrollbarWidth: "thin", scrollbarColor: "#DCE3DC #F5F7F3" }}
       >
         <div className="max-w-[480px] mx-auto px-6 py-10">
           {/* Breadcrumb */}
@@ -296,7 +296,7 @@ export default function DeliveryPartnerRegistration() {
             <button
               onClick={() => navigate("/login")}
               className="hover:underline"
-              style={{ color: "#735a3e" }}
+              style={{ color: "#145C43" }}
             >
               Login
             </button>
@@ -313,7 +313,7 @@ export default function DeliveryPartnerRegistration() {
             <button
               onClick={() => navigate("/create-account")}
               className="hover:underline"
-              style={{ color: "#735a3e" }}
+              style={{ color: "#145C43" }}
             >
               Create Account
             </button>
@@ -327,7 +327,7 @@ export default function DeliveryPartnerRegistration() {
             >
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            <span className="font-bold" style={{ color: "#735a3e" }}>
+            <span className="font-bold" style={{ color: "#145C43" }}>
               Registration
             </span>
           </nav>
@@ -346,8 +346,8 @@ export default function DeliveryPartnerRegistration() {
           <div
             className="flex items-start gap-3 p-4 mb-8 rounded"
             style={{
-              backgroundColor: "#f4ece8",
-              borderLeft: "3px solid #eeddc7",
+              backgroundColor: "#F5F7F3",
+              borderLeft: "3px solid #145C43",
             }}
           >
             <svg
@@ -355,7 +355,7 @@ export default function DeliveryPartnerRegistration() {
               height="18"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#6d614f"
+              stroke="#145C43"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -367,7 +367,7 @@ export default function DeliveryPartnerRegistration() {
             </svg>
             <p
               className="text-xs leading-relaxed"
-              style={{ color: "#6d614f" }}
+              style={{ color: "#6E7C74" }}
             >
               Your account will be reviewed by our admin team once submitted.
               We'll notify you via phone once your application is approved.
@@ -544,8 +544,8 @@ export default function DeliveryPartnerRegistration() {
                       ...inputStyle,
                       borderColor:
                         confirmPassword && confirmPassword !== password
-                          ? "#ba1a1a"
-                          : "#d2c4b9",
+                          ? "#BA1A1A"
+                          : "#DCE3DC",
                     }}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
@@ -590,10 +590,10 @@ export default function DeliveryPartnerRegistration() {
                       className="flex-1 py-2 text-xs font-bold tracking-wide rounded-lg border transition-all"
                       style={{
                         backgroundColor:
-                          vehicle === v ? "#735a3e" : "white",
-                        color: vehicle === v ? "white" : "#1e1b19",
+                          vehicle === v ? "#145C43" : "white",
+                        color: vehicle === v ? "white" : "#16241D",
                         borderColor:
-                          vehicle === v ? "#735a3e" : "#d2c4b9",
+                          vehicle === v ? "#145C43" : "#DCE3DC",
                       }}
                     >
                       {v}
@@ -781,9 +781,9 @@ export default function DeliveryPartnerRegistration() {
                 disabled={submitting}
                 className="w-full h-12 text-xs font-bold tracking-widest uppercase rounded-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: "#c2a383",
-                  color: "#291803",
-                  boxShadow: "0 8px 24px rgba(115,90,62,0.15)",
+                  backgroundColor: "#A9CC3B",
+                  color: "#16241D",
+                  boxShadow: "0 8px 24px rgba(20,92,67,0.12)",
                 }}
               >
                 {submitting ? "Submitting…" : "Submit Application"}
@@ -794,7 +794,7 @@ export default function DeliveryPartnerRegistration() {
                   type="button"
                   onClick={() => navigate("/login")}
                   className="font-bold hover:underline"
-                  style={{ color: "#735a3e" }}
+                  style={{ color: "#145C43" }}
                 >
                   Sign In
                 </button>

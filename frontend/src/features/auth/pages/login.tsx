@@ -38,7 +38,7 @@ export default function QuickKartLogin() {
   const { handleFocus, handleBlur } = useInputFocusStyle();
 
   const inputClass = "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400";
-  const inputStyle = { borderColor: "#D6C5B0", backgroundColor: "#FAFAF8" };
+  const inputStyle = { borderColor: "#DCE3DC", backgroundColor: "#F5F7F3" };
 
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -241,7 +241,7 @@ export default function QuickKartLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 text-sm font-bold rounded-md text-[#16241D] transition-all bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full py-2.5 text-sm font-bold rounded-md text-white transition-all bg-[#145C43] hover:bg-[#114E39] active:bg-[#0E402F] flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {loading && (
                 <svg className="animate-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -253,16 +253,15 @@ export default function QuickKartLogin() {
           </form>
 
           <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px" style={{ backgroundColor: "#E8DDD0" }} />
+            <div className="flex-1 h-px" style={{ backgroundColor: "#E3E7E1" }} />
             <span className="text-xs text-gray-400">OR</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: "#E8DDD0" }} />
+            <div className="flex-1 h-px" style={{ backgroundColor: "#E3E7E1" }} />
           </div>
 
           <p className="text-center text-sm text-gray-500 mb-3">Don't have an account?</p>
           <button
             onClick={() => navigate("/create-account")}
-            className="w-full py-2.5 text-sm font-semibold rounded-md bg-white transition-colors hover:bg-amber-50"
-            style={{ border: "1.5px solid #C9A97A", color: "#9A7A52" }}
+            className="w-full py-2.5 text-sm font-semibold rounded-md bg-white border border-[#DCE3DC] text-[#145C43] hover:bg-[#E8EFEC] transition-colors"
           >
             Create an Account
           </button>

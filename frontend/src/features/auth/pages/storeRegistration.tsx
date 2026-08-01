@@ -44,8 +44,8 @@ function UploadCard({
       onClick={() => ref.current?.click()}
       className="relative group p-5 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all"
       style={{
-        borderColor: uploaded ? "#735a3e" : "#d2c4b9",
-        backgroundColor: uploaded ? "#f9f4ee" : "#faf2ee",
+        borderColor: uploaded ? "#145C43" : "#DCE3DC",
+        backgroundColor: uploaded ? "#E8EFEC" : "#F5F7F3",
       }}
     >
       <input
@@ -57,13 +57,13 @@ function UploadCard({
           if (e.target.files?.[0]) onUpload(e.target.files[0]);
         }}
       />
-      <div style={{ color: uploaded ? "#735a3e" : "#80756b" }}>{icon}</div>
+      <div style={{ color: uploaded ? "#145C43" : "#6E7C74" }}>{icon}</div>
       <div className="text-center">
         <p className="text-sm font-semibold text-gray-800">{label}</p>
         <p
           className="text-xs mt-0.5"
           style={{
-            color: uploaded ? "#735a3e" : "#80756b",
+            color: uploaded ? "#145C43" : "#6E7C74",
             fontWeight: uploaded ? 600 : 400,
           }}
         >
@@ -163,11 +163,11 @@ function LocationStep({
       html: `
         <div style="
           width:36px;height:36px;
-          background:#c2a383;
-          border:3px solid #291803;
+          background:#145C43;
+          border:3px solid #0D2B21;
           border-radius:50% 50% 50% 0;
           transform:rotate(-45deg);
-          box-shadow:0 4px 12px rgba(41,24,3,0.35);
+          box-shadow:0 4px 12px rgba(13,43,33,0.35);
         "></div>`,
       iconSize: [36, 36],
       iconAnchor: [18, 36],
@@ -284,7 +284,7 @@ function LocationStep({
             type="text"
             placeholder="Search for your store's address"
             className="w-full h-11 pl-9 pr-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400"
-            style={{ borderColor: "#d2c4b9" }}
+            style={{ borderColor: "#DCE3DC" }}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => {
@@ -300,7 +300,7 @@ function LocationStep({
           onClick={handleSearch}
           disabled={searching || !searchText.trim()}
           className="h-11 px-4 rounded-lg text-sm font-semibold transition-all hover:brightness-95 active:scale-95 disabled:opacity-50 flex-shrink-0"
-          style={{ backgroundColor: "#291803", color: "#f5ede3" }}
+          style={{ backgroundColor: "#145C43", color: "#FFFFFF" }}
         >
           {searching ? "Searching…" : "Search"}
         </button>
@@ -311,7 +311,7 @@ function LocationStep({
         onClick={handleGPS}
         disabled={gpsLoading}
         className="w-full h-11 flex items-center justify-center gap-2 rounded-lg text-sm font-semibold border-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-60"
-        style={{ borderColor: "#c2a383", color: "#735a3e", backgroundColor: "#faf2ee" }}
+        style={{ borderColor: "#145C43", color: "#145C43", backgroundColor: "#E8EFEC" }}
       >
         {gpsLoading ? (
           <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -327,7 +327,7 @@ function LocationStep({
       </button>
 
       {searchError && (
-        <p className="text-xs flex items-start gap-1.5" style={{ color: "#dc2626" }}>
+        <p className="text-xs flex items-start gap-1.5" style={{ color: "#BA1A1A" }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
@@ -340,7 +340,7 @@ function LocationStep({
       {/* Map */}
       <div
         className="relative rounded-xl overflow-hidden border-2"
-        style={{ borderColor: isConfirmed ? "#735a3e" : pending ? "#c2a383" : "#d2c4b9" }}
+        style={{ borderColor: isConfirmed ? "#145C43" : pending ? "#A9CC3B" : "#DCE3DC" }}
       >
         <div ref={mapRef} style={{ height: "280px", width: "100%", zIndex: 1 }} />
       </div>
@@ -349,8 +349,8 @@ function LocationStep({
       <div
         className="rounded-lg p-3 space-y-2"
         style={{
-          backgroundColor: isConfirmed ? "rgba(115,90,62,0.08)" : pending ? "#faf2ee" : "#f5f1ee",
-          border: `1px solid ${isConfirmed ? "#735a3e" : pending ? "#d2c4b9" : "#e8e1dd"}`,
+          backgroundColor: isConfirmed ? "#E8EFEC" : pending ? "#F5F7F3" : "#F5F7F3",
+          border: `1px solid ${isConfirmed ? "#145C43" : pending ? "#DCE3DC" : "#E3E7E1"}`,
         }}
       >
         {!pending && (
@@ -364,22 +364,22 @@ function LocationStep({
             <div className="flex items-center gap-2">
               <div
                 className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: isConfirmed ? "#735a3e" : "#c2a383" }}
+                style={{ backgroundColor: isConfirmed ? "#145C43" : "#A9CC3B" }}
               />
-              <p className="text-xs font-mono font-semibold" style={{ color: "#5c4a35" }}>
+              <p className="text-xs font-mono font-semibold" style={{ color: "#16241D" }}>
                 {pending.lat}, {pending.lng}
               </p>
               {isConfirmed && (
                 <span
                   className="text-xs px-2 py-0.5 rounded-full font-semibold ml-auto"
-                  style={{ backgroundColor: "rgba(115,90,62,0.15)", color: "#735a3e" }}
+                  style={{ backgroundColor: "#E8EFEC", color: "#145C43" }}
                 >
                   ✓ Confirmed
                 </span>
               )}
             </div>
 
-            <p className="text-xs leading-relaxed" style={{ color: "#6d614f" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "#6E7C74" }}>
               {resolving ? (
                 <span className="inline-flex items-center gap-1.5">
                   <svg className="animate-spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -396,14 +396,14 @@ function LocationStep({
 
             {!isConfirmed && (
               <>
-                <p className="text-xs" style={{ color: "#80756b" }}>
+                <p className="text-xs" style={{ color: "#6E7C74" }}>
                   Drag the marker to fine-tune, then confirm.
                 </p>
                 <button
                   type="button"
                   onClick={handleConfirm}
                   className="w-full h-10 rounded-lg text-sm font-semibold transition-all hover:brightness-95 active:scale-[0.98]"
-                  style={{ backgroundColor: "#c2a383", color: "#291803" }}
+                  style={{ backgroundColor: "#A9CC3B", color: "#16241D" }}
                 >
                   Confirm Location
                 </button>
@@ -415,7 +415,7 @@ function LocationStep({
                 type="button"
                 onClick={() => onConfirm(null)}
                 className="text-xs font-semibold underline"
-                style={{ color: "#735a3e" }}
+                style={{ color: "#145C43" }}
               >
                 Change location
               </button>
@@ -457,7 +457,7 @@ export default function StoreRegistration() {
 const { handleFocus, handleBlur } = useInputFocusStyle("muted");
   const inputClass =
     "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
-  const inputStyle = { borderColor: "#d2c4b9" };
+  const inputStyle = { borderColor: "#DCE3DC" };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -530,7 +530,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
   };
 
   return (
-    <div className="flex min-h-screen w-full font-sans" style={{ backgroundColor: "#fff8f4" }}>
+    <div className="flex min-h-screen w-full font-sans" style={{ backgroundColor: "#F7F8F5" }}>
       {showOtpModal && (
         <OtpVerificationModal
           email={email.trim().toLowerCase()}
@@ -542,11 +542,11 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
       {/* ── Left Panel ──────────────────────────────────────────────────────── */}
       <aside
         className="hidden md:flex flex-col justify-between w-[40%] min-h-screen px-10 py-10 relative overflow-hidden flex-shrink-0"
-        style={{ backgroundColor: "#291803" }}
+        style={{ backgroundColor: "#0D2B21" }}
       >
         <div
           className="absolute inset-0 opacity-20 grayscale pointer-events-none"
-          style={{ background: "linear-gradient(135deg,#3a2010 0%,#1a0e06 100%)" }}
+          style={{ background: "linear-gradient(135deg,#0D2B21 0%,#0A1F17 100%)" }}
         />
         <div className="relative z-10">
           <span className="text-white font-bold text-2xl tracking-tight">QuickKart</span>
@@ -554,7 +554,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
             <h1 className="text-white text-3xl font-bold leading-tight">
               Grow your business with hyperlocal delivery.
             </h1>
-            <p className="text-sm leading-relaxed" style={{ color: "#a08060" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "#8FCDB0" }}>
               Your neighbourhood grocery, delivered fast. Join our network of premium local stores.
             </p>
           </div>
@@ -578,10 +578,10 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
               },
             ].map(({ label, icon }, i) => (
               <div key={i} className="flex items-center gap-3 py-3 cursor-pointer group">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A97A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8FCDB0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   {icon}
                 </svg>
-                <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: "#a08060" }}>
+                <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: "#8FCDB0" }}>
                   {label}
                 </span>
               </div>
@@ -589,7 +589,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
           </nav>
         </div>
         <div className="relative z-10 flex items-center gap-1">
-          <span className="text-xs" style={{ color: "#6B4F35" }}>© 2024 QuickKart</span>
+          <span className="text-xs" style={{ color: "#8FCDB0" }}>© 2024 QuickKart</span>
         </div>
       </aside>
 
@@ -598,25 +598,25 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
         <div className="max-w-[480px] mx-auto space-y-8">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs">
-            <button onClick={() => navigate("/login")} className="hover:underline" style={{ color: "#735a3e" }}>
+            <button onClick={() => navigate("/login")} className="hover:underline" style={{ color: "#145C43" }}>
               Login
             </button>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            <button onClick={() => navigate("/create-account")} className="hover:underline" style={{ color: "#735a3e" }}>
+            <button onClick={() => navigate("/create-account")} className="hover:underline" style={{ color: "#145C43" }}>
               Create Account
             </button>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            <span className="font-bold" style={{ color: "#735a3e" }}>Store Registration</span>
+            <span className="font-bold" style={{ color: "#145C43" }}>Store Registration</span>
           </nav>
 
           {/* Heading */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Register your Store</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <h2 className="text-2xl font-bold text-[#16241D]">Register your Store</h2>
+            <p className="text-sm text-[#6E7C74] mt-1">
               Partner with us to reach thousands of customers in your locality.
             </p>
           </div>
@@ -624,38 +624,38 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
           {/* Admin Review Notice */}
           <div
             className="flex items-start gap-3 p-4 rounded-lg"
-            style={{ backgroundColor: "rgba(238,221,199,0.25)", borderLeft: "4px solid #c2a383" }}
+            style={{ backgroundColor: "#F5F7F3", borderLeft: "4px solid #145C43" }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#735a3e" stroke="none" className="mt-0.5 flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#145C43" stroke="none" className="mt-0.5 flex-shrink-0">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
             </svg>
-            <p className="text-xs leading-relaxed" style={{ color: "#6d614f" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "#6E7C74" }}>
               Your store will be reviewed and approved by our admin team within 24–48 hours after submission. Ensure all documents are clear and valid.
             </p>
           </div>
 
           {/* Error Banner */}
           {error && (
-            <div className="flex items-center gap-2 rounded-md px-4 py-3 bg-red-50 border border-red-200">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex items-center gap-2 rounded-md px-4 py-3 bg-[#FBEAEA] border border-[#BA1A1A]/30">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BA1A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-[#BA1A1A]">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* ── Section 1: Store Info ─────────────────────────────────────── */}
             <section className="space-y-5">
-              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#e8e1dd" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#735a3e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#E3E7E1" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l1-5h16l1 5" />
                   <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
                   <path d="M9 9v12M15 9v12" />
                 </svg>
-                <h3 className="text-base font-semibold text-gray-900">Store Info</h3>
+                <h3 className="text-base font-semibold text-[#16241D]">Store Info</h3>
               </div>
 
               <div className="space-y-4">
@@ -752,8 +752,8 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                     <span
                       className="text-xs px-2 py-0.5 rounded-full font-semibold"
                       style={{
-                        backgroundColor: location ? "rgba(115,90,62,0.12)" : "rgba(220,38,38,0.08)",
-                        color: location ? "#735a3e" : "#dc2626",
+                        backgroundColor: location ? "#E8EFEC" : "rgba(186,26,26,0.08)",
+                        color: location ? "#145C43" : "#BA1A1A",
                       }}
                     >
                       {location ? "✓ Confirmed" : "Required"}
@@ -775,12 +775,12 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
 
             {/* ── Section 2: Credentials ───────────────────────────────────── */}
             <section className="space-y-5">
-              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#e8e1dd" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#735a3e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#E3E7E1" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
-                <h3 className="text-base font-semibold text-gray-900">Credentials</h3>
+                <h3 className="text-base font-semibold text-[#16241D]">Credentials</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -845,12 +845,12 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
 
             {/* ── Section 3: Documents ─────────────────────────────────────── */}
             <section className="space-y-5">
-              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#e8e1dd" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#735a3e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#E3E7E1" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                <h3 className="text-base font-semibold text-gray-900">Documents</h3>
+                <h3 className="text-base font-semibold text-[#16241D]">Documents</h3>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
@@ -903,9 +903,9 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                 disabled={loading}
                 className="w-full h-12 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70"
                 style={{
-                  backgroundColor: "#c2a383",
-                  color: "#291803",
-                  boxShadow: "0 8px 24px rgba(42,26,10,0.08)",
+                  backgroundColor: "#A9CC3B",
+                  color: "#16241D",
+                  boxShadow: "0 8px 24px rgba(20,92,67,0.12)",
                 }}
               >
                 {loading ? (
@@ -922,7 +922,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
               </button>
               <p className="mt-3 text-xs text-center text-gray-500">
                 By clicking submit, you agree to QuickKart's{" "}
-                <a href="#" className="font-semibold underline" style={{ color: "#735a3e" }}>
+                <a href="#" className="font-semibold underline" style={{ color: "#145C43" }}>
                   Merchant Terms &amp; Conditions
                 </a>
                 .
@@ -933,7 +933,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                   type="button"
                   onClick={() => navigate("/login")}
                   className="font-semibold underline"
-                  style={{ color: "#735a3e" }}
+                  style={{ color: "#145C43" }}
                 >
                   Login
                 </button>
