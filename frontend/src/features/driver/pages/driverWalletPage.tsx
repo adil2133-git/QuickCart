@@ -233,14 +233,14 @@ function WalletBalanceTab() {
             <div className="mt-5 flex gap-2.5">
               <button
                 onClick={() => setShowWithdraw(true)}
-                className="flex items-center gap-2 rounded-xl bg-[#1F4D3D] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#163D30] transition-colors cursor-pointer"
+                className="flex items-center gap-2 rounded-xl bg-[#A9CC3B] px-5 py-2.5 text-sm font-bold text-[#16241D] hover:bg-[#98B933] active:bg-[#87A62C] transition-colors cursor-pointer"
               >
                 <Landmark className="h-4 w-4" />
                 Withdraw Funds
               </button>
               <button
                 onClick={() => toast.info("Payout schedule details coming soon.")}
-                className="rounded-xl border border-[#E3E7E1] px-5 py-2.5 text-sm font-semibold text-[#1F4D3D] hover:bg-[#F5F7F3] transition-colors cursor-pointer"
+                className="rounded-xl border border-[#E3E7E1] px-5 py-2.5 text-sm font-semibold text-[#145C43] hover:bg-[#F5F7F3] transition-colors cursor-pointer"
               >
                 View Payout Schedule
               </button>

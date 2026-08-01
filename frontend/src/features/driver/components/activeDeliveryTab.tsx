@@ -12,6 +12,8 @@ import {
   Circle,
   IndianRupee,
   Banknote,
+  Loader2,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ActiveDelivery } from "../types/driverDelivery";
@@ -38,16 +40,16 @@ function ProgressStep({
           {status === "COMPLETED" ? (
             <CheckCircle2 className="h-6 w-6 text-emerald-600" />
           ) : status === "IN_PROGRESS" ? (
-            <div className="h-5 w-5 rounded-full border-[3px] border-[#2B1B0E] bg-white" />
+            <div className="h-5 w-5 rounded-full border-[3px] border-[#145C43] bg-white" />
           ) : (
-            <Circle className="h-5 w-5 text-[#D0C4B8]" />
+            <Circle className="h-5 w-5 text-[#9BAAA1]" />
           )}
         </div>
         {!isLast && (
           <div
             className={[
               "my-1 w-0.5 flex-1",
-              status === "COMPLETED" ? "bg-emerald-400" : "bg-[#EADFD3]",
+              status === "COMPLETED" ? "bg-emerald-400" : "bg-[#E3E7E1]",
             ].join(" ")}
             style={{ minHeight: 24 }}
           />
@@ -59,25 +61,19 @@ function ProgressStep({
         <p
           className={[
             "text-sm font-semibold",
-            status === "PENDING" ? "text-[#A38F7D]" : "text-[#2B1B0E]",
+            status === "PENDING" ? "text-[#6E7C74]" : "text-[#16241D]",
           ].join(" ")}
         >
           {label}
         </p>
         {completedAt && (
-          <p className="text-xs text-[#A38F7D]">
+          <p className="text-xs text-[#6E7C74]">
             Completed at{" "}
             {new Date(completedAt).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}
           </p>
-        )}
-        {status === "IN_PROGRESS" && !completedAt && (
-          <p className="text-xs text-[#C8A37E]">In Progress</p>
-        )}
-        {status === "PENDING" && (
-          <p className="text-xs text-[#A38F7D]">Pending</p>
         )}
       </div>
     </div>
@@ -87,28 +83,13 @@ function ProgressStep({
 // ─── Action Buttons ───────────────────────────────────────────────────────────
 
 function ActionButtons({ delivery }: { delivery: ActiveDelivery }) {
+  const stage = delivery.currentStage;
+  const isDelivered = stage === "DELIVERED";
   const { advanceStage } = useDriverDeliveryActions();
   const [loading, setLoading] = useState(false);
 
-  const stage = delivery.currentStage;
-  const isCOD  = delivery.paymentMethod === "COD";
-  const cashDone = delivery.cashCollected;
-  const isDelivered = stage === "DELIVERED";
-
-  const handleNavigateToStore = () => {
-    toast.info("Opening navigation to store…");
-  };
-
-  const handleNavigateToCustomer = () => {
-    toast.info("Opening navigation to customer…");
-  };
-
   const handlePrimary = () => {
-    if (stage === "NAVIGATE_TO_STORE" || stage === "REACHED_STORE") {
-      handleNavigateToStore();
-    } else {
-      handleNavigateToCustomer();
-    }
+    toast.info("Opening navigation…");
   };
 
   const handleAdvance = async () => {
@@ -126,21 +107,20 @@ function ActionButtons({ delivery }: { delivery: ActiveDelivery }) {
     }
   };
 
-
   if (isDelivered) {
     return (
       <button
         type="button"
         onClick={() => {}}
-        className="w-full rounded-xl bg-[#2B1B0E] py-3 text-sm font-semibold text-white"
+        className="w-full rounded-xl bg-[#145C43] py-3 text-sm font-semibold text-white"
       >
         Back to Dashboard
       </button>
     );
   }
 
-  // "Reached Customer" + COD not collected → show cash collect first
-  const showCashFirst = stage === "REACHED_CUSTOMER" && isCOD && !cashDone;
+  const isCOD = delivery.paymentMethod === "COD";
+  const showCashFirst = stage === "REACHED_CUSTOMER" && isCOD && !delivery.cashCollected;
 
   const secondaryLabel = (() => {
     switch (stage) {
@@ -164,7 +144,7 @@ function ActionButtons({ delivery }: { delivery: ActiveDelivery }) {
       <button
         type="button"
         onClick={handlePrimary}
-        className="w-full rounded-xl border border-[#EADFD3] py-3 text-sm font-semibold text-[#2B1B0E] transition-colors hover:bg-[#F5EDE5]"
+        className="w-full rounded-xl border border-[#E3E7E1] py-3 text-sm font-semibold text-[#16241D] transition-colors hover:bg-[#F5F7F3]"
       >
         <span className="flex items-center justify-center gap-2">
           <Navigation className="h-4 w-4" />
@@ -181,15 +161,18 @@ function ActionButtons({ delivery }: { delivery: ActiveDelivery }) {
         className={[
           "w-full rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60",
           secondaryVariant === "green"
-            ? "bg-[#1A5C2E] text-white hover:bg-[#144A25]"
+            ? "bg-[#145C43] text-white hover:bg-[#114E39]"
             : secondaryVariant === "muted"
-            ? "bg-[#EDE3D9] text-[#2B1B0E] hover:bg-[#E0D4C6]"
-            : "bg-[#2B1B0E] text-white hover:bg-[#3D2A18]",
+            ? "bg-[#E8EFEC] text-[#145C43] hover:bg-[#DCE3DC]"
+            : "bg-[#145C43] text-white hover:bg-[#114E39]",
         ].join(" ")}
       >
         <span className="flex items-center justify-center gap-2">
-          <CheckCircle2 className="h-4 w-4" />
-          {loading ? "Updating…" : secondaryLabel}
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            secondaryLabel
+          )}
         </span>
       </button>
     </div>
@@ -200,187 +183,135 @@ function ActionButtons({ delivery }: { delivery: ActiveDelivery }) {
 
 function EmptyActiveDelivery() {
   return (
-    <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#EADFD3]">
-      <Package className="h-10 w-10 text-[#C8A37E]" />
-      <p className="font-semibold text-[#7A6350]">No active delivery</p>
-      <p className="text-sm text-[#A38F7D]">Accept a request to start delivering.</p>
+    <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#E3E7E1]">
+      <Package className="h-10 w-10 text-[#9BAAA1]" />
+      <p className="font-semibold text-[#6E7C74]">No active delivery</p>
+      <p className="text-sm text-[#6E7C74]">Accept a request to start delivering.</p>
     </div>
   );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-interface ActiveDeliveryTabProps {
-  delivery: ActiveDelivery | null;
-  loading: boolean;
-  error: string | null;
-}
-
 export default function ActiveDeliveryTab({
   delivery,
   loading,
   error,
-}: ActiveDeliveryTabProps) {
-  const isDelivered = delivery?.currentStage === "DELIVERED";
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center text-[#A38F7D]">
-        Loading delivery…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{error}</div>
-    );
-  }
-
+}: {
+  delivery: ActiveDelivery | null;
+  loading: boolean;
+  error: string | null;
+}) {
+  if (loading) return <div className="flex h-64 items-center justify-center text-[#6E7C74]">Loading…</div>;
+  if (error) return <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{error}</div>;
   if (!delivery) return <EmptyActiveDelivery />;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      {/* ── Col 1: Order summary + action buttons ─────────────────────────── */}
-      <div className="flex flex-col gap-4">
-        <div className="rounded-2xl border border-[#EADFD3] bg-white p-5">
-          {/* Delivered success banner */}
-          {isDelivered && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-              <CheckCircle2 className="h-5 w-5" />
-              Order #{delivery.orderNumber} Delivered Successfully
-            </div>
-          )}
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* ── Col 1: Main Active Card ────────────────────────────────────────── */}
+      <div className="lg:col-span-1">
+        <div className="rounded-2xl border border-[#E3E7E1] bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="rounded-full bg-[#E8EFEC] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#145C43]">
+              Active
+            </span>
+            <span className="text-xs font-bold text-[#16241D]">#{delivery.orderNumber}</span>
+          </div>
 
-          {/* Order meta */}
-          <div className="mb-4 flex items-start justify-between gap-2">
-            <div>
-              <p className="mb-0.5 text-xs text-[#A38F7D]">ORDER ID: #{delivery.orderNumber}</p>
-              {delivery.isPriority && (
-                <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                  PRIORITY
-                </span>
-              )}
+          <div className="mb-5 flex h-40 items-center justify-center rounded-xl bg-[#F5F7F3] border border-[#E3E7E1]">
+            <div className="text-center text-[#6E7C74]">
+              <MapPin className="mx-auto h-8 w-8 text-[#145C43]" />
+              <p className="mt-1 text-xs font-semibold">Live Route Map</p>
             </div>
           </div>
 
-          {/* Store + Customer */}
-          <div className="mb-4 space-y-3">
+          <div className="mb-5 space-y-2.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F5EDE5]">
-                <Store className="h-4 w-4 text-[#7A6350]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E8EFEC]">
+                <Store className="h-4 w-4 text-[#145C43]" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A38F7D]">Store</p>
-                <p className="text-sm font-semibold text-[#2B1B0E]">{delivery.store.name}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6E7C74]">Store</p>
+                <p className="text-sm font-semibold text-[#16241D]">{delivery.store.name}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F5EDE5]">
-                <User className="h-4 w-4 text-[#7A6350]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E8EFEC]">
+                <User className="h-4 w-4 text-[#145C43]" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A38F7D]">Customer</p>
-                <p className="text-sm font-semibold text-[#2B1B0E]">{delivery.customer.name}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6E7C74]">Customer</p>
+                <p className="text-sm font-semibold text-[#16241D]">{delivery.customer.name}</p>
               </div>
             </div>
           </div>
 
-          {/* Items + Payment */}
           <div className="mb-5 flex gap-3">
-            <div className="flex-1 rounded-xl bg-[#F5EDE5] px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A38F7D]">Items</p>
-              <p className="text-sm font-bold text-[#2B1B0E]">{delivery.itemCount} Products</p>
+            <div className="flex-1 rounded-xl bg-[#F5F7F3] px-4 py-3 border border-[#E3E7E1]">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6E7C74]">Items</p>
+              <p className="text-sm font-bold text-[#16241D]">{delivery.itemCount} Products</p>
             </div>
-            <div className="flex-1 rounded-xl bg-[#F5EDE5] px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A38F7D]">Payment</p>
-              <p className="text-sm font-bold text-[#2B1B0E]">
+            <div className="flex-1 rounded-xl bg-[#F5F7F3] px-4 py-3 border border-[#E3E7E1]">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6E7C74]">Payment</p>
+              <p className="text-sm font-bold text-[#16241D]">
                 ₹{delivery.amountToCollect}{" "}
                 <span className="text-xs font-normal">({delivery.paymentMethod})</span>
               </p>
             </div>
           </div>
 
-          {/* Action buttons */}
           <ActionButtons delivery={delivery} />
         </div>
       </div>
 
       {/* ── Col 2: Store + Customer contact cards ─────────────────────────── */}
       <div className="flex flex-col gap-4">
-        {/* Store card */}
-        <div className="rounded-2xl border border-[#EADFD3] bg-white p-5">
+        <div className="rounded-2xl border border-[#E3E7E1] bg-white p-5">
           <div className="mb-4 flex items-center gap-3">
             {delivery.store.logoUrl ? (
-              <img
-                src={delivery.store.logoUrl}
-                alt={delivery.store.name}
-                className="h-12 w-12 rounded-xl object-cover"
-              />
+              <img src={delivery.store.logoUrl} className="h-12 w-12 rounded-xl object-cover" />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5EDE5]">
-                <Store className="h-6 w-6 text-[#7A6350]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8EFEC]">
+                <Store className="h-6 w-6 text-[#145C43]" />
               </div>
             )}
             <div>
-              <p className="font-semibold text-[#2B1B0E]">{delivery.store.name}</p>
-              <p className="text-sm text-[#7A6350]">{delivery.store.address}</p>
+              <p className="font-semibold text-[#16241D]">{delivery.store.name}</p>
+              <p className="text-sm text-[#6E7C74]">{delivery.store.address}</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <a
-              href={`tel:${delivery.store.phone}`}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#EADFD3] py-2.5 text-sm font-medium text-[#2B1B0E] transition-colors hover:bg-[#F5EDE5]"
-            >
-              <Phone className="h-4 w-4" />
-              Call Store
+            <a href={`tel:${delivery.store.phone}`} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#E3E7E1] py-2.5 text-sm font-medium text-[#16241D] transition-colors hover:bg-[#F5F7F3]">
+              <Phone className="h-4 w-4" /> Call Store
             </a>
-            <button
-              type="button"
-              onClick={() => toast.info("Opening navigation…")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#EADFD3] py-2.5 text-sm font-medium text-[#2B1B0E] transition-colors hover:bg-[#F5EDE5]"
-            >
-              <Navigation className="h-4 w-4" />
-              Navigate
+            <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#E3E7E1] py-2.5 text-sm font-medium text-[#16241D] transition-colors hover:bg-[#F5F7F3]">
+              <Navigation className="h-4 w-4" /> Navigate
             </button>
           </div>
         </div>
 
-        {/* Customer card */}
-        <div className="rounded-2xl border border-[#EADFD3] bg-white p-5">
+        <div className="rounded-2xl border border-[#E3E7E1] bg-white p-5">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5EDE5]">
-              <User className="h-6 w-6 text-[#7A6350]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8EFEC]">
+              <User className="h-6 w-6 text-[#145C43]" />
             </div>
             <div>
-              <p className="font-semibold text-[#2B1B0E]">{delivery.customer.name}</p>
-              <p className="text-sm text-[#7A6350]">{delivery.customer.address}</p>
+              <p className="font-semibold text-[#16241D]">{delivery.customer.name}</p>
+              <p className="text-sm text-[#6E7C74]">{delivery.customer.address}</p>
             </div>
           </div>
           <div className="mb-4 flex gap-2">
-            <a
-              href={`tel:${delivery.customer.phone}`}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#EADFD3] py-2.5 text-sm font-medium text-[#2B1B0E] transition-colors hover:bg-[#F5EDE5]"
-            >
-              <Phone className="h-4 w-4" />
-              Call
+            <a href={`tel:${delivery.customer.phone}`} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#E3E7E1] py-2.5 text-sm font-medium text-[#16241D] transition-colors hover:bg-[#F5F7F3]">
+              <Phone className="h-4 w-4" /> Call
             </a>
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#EADFD3] py-2.5 text-sm font-medium text-[#2B1B0E] transition-colors hover:bg-[#F5EDE5]"
-            >
-              <MessageSquare className="h-4 w-4" />
-              Message
+            <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#E3E7E1] py-2.5 text-sm font-medium text-[#16241D] transition-colors hover:bg-[#F5F7F3]">
+              <MessageSquare className="h-4 w-4" /> Message
             </button>
           </div>
           {delivery.customer.deliveryInstruction && (
-            <div className="rounded-xl border border-dashed border-[#D0C4B8] bg-[#FBF6F1] p-3">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#A38F7D]">
-                Delivery Instruction
-              </p>
-              <p className="text-sm italic text-[#5C4A38]">
-                "{delivery.customer.deliveryInstruction}"
-              </p>
+            <div className="rounded-xl border border-dashed border-[#DCE3DC] bg-[#F5F7F3] p-3">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#6E7C74]">Instruction</p>
+              <p className="text-sm italic text-[#16241D]">"{delivery.customer.deliveryInstruction}"</p>
             </div>
           )}
         </div>
@@ -388,9 +319,8 @@ export default function ActiveDeliveryTab({
 
       {/* ── Col 3: Progress + Payment ──────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
-        {/* Delivery Progress */}
-        <div className="rounded-2xl border border-[#EADFD3] bg-white p-5">
-          <h3 className="mb-5 text-sm font-bold text-[#2B1B0E]">Delivery Progress</h3>
+        <div className="rounded-2xl border border-[#E3E7E1] bg-white p-5">
+          <h3 className="mb-5 text-sm font-bold text-[#16241D]">Delivery Progress</h3>
           <div>
             {STAGE_ORDER.map((stageKey, idx) => {
               const step = delivery.progressSteps.find((s) => s.key === stageKey);
@@ -407,22 +337,19 @@ export default function ActiveDeliveryTab({
           </div>
         </div>
 
-        {/* Payment Info */}
-        <div className="rounded-2xl border border-[#EADFD3] bg-white p-5">
+        <div className="rounded-2xl border border-[#E3E7E1] bg-white p-5">
           <div className="mb-4 flex items-center gap-2">
-            <Banknote className="h-5 w-5 text-[#7A6350]" />
-            <h3 className="text-sm font-bold text-[#2B1B0E]">Payment Info</h3>
+            <Banknote className="h-5 w-5 text-[#145C43]" />
+            <h3 className="text-sm font-bold text-[#16241D]">Payment Info</h3>
           </div>
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="text-[#7A6350]">Payment Method</span>
-            <span className="font-bold text-[#2B1B0E]">
-              {delivery.paymentMethod === "COD" ? "Cash On Delivery" : "Online Payment"}
-            </span>
+            <span className="text-[#6E7C74]">Method</span>
+            <span className="font-bold text-[#16241D]">{delivery.paymentMethod === "COD" ? "Cash" : "Online"}</span>
           </div>
           {delivery.paymentMethod === "COD" && (
             <div className="mb-4 flex items-center justify-between text-sm">
-              <span className="text-[#7A6350]">Amount To Collect</span>
-              <span className="flex items-center font-bold text-[#2B1B0E]">
+              <span className="text-[#6E7C74]">Amount</span>
+              <span className="flex items-center font-bold text-[#16241D]">
                 <IndianRupee className="h-3.5 w-3.5" />
                 {delivery.amountToCollect.toFixed(2)}
               </span>
@@ -483,12 +410,12 @@ function CashCollectButton({ delivery }: { delivery: ActiveDelivery }) {
           type="button"
           onClick={handleCashAndDeliver}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A5C2E] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#144A25] disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#145C43] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#114E39] disabled:opacity-60"
         >
           <CreditCard className="h-4 w-4" />
           {loading ? "Confirming…" : "Cash Collected"}
         </button>
-        <p className="mt-2 text-center text-xs text-[#A38F7D]">
+        <p className="mt-2 text-center text-xs text-[#6E7C74]">
           Please collect payment to complete delivery
         </p>
       </>
@@ -500,12 +427,12 @@ function CashCollectButton({ delivery }: { delivery: ActiveDelivery }) {
       <button
         type="button"
         disabled
-        className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#EADFD3] py-3 text-sm font-semibold text-[#A38F7D]"
+        className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#F5F7F3] py-3 text-sm font-semibold text-[#9BAAA1]"
       >
         <CreditCard className="h-4 w-4" />
         Cash Collected
       </button>
-      <p className="mt-2 text-center text-xs text-[#A38F7D]">
+      <p className="mt-2 text-center text-xs text-[#6E7C74]">
         Active only after delivery confirmation
       </p>
     </>

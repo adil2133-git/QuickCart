@@ -106,7 +106,7 @@ function RequestCard({
         <div className="flex gap-2">
           <button
             onClick={onDecline}
-            className="flex-1 rounded-xl border border-[#E3E7E1] py-2.5 text-xs font-semibold text-[#1F4D3D] transition-colors hover:bg-[#F5F7F3] cursor-pointer"
+            className="flex-1 rounded-xl border border-[#E3E7E1] py-2.5 text-xs font-semibold text-[#145C43] transition-colors hover:bg-[#F5F7F3] cursor-pointer"
           >
             Decline
           </button>

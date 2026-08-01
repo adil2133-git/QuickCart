@@ -9,18 +9,18 @@ import type { CompletedDelivery } from "../types/driverDelivery";
 
 function CompletedRow({ delivery }: { delivery: CompletedDelivery }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#EADFD3] bg-white p-5">
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#E3E7E1] bg-white p-5">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#F5EDE5]">
-          <Package className="h-5 w-5 text-[#7A6350]" />
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#E8EFEC]">
+          <Package className="h-5 w-5 text-[#145C43]" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-[#2B1B0E]">#{delivery.orderNumber}</p>
-          <p className="truncate text-xs text-[#A38F7D]">{delivery.storeName}</p>
+          <p className="text-sm font-semibold text-[#16241D]">#{delivery.orderNumber}</p>
+          <p className="truncate text-xs text-[#6E7C74]">{delivery.storeName}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-[#A38F7D]">
+      <div className="flex items-center gap-2 text-xs text-[#6E7C74]">
         <CalendarClock className="h-3.5 w-3.5" />
         {delivery.completedAt ? new Date(delivery.completedAt).toLocaleString([], {
           dateStyle: "medium",
@@ -28,7 +28,7 @@ function CompletedRow({ delivery }: { delivery: CompletedDelivery }) {
         }) : "N/A"}
       </div>
 
-      <div className="flex items-center gap-1 text-sm font-bold text-[#2B7A3E]">
+      <div className="flex items-center gap-1 text-sm font-bold text-[#145C43]">
         <IndianRupee className="h-3.5 w-3.5" />
         {(delivery.earnings ?? 0).toFixed(2)}
       </div>
@@ -57,7 +57,7 @@ export default function CompletedHistoryTab() {
 
   if (completedLoading && completedDeliveries.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center text-[#A38F7D]">
+      <div className="flex h-40 items-center justify-center text-[#6E7C74]">
         Loading delivery history…
       </div>
     );
@@ -71,9 +71,9 @@ export default function CompletedHistoryTab() {
 
   if (completedDeliveries.length === 0) {
     return (
-      <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#EADFD3] text-center">
-        <p className="font-medium text-[#7A6350]">No completed deliveries yet</p>
-        <p className="text-sm text-[#A38F7D]">Your delivery history will show up here.</p>
+      <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#E3E7E1] text-center">
+        <p className="font-medium text-[#16241D]">No completed deliveries yet</p>
+        <p className="text-sm text-[#6E7C74]">Your delivery history will show up here.</p>
       </div>
     );
   }
@@ -92,7 +92,7 @@ export default function CompletedHistoryTab() {
             type="button"
             onClick={() => fetchCompleted(completedPage + 1)}
             disabled={completedLoading}
-            className="rounded-xl border border-[#EADFD3] px-6 py-2.5 text-sm font-semibold text-[#2B1B0E] transition-colors hover:bg-[#F5EDE5] disabled:opacity-60"
+            className="rounded-xl border border-[#DCE3DC] px-6 py-2.5 text-sm font-semibold text-[#16241D] transition-colors hover:bg-[#F5F7F3] disabled:opacity-60"
           >
             {completedLoading ? "Loading…" : "Load More"}
           </button>
