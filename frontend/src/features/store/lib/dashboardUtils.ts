@@ -12,15 +12,15 @@ interface StatusBadgeConfig {
 }
 
 export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusBadgeConfig> = {
-  PENDING: { label: "New", className: "bg-amber-100 text-amber-700" },
-  ACCEPTED: { label: "Accepted", className: "bg-amber-100 text-amber-700" },
-  PACKING: { label: "Preparing", className: "bg-emerald-100 text-emerald-700" },
-  READY_FOR_PICKUP: { label: "Ready", className: "bg-sky-100 text-sky-700" },
-  DRIVER_ASSIGNED: { label: "Driver assigned", className: "bg-sky-100 text-sky-700" },
-  PICKED_UP: { label: "Picked up", className: "bg-violet-100 text-violet-700" },
-  OUT_FOR_DELIVERY: { label: "Out for delivery", className: "bg-violet-100 text-violet-700" },
-  DELIVERED: { label: "Delivered", className: "bg-stone-200 text-stone-600" },
-  CANCELLED: { label: "Cancelled", className: "bg-red-100 text-red-700" },
+  PENDING: { label: "New", className: "bg-[#FEF3C7] text-[#B47800]" },
+  ACCEPTED: { label: "Accepted", className: "bg-[#FEF3C7] text-[#B47800]" },
+  PACKING: { label: "Preparing", className: "bg-[#E8EFEC] text-[#145C43]" },
+  READY_FOR_PICKUP: { label: "Ready", className: "bg-[#E8EFEC] text-[#145C43]" },
+  DRIVER_ASSIGNED: { label: "Driver assigned", className: "bg-[#E8EFEC] text-[#145C43]" },
+  PICKED_UP: { label: "Picked up", className: "bg-[#E8EFEC] text-[#145C43]" },
+  OUT_FOR_DELIVERY: { label: "Out for delivery", className: "bg-[#E8EFEC] text-[#145C43]" },
+  DELIVERED: { label: "Delivered", className: "bg-[#E8EFEC] text-[#145C43]" },
+  CANCELLED: { label: "Cancelled", className: "bg-[#FBEAEA] text-[#BA1A1A]" },
 };
 
 export function getOrderStatusBadge(status: OrderStatus): StatusBadgeConfig {
@@ -35,9 +35,9 @@ export const STORE_STATUS_CONFIG: Record<
   StoreStatus,
   { label: string; dotClassName: string; trackClassName: string }
 > = {
-  OPEN: { label: "Open", dotClassName: "bg-emerald-500", trackClassName: "bg-emerald-500" },
-  BUSY: { label: "Busy", dotClassName: "bg-amber-500", trackClassName: "bg-amber-500" },
-  CLOSED: { label: "Closed", dotClassName: "bg-stone-400", trackClassName: "bg-stone-300" },
+  OPEN: { label: "Open", dotClassName: "bg-[#145C43]", trackClassName: "bg-[#145C43]" },
+  BUSY: { label: "Busy", dotClassName: "bg-[#B47800]", trackClassName: "bg-[#B47800]" },
+  CLOSED: { label: "Closed", dotClassName: "bg-[#BA1A1A]", trackClassName: "bg-[#BA1A1A]" },
 };
 
 // ---------------------------------------------------------------------------

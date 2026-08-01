@@ -45,7 +45,7 @@ export default function StoreStatusCard({
               onClick={() => onStatusChange?.(value)}
               className={[
                 "flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer",
-                isActive ? "bg-[#1F4D3D] text-white shadow-sm" : "text-[#6E7C74] hover:text-[#16241D]",
+                isActive ? "bg-[#145C43] text-white shadow-sm" : "text-[#6E7C74] hover:text-[#16241D]",
               ].join(" ")}
             >
               <span className="flex items-center justify-center gap-1.5">

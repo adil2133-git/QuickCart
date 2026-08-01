@@ -87,16 +87,16 @@ export default function Topbar({ onNotificationClick }: TopbarProps) {
         {isOpen && (
           <div
             ref={panelRef}
-            className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border border-[#EADFD3] bg-white shadow-lg"
+            className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border border-[#E3E7E1] bg-white shadow-lg"
           >
             <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#9C8C7C]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6E7C74]">
                 Notifications
               </p>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="text-[11px] font-semibold text-[#8B6F47] hover:underline"
+                  className="text-[11px] font-semibold text-[#145C43] hover:underline"
                 >
                   Mark all read
                 </button>

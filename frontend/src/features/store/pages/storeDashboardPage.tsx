@@ -15,7 +15,7 @@ export default function DashboardPage() {
   useStoreDashboardSocket();
 
   if (isLoading && !summary) {
-    return <div className="p-6 text-sm text-[#A38F7D]">Loading dashboard…</div>;
+    return <div className="p-6 text-sm text-[#6E7C74]">Loading dashboard…</div>;
   }
 
   if (error && !summary) {

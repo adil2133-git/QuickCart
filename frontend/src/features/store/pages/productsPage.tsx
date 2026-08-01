@@ -216,7 +216,7 @@ function RowMenu({
       <button
         ref={buttonRef}
         onClick={() => (open ? setOpen(false) : openMenu())}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-[#2B1B0E]/45 hover:bg-[#2B1B0E]/[0.06] hover:text-[#2B1B0E]"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-[#6E7C74] hover:bg-[#F5F7F3] hover:text-[#16241D]"
       >
         <MoreVertical size={15} />
       </button>
@@ -230,11 +230,11 @@ function RowMenu({
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
               transition={{ duration: 0.12 }}
               style={{ position: "fixed", top: coords.top, left: coords.left, width: MENU_WIDTH }}
-              className="z-50 overflow-hidden rounded-xl border border-[#2B1B0E]/[0.08] bg-white py-1 shadow-lg"
+              className="z-50 overflow-hidden rounded-xl border border-[#E3E7E1] bg-white py-1 shadow-lg"
             >
               <button
                 onClick={() => { setOpen(false); onEdit(); }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[#2B1B0E] hover:bg-[#FBF1E9]"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[#16241D] hover:bg-[#F5F7F3]"
               >
                 <Pencil size={13} /> Edit
               </button>
@@ -311,16 +311,16 @@ function ConfirmDeleteDialog({
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
       >
-        <h3 className="text-base font-semibold text-[#2B1B0E]">Delete this product?</h3>
-        <p className="mt-1.5 text-sm text-[#2B1B0E]/60">
-          <strong className="font-medium text-[#2B1B0E]">{productName}</strong> will be removed
+        <h3 className="text-base font-semibold text-[#16241D]">Delete this product?</h3>
+        <p className="mt-1.5 text-sm text-[#6E7C74]">
+          <strong className="font-medium text-[#16241D]">{productName}</strong> will be removed
           permanently. This can&apos;t be undone.
         </p>
         <div className="mt-5 flex justify-end gap-2.5">
           <button
             onClick={onCancel}
             disabled={deleting}
-            className="rounded-full border border-[#2B1B0E]/15 px-4 py-2 text-sm font-medium text-[#2B1B0E] hover:bg-[#FBF1E9]"
+            className="rounded-full border border-[#DCE3DC] px-4 py-2 text-sm font-medium text-[#16241D] hover:bg-[#F5F7F3]"
           >
             Cancel
           </button>
@@ -476,14 +476,14 @@ export default function ProductsPage() {
         </div>
 
         {/* Filter bar */}
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#2B1B0E]/[0.07] bg-white p-3.5">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#E3E7E1] bg-white p-3.5">
           <div className="relative flex-1 min-w-[220px] max-w-sm">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#2B1B0E]/35" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9BAAA1]" />
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search products…"
-              className="w-full rounded-full border border-[#2B1B0E]/10 bg-[#FBF1E9] py-2 pl-9 pr-4 text-sm text-[#2B1B0E] placeholder:text-[#2B1B0E]/40 focus:border-[#C2825A] focus:outline-none focus:ring-2 focus:ring-[#C2825A]/15"
+              className="w-full rounded-full border border-[#DCE3DC] bg-[#F5F7F3] py-2 pl-9 pr-4 text-sm text-[#16241D] placeholder:text-[#9BAAA1] focus:border-[#145C43] focus:outline-none focus:ring-2 focus:ring-[#145C43]/15"
             />
           </div>
 
@@ -508,7 +508,7 @@ export default function ProductsPage() {
           {hasFilters && (
             <button
               onClick={() => { setSearchInput(""); clearFilters(); }}
-              className="text-xs font-medium text-[#C2825A] hover:underline"
+              className="text-xs font-medium text-[#145C43] hover:underline"
             >
               Clear filters
             </button>
@@ -550,7 +550,7 @@ export default function ProductsPage() {
             <tbody className="divide-y divide-[#E3E7E1]">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center text-sm text-[#2B1B0E]/45">
+                  <td colSpan={7} className="px-4 py-16 text-center text-sm text-[#6E7C74]">
                     <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
                     Loading products…
                   </td>
@@ -562,14 +562,14 @@ export default function ProductsPage() {
               ) : sorted.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-16 text-center">
-                    <PackageX size={28} className="mx-auto mb-2 text-[#2B1B0E]/25" />
-                    <p className="text-sm font-medium text-[#2B1B0E]/60">
+                    <PackageX size={28} className="mx-auto mb-2 text-[#9BAAA1]" />
+                    <p className="text-sm font-medium text-[#6E7C74]">
                       {hasFilters ? "No products match these filters." : "No products yet."}
                     </p>
                     {!hasFilters && (
                       <button
                         onClick={() => navigate("/store/products/new")}
-                        className="mt-2 text-sm font-semibold text-[#C2825A] hover:underline"
+                        className="mt-2 text-sm font-semibold text-[#145C43] hover:underline"
                       >
                         Add your first product
                       </button>
@@ -583,23 +583,23 @@ export default function ProductsPage() {
                   return (
                     <tr
                       key={product._id}
-                      className="border-b border-[#2B1B0E]/[0.05] last:border-0 hover:bg-[#FBF1E9]/40"
+                      className="border-b border-[#E3E7E1] last:border-0 hover:bg-[#F5F7F3]"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#E7D7C1]">
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#E8EFEC]">
                             {product.images[0] && (
                               <img src={product.images[0]} alt="" className="h-full w-full object-cover" />
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-[#2B1B0E]">{product.productName}</p>
+                            <p className="truncate font-medium text-[#16241D]">{product.productName}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[#2B1B0E]/65">{getCategoryName(product.categoryId)}</td>
-                      <td className="px-4 py-3 text-right font-medium tabular-nums text-[#2B1B0E]">
-                        ${product.price.toFixed(2)}
+                      <td className="px-4 py-3 text-[#6E7C74]">{getCategoryName(product.categoryId)}</td>
+                      <td className="px-4 py-3 text-right font-medium tabular-nums text-[#16241D]">
+                        ₹{product.price.toFixed(2)}
                       </td>
                       <td className="px-4 py-3">
                         <StockCell product={product} onCommit={(qty) => handleStockCommit(product, qty)} />
@@ -618,7 +618,7 @@ export default function ProductsPage() {
                           onClick={() => toggleAvailability(product)}
                           disabled={product.availabilityStatus === "HIDDEN"}
                           className={`relative inline-block h-5 w-9 rounded-full transition-colors disabled:opacity-30 ${
-                            product.availabilityStatus === "AVAILABLE" ? "bg-[#C2825A]" : "bg-[#2B1B0E]/15"
+                            product.availabilityStatus === "AVAILABLE" ? "bg-[#145C43]" : "bg-[#DCE3DC]"
                           }`}
                           title={
                             product.availabilityStatus === "HIDDEN"
@@ -649,17 +649,17 @@ export default function ProductsPage() {
 
         {/* Pagination */}
         {!loading && sorted.length > 0 && (
-          <div className="mt-4 flex items-center justify-between text-sm text-[#2B1B0E]/55">
+          <div className="mt-4 flex items-center justify-between text-sm text-[#6E7C74]">
             <span>
-              Showing <strong className="text-[#2B1B0E]">{(page - 1) * limit + 1}</strong>–
-              <strong className="text-[#2B1B0E]">{Math.min(page * limit, total)}</strong> of{" "}
-              <strong className="text-[#2B1B0E]">{total}</strong>
+              Showing <strong className="text-[#16241D]">{(page - 1) * limit + 1}</strong>–
+              <strong className="text-[#16241D]">{Math.min(page * limit, total)}</strong> of{" "}
+              <strong className="text-[#16241D]">{total}</strong>
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#2B1B0E]/10 hover:bg-white disabled:opacity-40"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#DCE3DC] hover:bg-white disabled:opacity-40"
               >
                 <ChevronLeft size={15} />
               </button>
@@ -667,7 +667,7 @@ export default function ProductsPage() {
               <button
                 onClick={() => setPage(Math.min(pages, page + 1))}
                 disabled={page >= pages}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#2B1B0E]/10 hover:bg-white disabled:opacity-40"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#DCE3DC] hover:bg-white disabled:opacity-40"
               >
                 <ChevronRight size={15} />
               </button>
