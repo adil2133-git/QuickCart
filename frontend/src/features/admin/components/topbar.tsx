@@ -61,7 +61,7 @@ export default function TopBar({
                         <input
                             type="text"
                             placeholder={searchPlaceholder}
-                            className="w-full bg-transparent text-[13.5px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
+                            className="w-full bg-transparent text-[13.5px] text-[#16241D] placeholder:text-[#9BAAA1] focus:outline-none"
                         />
                     </div>
                 )}
@@ -72,59 +72,59 @@ export default function TopBar({
 
             {/* Right: date, notifications, profile — identical on every page */}
             <div className="flex items-center gap-5">
-                <span className="whitespace-nowrap text-[13.5px] text-[#8C7C6B]">
+                <span className="whitespace-nowrap text-[13.5px] text-[#6E7C74]">
                     {getFormattedDate()}
                 </span>
 
-                <div className="h-5 w-px bg-[#EBE1D2]" />
+                <div className="h-5 w-px bg-[#E3E7E1]" />
 
                 <button
                     aria-label="Notifications"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#5A4A3A] transition-colors hover:bg-[#F0E6D6]"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#16241D] transition-colors hover:bg-[#F5F7F3]"
                 >
                     <Bell size={18} strokeWidth={2} />
                     {unreadCount > 0 && (
-                        <span className="absolute right-1.5 top-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-[#D94F4F] ring-2 ring-[#FBF6EE]" />
+                        <span className="absolute right-1.5 top-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-[#BA1A1A] ring-2 ring-white" />
                     )}
                 </button>
 
                 <div className="relative" ref={menuRef}>
                     <button
                         onClick={() => setMenuOpen((o) => !o)}
-                        className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-[#F0E6D6]"
+                        className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-[#F5F7F3]"
                     >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B6F47] text-[12px] font-semibold text-[#FBF6EE]">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#145C43] text-[12px] font-semibold text-white">
                             {adminInitials}
                         </span>
                         <ChevronDown
                             size={15}
-                            className={`text-[#8C7C6B] transition-transform duration-200 ${menuOpen ? "rotate-180" : ""
+                            className={`text-[#6E7C74] transition-transform duration-200 ${menuOpen ? "rotate-180" : ""
                                 }`}
                         />
                     </button>
 
                     {menuOpen && (
-                        <div className="absolute right-0 z-50 mt-2 w-52 rounded-xl border border-[#EBE1D2] bg-white p-1.5 shadow-lg">
+                        <div className="absolute right-0 z-50 mt-2 w-52 rounded-xl border border-[#E3E7E1] bg-white p-1.5 shadow-lg">
                             <div className="px-3 py-2">
-                                <p className="text-[13px] font-semibold text-[#3A2C20]">
+                                <p className="text-[13px] font-semibold text-[#16241D]">
                                     {adminName}
                                 </p>
-                                <p className="text-[11.5px] text-[#8C7C6B]">Super Admin</p>
+                                <p className="text-[11.5px] text-[#6E7C74]">Super Admin</p>
                             </div>
-                            <div className="my-1 h-px bg-[#EBE1D2]" />
-                            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]">
+                            <div className="my-1 h-px bg-[#E3E7E1]" />
+                            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#16241D] transition-colors hover:bg-[#F5F7F3]">
                                 <UserCircle2 size={16} />
                                 Admin Profile
                             </button>
-                            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]">
+                            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#16241D] transition-colors hover:bg-[#F5F7F3]">
                                 <Settings size={16} />
                                 Platform Settings
                             </button>
-                            <div className="my-1 h-px bg-[#EBE1D2]" />
+                            <div className="my-1 h-px bg-[#E3E7E1]" />
                             <button
                                 onClick={logout}
                                 disabled={isLoggingOut}
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#D94F4F] transition-colors hover:bg-[#FBEAEA]"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-[#BA1A1A] transition-colors hover:bg-[#FBEAEA]"
                             >
                                 <LogOut size={16} />
                                 {isLoggingOut ? "Logging out…" : "Logout"}

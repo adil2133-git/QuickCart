@@ -34,10 +34,10 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
-  Delivered: "#8B6F47",
-  Processing: "#D9A441",
-  "Out for Delivery": "#4F7FD9",
-  Cancelled: "#D94F4F",
+  Delivered: "#145C43",
+  Processing: "#B47800",
+  "Out for Delivery": "#145C43",
+  Cancelled: "#BA1A1A",
 };
 
 function CustomTooltip({
@@ -51,7 +51,7 @@ function CustomTooltip({
   const value = payload[0]?.value;
   if (typeof value !== "number") return null;
   return (
-    <div className="rounded-lg bg-[#2A1F18] px-3 py-1.5 text-[12px] font-semibold text-[#F4EDE2] shadow-lg">
+    <div className="rounded-lg bg-[#0D2B21] px-3 py-1.5 text-[12px] font-semibold text-white shadow-lg">
       ₹{value.toLocaleString("en-IN")}
     </div>
   );
@@ -72,10 +72,10 @@ function HealthBar({
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between text-[12.5px]">
-        <span className="text-[#5A4A3A]">{label}</span>
-        <span className="font-semibold text-[#2A1F18]">{value}</span>
+        <span className="text-[#6E7C74]">{label}</span>
+        <span className="font-semibold text-[#16241D]">{value}</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-[#F0E6D6]">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-[#F5F7F3]">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: color }}
@@ -118,22 +118,22 @@ export default function OperationsIntelligence() {
     : 0;
 
   return (
-    <div className="rounded-2xl border border-[#EBE1D2] bg-white">
+    <div className="rounded-2xl border border-[#E3E7E1] bg-white">
       {/* Tabs */}
-      <div className="flex items-center gap-7 border-b border-[#EBE1D2] px-6 pt-5">
+      <div className="flex items-center gap-7 border-b border-[#E3E7E1] px-6 pt-5">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`relative pb-4 text-[14.5px] font-medium transition-colors ${
               activeTab === tab.id
-                ? "text-[#2A1F18]"
-                : "text-[#A2937F] hover:text-[#5A4A3A]"
+                ? "text-[#16241D]"
+                : "text-[#9BAAA1] hover:text-[#6E7C74]"
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute bottom-0 left-0 h-[2.5px] w-full rounded-full bg-[#8B6F47]" />
+              <span className="absolute bottom-0 left-0 h-[2.5px] w-full rounded-full bg-[#145C43]" />
             )}
           </button>
         ))}
@@ -141,11 +141,11 @@ export default function OperationsIntelligence() {
 
       <div className="px-6 pb-5 pt-4">
         {operationsError && (
-          <p className="py-6 text-center text-[13px] text-[#D94F4F]">{operationsError}</p>
+          <p className="py-6 text-center text-[13px] text-[#BA1A1A]">{operationsError}</p>
         )}
 
         {!operationsError && operationsLoading && !orderStatus && (
-          <div className="flex h-[190px] items-center justify-center text-[13px] text-[#A2937F]">
+          <div className="flex h-[190px] items-center justify-center text-[13px] text-[#9BAAA1]">
             Loading…
           </div>
         )}
@@ -159,12 +159,12 @@ export default function OperationsIntelligence() {
                     dataKey="day"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#A2937F", fontSize: 12 }}
+                    tick={{ fill: "#9BAAA1", fontSize: 12 }}
                   />
-                  <Tooltip cursor={{ fill: "#FBF6EE" }} content={<CustomTooltip />} />
+                  <Tooltip cursor={{ fill: "#F5F7F3" }} content={<CustomTooltip />} />
                   <Bar dataKey="value" radius={[6, 6, 6, 6]} maxBarSize={40}>
                     {revenueTrend.map((entry, i) => (
-                      <Cell key={i} fill={entry.active ? "#8B6F47" : "#E4D5BD"} />
+                      <Cell key={i} fill={entry.active ? "#145C43" : "#DCE3DC"} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -193,16 +193,16 @@ export default function OperationsIntelligence() {
                 <div className="flex flex-1 flex-col gap-3">
                   {orderStatusData.map((status) => (
                     <div key={status.name} className="flex items-center justify-between">
-                      <span className="flex items-center gap-2.5 text-[13.5px] text-[#5A4A3A]">
+                      <span className="flex items-center gap-2.5 text-[13.5px] text-[#6E7C74]">
                         <span
                           className="h-2.5 w-2.5 rounded-full"
                           style={{ backgroundColor: status.color }}
                         />
                         {status.name}
                       </span>
-                      <span className="text-[13.5px] font-semibold text-[#2A1F18]">
+                      <span className="text-[13.5px] font-semibold text-[#16241D]">
                         {status.value}{" "}
-                        <span className="font-normal text-[#A2937F]">
+                        <span className="font-normal text-[#9BAAA1]">
                           ({Math.round((status.value / totalOrders) * 100)}%)
                         </span>
                       </span>
@@ -212,7 +212,7 @@ export default function OperationsIntelligence() {
               </div>
             )}
             {activeTab === "orders" && totalOrders === 0 && (
-              <div className="flex h-[190px] items-center justify-center text-[13px] text-[#A2937F]">
+              <div className="flex h-[190px] items-center justify-center text-[13px] text-[#9BAAA1]">
                 No orders in the last 30 days.
               </div>
             )}
@@ -220,23 +220,23 @@ export default function OperationsIntelligence() {
             {activeTab === "health" && driverHealth && storeHealth && (
               <div className="grid grid-cols-2 gap-10">
                 <div>
-                  <p className="mb-4 text-[13px] font-semibold text-[#3A2C20]">
+                  <p className="mb-4 text-[13px] font-semibold text-[#16241D]">
                     Driver Status
                   </p>
                   <div className="flex flex-col gap-4">
-                    <HealthBar label="Online" value={driverHealth.ONLINE} max={driverMax} color="#3FA96A" />
-                    <HealthBar label="On Delivery" value={driverHealth.BUSY} max={driverMax} color="#4F7FD9" />
-                    <HealthBar label="Offline" value={driverHealth.OFFLINE} max={driverMax} color="#C9BCAC" />
+                    <HealthBar label="Online" value={driverHealth.ONLINE} max={driverMax} color="#145C43" />
+                    <HealthBar label="On Delivery" value={driverHealth.BUSY} max={driverMax} color="#B47800" />
+                    <HealthBar label="Offline" value={driverHealth.OFFLINE} max={driverMax} color="#9BAAA1" />
                   </div>
                 </div>
                 <div>
-                  <p className="mb-4 text-[13px] font-semibold text-[#3A2C20]">
+                  <p className="mb-4 text-[13px] font-semibold text-[#16241D]">
                     Store Status
                   </p>
                   <div className="flex flex-col gap-4">
-                    <HealthBar label="Open" value={storeHealth.OPEN} max={storeMax} color="#3FA96A" />
-                    <HealthBar label="Busy" value={storeHealth.BUSY} max={storeMax} color="#D9A441" />
-                    <HealthBar label="Closed" value={storeHealth.CLOSED} max={storeMax} color="#C9BCAC" />
+                    <HealthBar label="Open" value={storeHealth.OPEN} max={storeMax} color="#145C43" />
+                    <HealthBar label="Busy" value={storeHealth.BUSY} max={storeMax} color="#B47800" />
+                    <HealthBar label="Closed" value={storeHealth.CLOSED} max={storeMax} color="#9BAAA1" />
                   </div>
                 </div>
               </div>

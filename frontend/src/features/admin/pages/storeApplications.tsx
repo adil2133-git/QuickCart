@@ -24,15 +24,15 @@ const CITIES = ["All Cities", "Mumbai, Maharashtra", "Delhi, NCR", "Bangalore, K
 // ---------- UI helpers (unchanged) ----------
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-    pending: { label: "Pending", className: "bg-[#F7EFE2] text-[#8B6F47]" },
-    approved: { label: "Approved", className: "bg-[#EAF6EF] text-[#2E7D52]" },
-    rejected: { label: "Rejected", className: "bg-[#FBEAEA] text-[#D94F4F]" },
-    "more-info": { label: "More Info", className: "bg-[#EEF1FB] text-[#3D5A99]" },
+    pending: { label: "Pending", className: "bg-[#FEF3C7] text-[#B47800]" },
+    approved: { label: "Approved", className: "bg-[#E8EFEC] text-[#145C43]" },
+    rejected: { label: "Rejected", className: "bg-[#FBEAEA] text-[#BA1A1A]" },
+    "more-info": { label: "More Info", className: "bg-[#E8EFEC] text-[#145C43]" },
 };
 
 const DOC_CHIP: Record<"verified" | "missing", string> = {
-    verified: "bg-[#EAF6EF] text-[#2E7D52]",
-    missing: "bg-[#F0E6D6] text-[#A2937F]",
+    verified: "bg-[#E8EFEC] text-[#145C43]",
+    missing: "bg-[#F5F7F3] text-[#9BAAA1]",
 };
 
 function DocIcon({ status }: { status: "verified" | "missing" }) {
@@ -65,8 +65,8 @@ function StatCard({
                 <Icon size={16} strokeWidth={2} />
             </span>
             <div>
-                <p className="text-[13px] text-[#5A4A3A]">{label}</p>
-                <p className="text-[28px] font-semibold leading-tight text-[#3A2C20]">{value}</p>
+                <p className="text-[13px] text-[#6E7C74]">{label}</p>
+                <p className="text-[28px] font-semibold leading-tight text-[#16241D]">{value}</p>
             </div>
         </div>
     );
@@ -75,13 +75,13 @@ function StatCard({
 function StoreLogo({ app }: { app: StoreApplication }) {
     if (!app.logoInitial) {
         return (
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EFE7DC] text-[#A2937F]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8EFEC] text-[#9BAAA1]">
                 <StoreIcon size={20} />
             </div>
         );
     }
     return (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#8B6F47] text-[15px] font-semibold text-white">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#145C43] text-[15px] font-semibold text-white">
             {app.logoInitial}
         </div>
     );
@@ -104,13 +104,13 @@ function ApplicationCard({ app, onReview }: { app: StoreApplication; onReview: (
     const primary = primaryAction(app.status);
 
     return (
-        <div className="flex flex-col gap-5 rounded-2xl border border-[#EBE1D2] bg-white p-6">
+        <div className="flex flex-col gap-5 rounded-2xl border border-[#E3E7E1] bg-white p-6">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
                     <StoreLogo app={app} />
                     <div>
-                        <p className="text-[15px] font-semibold text-[#3A2C20]">{app.name}</p>
-                        <p className="text-[12.5px] text-[#8C7C6B]">
+                        <p className="text-[15px] font-semibold text-[#16241D]">{app.name}</p>
+                        <p className="text-[12.5px] text-[#6E7C74]">
                             {app.owner} · {app.storeCode}
                         </p>
                     </div>
@@ -122,19 +122,19 @@ function ApplicationCard({ app, onReview }: { app: StoreApplication; onReview: (
 
             <div className="grid grid-cols-2 gap-4 text-[13px]">
                 <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-[#A2937F]">Contact</p>
-                    <p className="mt-1 text-[#3A2C20]">{app.contactEmail}</p>
-                    <p className="text-[#3A2C20]">{app.contactPhone}</p>
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-[#9BAAA1]">Contact</p>
+                    <p className="mt-1 text-[#16241D]">{app.contactEmail}</p>
+                    <p className="text-[#16241D]">{app.contactPhone}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-[#A2937F]">Location</p>
-                    <p className="mt-1 text-[#3A2C20]">{app.location}</p>
-                    <p className="italic text-[#8C7C6B]">{formatDateLabel(app.dateLabel)}</p>
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-[#9BAAA1]">Location</p>
+                    <p className="mt-1 text-[#16241D]">{app.location}</p>
+                    <p className="italic text-[#6E7C74]">{formatDateLabel(app.dateLabel)}</p>
                 </div>
             </div>
 
             <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-[#A2937F]">
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-[#9BAAA1]">
                     Submitted Documents
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -150,20 +150,20 @@ function ApplicationCard({ app, onReview }: { app: StoreApplication; onReview: (
                 </div>
             </div>
 
-            <div className="flex items-stretch divide-x divide-[#EBE1D2] rounded-xl bg-[#FBF6EE] px-2 py-3">
+            <div className="flex items-stretch divide-x divide-[#E3E7E1] rounded-xl bg-[#F5F7F3] px-2 py-3">
                 <div className="flex-1 px-3 text-center">
-                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#A2937F]">Documents</p>
-                    <p className="mt-1 text-[14px] font-semibold text-[#3A2C20]">
+                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#9BAAA1]">Documents</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[#16241D]">
                         {app.documentsSubmitted}/{app.documentsTotal}
                     </p>
                 </div>
                 <div className="flex-1 px-3 text-center">
-                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#A2937F]">Type</p>
-                    <p className="mt-1 text-[14px] font-semibold text-[#3A2C20]">{app.type}</p>
+                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#9BAAA1]">Type</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[#16241D]">{app.type}</p>
                 </div>
                 <div className="flex-1 px-3 text-center">
-                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#A2937F]">Pincode</p>
-                    <p className="mt-1 text-[14px] font-semibold text-[#3A2C20]">{app.pincode ?? "—"}</p>
+                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#9BAAA1]">Pincode</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[#16241D]">{app.pincode ?? "—"}</p>
                 </div>
             </div>
 
@@ -173,15 +173,15 @@ function ApplicationCard({ app, onReview }: { app: StoreApplication; onReview: (
                     onClick={() => onReview(app.id)}
                     className={`flex-1 rounded-xl px-4 py-2.5 text-[13px] font-medium transition-colors ${
                         primary.disabled
-                            ? "cursor-not-allowed bg-[#F0E6D6] text-[#A2937F]"
-                            : "bg-[#3A2C20] text-[#F4EDE2] hover:bg-[#2E231C]"
+                            ? "cursor-not-allowed bg-[#F5F7F3] text-[#9BAAA1]"
+                            : "bg-[#145C43] text-white hover:bg-[#114E39]"
                     }`}
                 >
                     {primary.label}
                 </button>
                 <button
                     onClick={() => onReview(app.id)}
-                    className="flex-1 rounded-xl border border-[#EBE1D2] bg-white px-4 py-2.5 text-[13px] font-medium text-[#3A2C20] transition-colors hover:bg-[#F5EEE2]"
+                    className="flex-1 rounded-xl border border-[#E3E7E1] bg-white px-4 py-2.5 text-[13px] font-medium text-[#16241D] transition-colors hover:bg-[#F5F7F3]"
                 >
                     View Documents
                 </button>
@@ -239,7 +239,7 @@ export default function StoreApplicationsPage() {
     const rangeEnd = Math.min(filters.page * filters.limit, total);
 
     return (
-        <div className="flex h-screen w-full bg-[#FBF6EE]">
+        <div className="flex h-screen w-full bg-[#F7F8F5]">
             <Sidebar />
 
             <div className="flex h-screen flex-1 flex-col overflow-hidden">
@@ -247,18 +247,18 @@ export default function StoreApplicationsPage() {
 
                 <main className="flex-1 overflow-y-auto overflow-x-hidden px-7 py-6">
                     <div className="flex flex-col gap-6">
-                        <p className="text-[14px] text-[#8C7C6B]">Review and manage store onboarding requests</p>
+                        <p className="text-[14px] text-[#6E7C74]">Review and manage store onboarding requests</p>
 
-                        <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#EBE1D2] bg-[#F7EFE2] px-6 py-4">
+                        <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#E3E7E1] bg-[#F5F7F3] px-6 py-4">
                             <div className="flex items-center gap-3">
-                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#3A2C20] text-[#F0DDB8]">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#145C43] text-white">
                                     <AlertTriangle size={18} />
                                 </span>
                                 <div>
-                                    <p className="text-[14px] font-semibold text-[#3A2C20]">
+                                    <p className="text-[14px] font-semibold text-[#16241D]">
                                         {stats?.pending ?? "—"} store applications are awaiting review
                                     </p>
-                                    <p className="text-[12.5px] text-[#8C7C6B]">
+                                    <p className="text-[12.5px] text-[#6E7C74]">
                                         {stats?.requiringAttention ?? "—"} applications have been pending for more than 48 hours
                                     </p>
                                 </div>
@@ -266,21 +266,21 @@ export default function StoreApplicationsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                            <StatCard label="Pending Applications" value={stats?.pending ?? 0} icon={CircleDashed} bg="bg-[#F7EFE2]" iconColor="text-[#8B6F47]" />
-                            <StatCard label="Approved Stores" value={stats?.approved ?? 0} icon={CheckCircle2} bg="bg-[#EAF6EF]" iconColor="text-[#2E7D52]" />
-                            <StatCard label="Rejected" value={stats?.rejected ?? 0} icon={XCircle} bg="bg-[#FBEAEA]" iconColor="text-[#D94F4F]" />
-                            <StatCard label="Requiring Attention" value={stats?.requiringAttention ?? 0} icon={AlertTriangle} bg="bg-[#FBEAEA]" iconColor="text-[#D94F4F]" />
+                            <StatCard label="Pending Applications" value={stats?.pending ?? 0} icon={CircleDashed} bg="bg-[#FEF3C7]" iconColor="text-[#B47800]" />
+                            <StatCard label="Approved Stores" value={stats?.approved ?? 0} icon={CheckCircle2} bg="bg-[#E8EFEC]" iconColor="text-[#145C43]" />
+                            <StatCard label="Rejected" value={stats?.rejected ?? 0} icon={XCircle} bg="bg-[#FBEAEA]" iconColor="text-[#BA1A1A]" />
+                            <StatCard label="Requiring Attention" value={stats?.requiringAttention ?? 0} icon={AlertTriangle} bg="bg-[#FBEAEA]" iconColor="text-[#BA1A1A]" />
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex min-w-[240px] flex-1 items-center gap-2.5 rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5">
-                                <Search size={16} className="shrink-0 text-[#8C7C6B]" />
+                            <div className="flex min-w-[240px] flex-1 items-center gap-2.5 rounded-xl border border-[#E3E7E1] bg-white px-3.5 py-2.5">
+                                <Search size={16} className="shrink-0 text-[#6E7C74]" />
                                 <input
                                     type="text"
                                     value={searchInput}
                                     onChange={(e) => setSearchInput(e.target.value)}
                                     placeholder="Search by store name or owner..."
-                                    className="w-full bg-transparent text-[13px] text-[#3A2C20] placeholder:text-[#A2937F] focus:outline-none"
+                                    className="w-full bg-transparent text-[13px] text-[#16241D] placeholder:text-[#9BAAA1] focus:outline-none"
                                 />
                             </div>
 
@@ -300,31 +300,31 @@ export default function StoreApplicationsPage() {
                                 type="date"
                                 value={filters.date}
                                 onChange={(e) => setFilters({ date: e.target.value })}
-                                className="rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5 text-[13px] text-[#3A2C20] focus:outline-none"
+                                className="rounded-xl border border-[#E3E7E1] bg-white px-3.5 py-2.5 text-[13px] text-[#16241D] focus:outline-none"
                             />
 
                             <button
                                 onClick={handleResetFilters}
-                                className="whitespace-nowrap text-[13px] font-medium text-[#8B6F47] hover:underline"
+                                className="whitespace-nowrap text-[13px] font-medium text-[#145C43] hover:underline"
                             >
                                 Reset Filters
                             </button>
                         </div>
 
                         {listError ? (
-                            <div className="col-span-full rounded-2xl border border-dashed border-[#D94F4F] bg-white px-6 py-12 text-center">
-                                <p className="text-[14px] font-medium text-[#D94F4F]">{listError}</p>
+                            <div className="col-span-full rounded-2xl border border-dashed border-[#BA1A1A] bg-white px-6 py-12 text-center">
+                                <p className="text-[14px] font-medium text-[#BA1A1A]">{listError}</p>
                             </div>
                         ) : listLoading ? (
-                            <div className="col-span-full rounded-2xl border border-dashed border-[#EBE1D2] bg-white px-6 py-12 text-center">
-                                <p className="text-[14px] text-[#8C7C6B]">Loading applications...</p>
+                            <div className="col-span-full rounded-2xl border border-dashed border-[#E3E7E1] bg-white px-6 py-12 text-center">
+                                <p className="text-[14px] text-[#6E7C74]">Loading applications...</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                                 {applications.length === 0 ? (
-                                    <div className="col-span-full rounded-2xl border border-dashed border-[#EBE1D2] bg-white px-6 py-12 text-center">
-                                        <p className="text-[14px] font-medium text-[#3A2C20]">No applications match these filters</p>
-                                        <p className="mt-1 text-[12.5px] text-[#8C7C6B]">Try a different search term or reset the filters above.</p>
+                                    <div className="col-span-full rounded-2xl border border-dashed border-[#E3E7E1] bg-white px-6 py-12 text-center">
+                                        <p className="text-[14px] font-medium text-[#16241D]">No applications match these filters</p>
+                                        <p className="mt-1 text-[12.5px] text-[#6E7C74]">Try a different search term or reset the filters above.</p>
                                     </div>
                                 ) : (
                                     applications.map((app) => (
@@ -339,25 +339,25 @@ export default function StoreApplicationsPage() {
                         )}
 
                         {total > 0 && (
-                            <div className="flex items-center justify-between border-t border-[#EBE1D2] pt-5">
-                                <p className="text-[13px] text-[#8C7C6B]">
-                                    Showing <span className="font-semibold text-[#3A2C20]">{rangeStart} – {rangeEnd}</span> of{" "}
-                                    <span className="font-semibold text-[#3A2C20]">{total}</span> applications
+                            <div className="flex items-center justify-between border-t border-[#E3E7E1] pt-5">
+                                <p className="text-[13px] text-[#6E7C74]">
+                                    Showing <span className="font-semibold text-[#16241D]">{rangeStart} – {rangeEnd}</span> of{" "}
+                                    <span className="font-semibold text-[#16241D]">{total}</span> applications
                                 </p>
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => setPage(Math.max(1, filters.page - 1))}
-                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E3E7E1] bg-white text-[#6E7C74] transition-colors hover:bg-[#F5F7F3] disabled:cursor-not-allowed disabled:opacity-50"
                                         disabled={filters.page === 1}
                                     >
                                         <ChevronLeft size={16} />
                                     </button>
-                                    <span className="px-2 text-[13px] text-[#3A2C20]">
+                                    <span className="px-2 text-[13px] text-[#16241D]">
                                         Page {filters.page} of {totalPages}
                                     </span>
                                     <button
                                         onClick={() => setPage(Math.min(totalPages, filters.page + 1))}
-                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#EBE1D2] bg-white text-[#8C7C6B] transition-colors hover:bg-[#F5EEE2] disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E3E7E1] bg-white text-[#6E7C74] transition-colors hover:bg-[#F5F7F3] disabled:cursor-not-allowed disabled:opacity-50"
                                         disabled={filters.page === totalPages}
                                     >
                                         <ChevronRight size={16} />
@@ -388,15 +388,15 @@ function FilterSelect({
             <select
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="appearance-none rounded-xl border border-[#EBE1D2] bg-white px-3.5 py-2.5 pr-9 text-[13px] text-[#3A2C20] focus:outline-none"
+                className="appearance-none rounded-xl border border-[#E3E7E1] bg-white px-3.5 py-2.5 pr-9 text-[13px] text-[#16241D] focus:outline-none"
             >
                 {options.map((opt) => (
                     <option key={opt} value={opt}>
-                        {prefix ? `${prefix}: ${opt}` : opt}
+                        {prefix && opt !== "All" ? `${prefix}: ${opt}` : opt}
                     </option>
                 ))}
             </select>
-            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8C7C6B]" />
+            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6E7C74]" />
         </div>
     );
 }

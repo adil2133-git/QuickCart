@@ -202,11 +202,11 @@ export default function Sidebar() {
                                     <span className="flex items-center gap-3">
                                         <span
                                             className={`relative flex h-5 w-5 items-center justify-center ${
-                                                isActive ? "text-[#C8A37A]" : ""
+                                                isActive ? "text-[#A9CC3B]" : ""
                                             }`}
                                         >
                                             {isActive && (
-                                                <span className="absolute -left-[15px] h-5 w-[3px] rounded-full bg-[#C8A37A]" />
+                                                <span className="absolute -left-[15px] h-5 w-[3px] rounded-full bg-[#A9CC3B]" />
                                             )}
                                             <Icon size={18} strokeWidth={2} />
                                         </span>
@@ -215,7 +215,7 @@ export default function Sidebar() {
                                     {hasChildren && (
                                         <ChevronDown
                                             size={15}
-                                            className={`text-[#8C7C6B] transition-transform duration-200 ${
+                                            className={`text-[#6E7C74] transition-transform duration-200 ${
                                                 isGroupOpen ? "rotate-180" : ""
                                             }`}
                                         />
@@ -230,7 +230,7 @@ export default function Sidebar() {
                                         }`}
                                     >
                                         <div className="min-h-0">
-                                            <div className="ml-[26px] flex flex-col gap-0.5 border-l border-[#3A2C20] py-1 pl-4">
+                                            <div className="ml-[26px] flex flex-col gap-0.5 border-l border-[#E3E7E1] py-1 pl-4">
                                                 {item.children!.map((child) => {
                                                     const isChildActive = activeId === child.id;
                                                     return (
@@ -239,8 +239,8 @@ export default function Sidebar() {
                                                             onClick={() => handleChildClick(child)}
                                                             className={`rounded-lg px-2.5 py-1.5 text-left text-[12.5px] font-normal transition-colors ${
                                                                 isChildActive
-                                                                    ? "bg-[#3A2C20] font-medium text-[#F4EDE2]"
-                                                                    : "text-[#A2937F] hover:bg-[#2E231C] hover:text-[#E4D9CB]"
+                                                                    ? "bg-[#145C43] font-semibold text-white"
+                                                                    : "text-[#6E7C74] hover:bg-[#F5F7F3] hover:text-[#16241D]"
                                                             }`}
                                                         >
                                                             {child.label}
@@ -258,10 +258,10 @@ export default function Sidebar() {
             </div>
 
             {/* Bottom: Admin profile / logout */}
-            <div className="flex flex-col gap-1 border-t border-[#3A2C20] px-3 py-4">
+            <div className="flex flex-col gap-1 border-t border-[#E3E7E1] px-3 py-4">
                 <button
                     onClick={() => navigate("/admin/profile")}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-[#C9BCAC] transition-colors hover:bg-[#2E231C] hover:text-[#F4EDE2]"
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-[#6E7C74] transition-colors hover:bg-[#F5F7F3] hover:text-[#16241D]"
                 >
                     <UserCircle2 size={18} />
                     <span>Admin Profile</span>
@@ -269,7 +269,7 @@ export default function Sidebar() {
                 <button
                     onClick={logout}
                     disabled={isLoggingOut}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-[#C9BCAC] transition-colors hover:bg-[#2E231C] hover:text-[#F4EDE2]"
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-[#6E7C74] transition-colors hover:bg-[#F5F7F3] hover:text-[#16241D]"
                 >
                     <LogOut size={18} />
                     <span>{isLoggingOut ? "Logging out…" : "Logout"}</span>

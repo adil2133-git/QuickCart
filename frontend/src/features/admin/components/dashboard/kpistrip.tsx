@@ -27,16 +27,13 @@ function TrendBadge({
   if (!direction || !label) return null;
   if (direction === "neutral") {
     return (
-      <span className="rounded-full bg-[#F0E6D6] px-2 py-0.5 text-[11px] font-medium text-[#8C7C6B]">
+      <span className="rounded-full bg-[#F5F7F3] px-2 py-0.5 text-[11px] font-medium text-[#6E7C74]">
         {label}
       </span>
     );
   }
   const Icon: LucideIcon = direction === "up" ? TrendingUp : TrendingDown;
-  // Direction alone doesn't mean good/bad here (a "down" avg-delivery-time
-  // trend is actually good), so this just always renders in the same
-  // neutral-positive green rather than guessing intent per-card.
-  const color = "text-[#3FA96A]";
+  const color = "text-[#16A34A]";
   return (
     <span className={`flex items-center gap-1 text-[12px] font-semibold ${color}`}>
       <Icon size={12} />
@@ -47,9 +44,9 @@ function TrendBadge({
 
 function KpiCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-[#EBE1D2] bg-white px-5 py-4 animate-pulse">
-      <div className="mb-3 h-3 w-20 rounded bg-[#F0E6D6]" />
-      <div className="h-6 w-16 rounded bg-[#F0E6D6]" />
+    <div className="rounded-2xl border border-[#E3E7E1] bg-white px-5 py-4 animate-pulse">
+      <div className="mb-3 h-3 w-20 rounded bg-[#F5F7F3]" />
+      <div className="h-6 w-16 rounded bg-[#F5F7F3]" />
     </div>
   );
 }
@@ -73,7 +70,7 @@ export default function KpiStrip() {
 
   if (kpisError) {
     return (
-      <div className="rounded-2xl border border-[#F5D8D8] bg-[#FBEAEA] px-5 py-4 text-[13px] text-[#D94F4F]">
+      <div className="rounded-2xl border border-[#FBEAEA] bg-[#FBEAEA] px-5 py-4 text-[13px] text-[#BA1A1A]">
         {kpisError}
       </div>
     );
@@ -119,13 +116,13 @@ export default function KpiStrip() {
       {cards.map((kpi) => (
         <div
           key={kpi.label}
-          className="rounded-2xl border border-[#EBE1D2] bg-white px-5 py-4"
+          className="rounded-2xl border border-[#E3E7E1] bg-white px-5 py-4"
         >
-          <p className="mb-2 text-[11px] font-semibold tracking-wide text-[#A2937F]">
+          <p className="mb-2 text-[11px] font-semibold tracking-wide text-[#6E7C74]">
             {kpi.label}
           </p>
           <div className="flex flex-col gap-1.5">
-            <span className="text-[26px] font-bold leading-none text-[#2A1F18]">
+            <span className="text-[26px] font-bold leading-none text-[#16241D]">
               {kpi.value}
             </span>
             <div>

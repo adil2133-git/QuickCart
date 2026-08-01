@@ -46,11 +46,11 @@ export default function LocationPreviewMap({
       html: `
         <div style="
           width:32px;height:32px;
-          background:#c2a383;
-          border:3px solid #291803;
+          background:#145C43;
+          border:3px solid #0D2B21;
           border-radius:50% 50% 50% 0;
           transform:rotate(-45deg);
-          box-shadow:0 4px 12px rgba(41,24,3,0.35);
+          box-shadow:0 4px 12px rgba(22,36,29,0.35);
         "></div>`,
       iconSize: [32, 32],
       iconAnchor: [16, 32],
@@ -83,7 +83,7 @@ export default function LocationPreviewMap({
   return (
     <div
       className={`overflow-hidden rounded-xl border ${className}`}
-      style={{ borderColor: "#EBE1D2" }}
+      style={{ borderColor: "#E3E7E1" }}
     >
       <div ref={mapRef} style={{ height, width: "100%" }} />
     </div>
