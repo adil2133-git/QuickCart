@@ -16,22 +16,22 @@ import type { StoreProfileSummary } from "../types/store";
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
 const PALETTE = {
-    bg: "#fff9ef",
-    ink: "#1d1b16",
-    muted: "#4e453d",
-    brown: "#735a3e",
-    green: "#376847",
-    busy: "#a36b1f",
-    closed: "#9b9286",
-    line: "#d2c4b9",
-    card: "#f9f3ea",
-    gold: "#c2a383",
+    bg: "#F7F8F5",
+    ink: "#16241D",
+    muted: "#6E7C74",
+    brown: "#145C43",
+    green: "#145C43",
+    busy: "#B47800",
+    closed: "#9BAAA1",
+    line: "#E3E7E1",
+    card: "#FFFFFF",
+    gold: "#A9CC3B",
 };
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
 function ShimmerBlock({ className = "" }: { className?: string }) {
-    return <div className={`animate-pulse rounded-2xl ${className}`} style={{ backgroundColor: "#ece3d4" }} />;
+    return <div className={`animate-pulse rounded-2xl ${className}`} style={{ backgroundColor: "#F5F7F3" }} />;
 }
 
 function StoreCardSkeleton() {
@@ -47,7 +47,7 @@ function StoreCardSkeleton() {
 
 // ─── Store card background (deterministic from name) ─────────────────────────
 
-const CARD_COLORS = ["#2c2018", "#1a2e1c", "#1c1a2e", "#2e1c1a", "#18282e"];
+const CARD_COLORS = ["#145C43", "#0D2B21", "#123A2C", "#0A1F17", "#16241D"];
 function storeCardColor(name: string): string {
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -183,7 +183,7 @@ function SortDropdown({
                 className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border text-xs font-medium transition-all"
                 style={{ borderColor: PALETTE.line, backgroundColor: "#fff", color: PALETTE.muted }}
             >
-                <span style={{ color: "#9c8c7c" }}>Sorted by</span>
+                <span style={{ color: "#6E7C74" }}>Sorted by</span>
                 <span style={{ color: PALETTE.ink, fontWeight: 600 }}>{current.label}</span>
                 <ChevronDown size={14} />
             </button>
@@ -197,7 +197,7 @@ function SortDropdown({
                         <button
                             key={o.value}
                             onClick={() => onChange(o.value)}
-                            className="flex items-center justify-between w-full text-left px-4 py-2.5 text-xs hover:bg-[#f9f3ea] transition-colors"
+                            className="flex items-center justify-between w-full text-left px-4 py-2.5 text-xs hover:bg-[#F5F7F3] transition-colors"
                             style={{ color: value === o.value ? PALETTE.brown : PALETTE.ink, fontWeight: value === o.value ? 600 : 400 }}
                         >
                             {o.label}

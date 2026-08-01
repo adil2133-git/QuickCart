@@ -73,11 +73,11 @@ const makeMarkerIcon = () =>
         className: "",
         html: `<div style="
       width:36px;height:36px;
-      background:#735A3E;
-      border:3px solid #291803;
+      background:#145C43;
+      border:3px solid #0D2B21;
       border-radius:50% 50% 50% 0;
       transform:rotate(-45deg);
-      box-shadow:0 4px 12px rgba(41,24,3,0.35);
+      box-shadow:0 4px 12px rgba(22,36,29,0.35);
     "></div>`,
         iconSize: [36, 36],
         iconAnchor: [18, 36],
@@ -303,9 +303,9 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                 className="w-full overflow-hidden rounded-2xl"
                 style={{
                     maxWidth: 520,
-                    backgroundColor: "#FFF9EF",
-                    boxShadow: "0px 24px 64px rgba(29,27,22,0.22)",
-                    border: "1px solid #D2C4B9",
+                    backgroundColor: "#FFFFFF",
+                    boxShadow: "0px 24px 64px rgba(22,36,29,0.18)",
+                    border: "1px solid #E3E7E1",
                     maxHeight: "90vh",
                     overflowY: "auto",
                 }}
@@ -313,23 +313,23 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                 {/* ── Header ── */}
                 <div
                     className="px-6 pt-6 pb-4 border-b"
-                    style={{ borderColor: "#EFE6D8" }}
+                    style={{ borderColor: "#E3E7E1" }}
                 >
                     <div className="flex items-start gap-3">
                         <div
                             className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
-                            style={{ backgroundColor: "#735A3E" }}
+                            style={{ backgroundColor: "#145C43" }}
                         >
-                            <MapPin size={18} color="#FFF9EF" />
+                            <MapPin size={18} color="#FFFFFF" />
                         </div>
                         <div className="min-w-0 flex-1">
                             <h2
                                 className="font-bold text-lg leading-tight"
-                                style={{ fontFamily: "'Playfair Display', serif", color: "#1D1B16" }}
+                                style={{ color: "#16241D" }}
                             >
                                 Where should we deliver?
                             </h2>
-                            <p className="text-xs mt-0.5" style={{ color: "#80756B" }}>
+                            <p className="text-xs mt-0.5" style={{ color: "#6E7C74" }}>
                                 Set your delivery location to see nearby stores and products.
                             </p>
                         </div>
@@ -337,8 +337,8 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                             <button
                                 onClick={onClose}
                                 aria-label="Close"
-                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors hover:bg-[#F3EAE0]"
-                                style={{ color: "#80756B" }}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors hover:bg-[#F5F7F3]"
+                                style={{ color: "#6E7C74" }}
                             >
                                 <X size={16} />
                             </button>
@@ -355,10 +355,9 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                         disabled={gpsLoading}
                         className="w-full flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-semibold transition-colors disabled:opacity-60"
                         style={{
-                            borderColor: "#C2A383",
-                            color: "#735A3E",
-                            backgroundColor: "#F9F3EA",
-                            fontFamily: "'DM Sans', sans-serif",
+                            borderColor: "#145C43",
+                            color: "#145C43",
+                            backgroundColor: "#E8EFEC",
                         }}
                     >
                         {gpsLoading
@@ -370,18 +369,18 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
 
                     {/* ── Divider ── */}
                     <div className="flex items-center gap-3">
-                        <div className="flex-1 h-px" style={{ backgroundColor: "#E5DAC9" }} />
-                        <span className="text-xs font-medium" style={{ color: "#9C8C7C" }}>or search</span>
-                        <div className="flex-1 h-px" style={{ backgroundColor: "#E5DAC9" }} />
+                        <div className="flex-1 h-px" style={{ backgroundColor: "#E3E7E1" }} />
+                        <span className="text-xs font-medium" style={{ color: "#6E7C74" }}>or search</span>
+                        <div className="flex-1 h-px" style={{ backgroundColor: "#E3E7E1" }} />
                     </div>
 
                     {/* ── Search row ── */}
                     <div className="flex gap-2">
                         <div
                             className="flex flex-1 items-center gap-2 rounded-xl border px-3 py-2.5"
-                            style={{ backgroundColor: "#F9F3EA", borderColor: "#D2C4B9" }}
+                            style={{ backgroundColor: "#F5F7F3", borderColor: "#DCE3DC" }}
                         >
-                            <Search size={14} color="#9C8C7C" />
+                            <Search size={14} color="#9BAAA1" />
                             <input
                                 type="text"
                                 placeholder="Search for your area, street…"
@@ -389,11 +388,11 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                                 onChange={(e) => setSearchText(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                                 className="flex-1 bg-transparent text-sm outline-none"
-                                style={{ fontFamily: "'DM Sans', sans-serif", color: "#4E453D" }}
+                                style={{ color: "#16241D" }}
                             />
                             {searchText && (
                                 <button onClick={() => setSearchText("")}>
-                                    <X size={13} color="#9C8C7C" />
+                                    <X size={13} color="#9BAAA1" />
                                 </button>
                             )}
                         </div>
@@ -403,9 +402,8 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                             disabled={searching || !searchText.trim()}
                             className="rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
                             style={{
-                                backgroundColor: "#735A3E",
-                                color: "#FFF9EF",
-                                fontFamily: "'DM Sans', sans-serif",
+                                backgroundColor: "#145C43",
+                                color: "#FFFFFF",
                             }}
                         >
                             {searching ? <Loader2 size={14} className="animate-spin" /> : "Go"}
@@ -413,14 +411,14 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                     </div>
 
                     {searchError && (
-                        <p className="text-xs" style={{ color: "#C24B3F" }}>{searchError}</p>
+                        <p className="text-xs" style={{ color: "#BA1A1A" }}>{searchError}</p>
                     )}
 
                     {/* ── Map ── */}
                     <div
                         className="overflow-hidden rounded-xl border-2 transition-colors"
                         style={{
-                            borderColor: isConfirmed ? "#735A3E" : pending ? "#C2A383" : "#D2C4B9",
+                            borderColor: isConfirmed ? "#145C43" : pending ? "#A9CC3B" : "#DCE3DC",
                         }}
                     >
                         <div ref={mapContainerRef} style={{ height: 240, width: "100%" }} />
@@ -430,12 +428,12 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                     <div
                         className="rounded-xl p-3 space-y-2"
                         style={{
-                            backgroundColor: isConfirmed ? "rgba(115,90,62,0.08)" : pending ? "#F9F3EA" : "#F5F1EE",
-                            border: `1px solid ${isConfirmed ? "#C2A383" : pending ? "#D2C4B9" : "#E8E1DD"}`,
+                            backgroundColor: isConfirmed ? "#E8EFEC" : pending ? "#F5F7F3" : "#F5F7F3",
+                            border: `1px solid ${isConfirmed ? "#145C43" : pending ? "#DCE3DC" : "#E3E7E1"}`,
                         }}
                     >
                         {!pending && (
-                            <p className="text-xs text-center" style={{ color: "#9C8C7C" }}>
+                            <p className="text-xs text-center" style={{ color: "#6E7C74" }}>
                                 Tap the map, search, or use GPS to drop a pin.
                             </p>
                         )}
@@ -445,13 +443,13 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                                 <div className="flex items-start gap-2">
                                     <div
                                         className="mt-1 h-2 w-2 flex-shrink-0 rounded-full"
-                                        style={{ backgroundColor: isConfirmed ? "#735A3E" : "#C2A383" }}
+                                        style={{ backgroundColor: isConfirmed ? "#145C43" : "#A9CC3B" }}
                                     />
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-semibold font-mono" style={{ color: "#5C4A35" }}>
+                                        <p className="text-xs font-semibold font-mono" style={{ color: "#16241D" }}>
                                             {pending.lat}, {pending.lng}
                                         </p>
-                                        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#6D614F" }}>
+                                        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#6E7C74" }}>
                                             {resolving ? (
                                                 <span className="flex items-center gap-1">
                                                     <Loader2 size={10} className="animate-spin" />
@@ -467,7 +465,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                                     {isConfirmed && (
                                         <span
                                             className="flex-shrink-0 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
-                                            style={{ backgroundColor: "rgba(115,90,62,0.15)", color: "#735A3E" }}
+                                            style={{ backgroundColor: "#E8EFEC", color: "#145C43" }}
                                         >
                                             <Check size={10} /> Confirmed
                                         </span>
@@ -476,7 +474,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
 
                                 {!isConfirmed && (
                                     <div className="space-y-1.5">
-                                        <p className="text-xs" style={{ color: "#9C8C7C" }}>
+                                        <p className="text-xs" style={{ color: "#6E7C74" }}>
                                             Drag the pin to fine-tune, then confirm.
                                         </p>
                                         <motion.button
@@ -484,9 +482,8 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                                             onClick={handleConfirm}
                                             className="w-full rounded-lg py-2.5 text-sm font-semibold"
                                             style={{
-                                                backgroundColor: "#C2A383",
-                                                color: "#291803",
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                backgroundColor: "#A9CC3B",
+                                                color: "#16241D",
                                             }}
                                         >
                                             Confirm this location
@@ -498,7 +495,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                                     <button
                                         onClick={() => setConfirmed(null)}
                                         className="text-xs font-semibold underline"
-                                        style={{ color: "#735A3E" }}
+                                        style={{ color: "#145C43" }}
                                     >
                                         Change pin
                                     </button>
@@ -517,7 +514,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                                 transition={{ duration: 0.2 }}
                                 className="space-y-2 overflow-hidden"
                             >
-                                <p className="text-xs font-semibold" style={{ color: "#4E453D" }}>
+                                <p className="text-xs font-semibold" style={{ color: "#16241D" }}>
                                     Save this as
                                 </p>
                                 <div className="flex gap-2">
@@ -528,10 +525,9 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                                             onClick={() => setSelectedLabel(value)}
                                             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 py-2.5 text-sm font-semibold transition-colors"
                                             style={{
-                                                borderColor: selectedLabel === value ? "#735A3E" : "#D2C4B9",
-                                                backgroundColor: selectedLabel === value ? "rgba(115,90,62,0.08)" : "#F9F3EA",
-                                                color: selectedLabel === value ? "#735A3E" : "#80756B",
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                borderColor: selectedLabel === value ? "#145C43" : "#DCE3DC",
+                                                backgroundColor: selectedLabel === value ? "#E8EFEC" : "#F5F7F3",
+                                                color: selectedLabel === value ? "#145C43" : "#6E7C74",
                                             }}
                                         >
                                             <Icon size={13} />
@@ -545,7 +541,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
 
                     {/* ── Save error ── */}
                     {saveError && (
-                        <p className="text-xs" style={{ color: "#C24B3F" }}>{saveError}</p>
+                        <p className="text-xs" style={{ color: "#BA1A1A" }}>{saveError}</p>
                     )}
 
                     {/* ── Save button ── */}
@@ -555,10 +551,9 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                         disabled={!canSave || saving}
                         className="w-full rounded-xl py-3.5 text-sm font-semibold transition-opacity disabled:opacity-40"
                         style={{
-                            backgroundColor: "#735A3E",
-                            color: "#FFF9EF",
-                            fontFamily: "'DM Sans', sans-serif",
-                            boxShadow: "0px 4px 16px rgba(115,90,62,0.25)",
+                            backgroundColor: "#145C43",
+                            color: "#FFFFFF",
+                            boxShadow: "0px 4px 16px rgba(20,92,67,0.25)",
                         }}
                     >
                         {saving ? (
@@ -570,7 +565,7 @@ export default function LocationPickerModal({ onSaved, onClose }: LocationPicker
                         )}
                     </motion.button>
 
-                    <p className="text-center text-xs" style={{ color: "#9C8C7C" }}>
+                    <p className="text-center text-xs" style={{ color: "#6E7C74" }}>
                         You can change or add more addresses later from your profile.
                     </p>
                 </div>

@@ -27,13 +27,13 @@ import { useCartStore } from "../state/cartState";
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
 const PALETTE = {
-  bg: "#fff9ef",
-  ink: "#1d1b16",
-  muted: "#4e453d",
-  brown: "#735a3e",
-  green: "#376847",
-  line: "#d2c4b9",
-  card: "#f9f3ea",
+  bg: "#F7F8F5",
+  ink: "#16241D",
+  muted: "#6E7C74",
+  brown: "#145C43",
+  green: "#145C43",
+  line: "#E3E7E1",
+  card: "#FFFFFF",
 };
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ function ProductCard({ product, storeId }: { product: Product; storeId: string }
   return (
     <div
       onClick={handleCardClick}
-      className="relative bg-white rounded-3xl p-4 border border-[#d2c4b9]/30 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer"
+      className="relative bg-white rounded-3xl p-4 border border-[#E3E7E1]/30 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer"
       onMouseEnter={() => setShowAdd(true)}
       onMouseLeave={() => setShowAdd(false)}
     >
@@ -177,7 +177,7 @@ function BestsellerCard({ item, storeId }: { item: Product; storeId: string }) {
   return (
     <div
       onClick={handleCardClick}
-      className="flex bg-white rounded-3xl overflow-hidden border border-[#d2c4b9]/30 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+      className="flex bg-white rounded-3xl overflow-hidden border border-[#E3E7E1]/30 hover:shadow-xl transition-all duration-300 group cursor-pointer"
       style={{ height: 224 }}
     >
       <div className="w-2/5 relative overflow-hidden flex-shrink-0">
@@ -467,8 +467,8 @@ function StorePageContent({ storeId }: { storeId: string }) {
           {/* ── Product Catalog ── */}
           <section className="mt-20">
             <div
-              className="sticky top-0 z-50 py-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#d2c4b9]/20"
-              style={{ backgroundColor: "rgba(255,249,239,0.85)", backdropFilter: "blur(12px)" }}
+              className="sticky top-0 z-50 py-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#E3E7E1]/20"
+              style={{ backgroundColor: "rgba(247,248,245,0.85)", backdropFilter: "blur(12px)" }}
             >
               {/* Search */}
               <div className="relative w-full md:w-80">
@@ -529,8 +529,8 @@ function StorePageContent({ storeId }: { storeId: string }) {
                       <button
                         key={o.value}
                         onClick={() => { setSort(o.value); setSortOpen(false); }}
-                        className="block w-full text-left px-4 py-2.5 text-xs hover:bg-[#f9f3ea] transition-colors"
-                        style={{ color: sort === o.value ? PALETTE.brown : PALETTE.ink, fontWeight: sort === o.value ? 600 : 400 }}
+                        className="block w-full text-left px-4 py-2.5 text-xs hover:bg-[#F5F7F3] transition-colors"
+                        style={{ color: sort === o.value ? PALETTE.green : PALETTE.ink, fontWeight: sort === o.value ? 600 : 400 }}
                       >
                         {o.label}
                       </button>
@@ -614,7 +614,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
 
             <div className="md:col-span-7 space-y-8">
               <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: 24, fontWeight: 700 }}>Customer Sentiment</h2>
-              <div className="bg-white p-8 rounded-3xl border border-[#d2c4b9]/30 shadow-sm">
+              <div className="bg-white p-8 rounded-3xl border border-[#E3E7E1]/30 shadow-sm">
                 <div className="flex flex-col md:flex-row gap-8 items-center mb-8">
                   <div className="text-center md:pr-8 flex-shrink-0" style={{ borderRight: "1px solid rgba(210,196,185,0.3)" }}>
                     <div style={{ fontSize: 48, fontWeight: 700, color: PALETTE.ink, lineHeight: 1 }} className="mb-1">
@@ -630,7 +630,7 @@ function StorePageContent({ storeId }: { storeId: string }) {
                     {(ratingSummary?.bars || [5, 4, 3, 2, 1].map((s) => ({ star: s, pct: 0 } as RatingBar))).map(({ star, pct }) => (
                       <div key={star} className="flex items-center gap-3">
                         <span className="text-xs w-4" style={{ color: PALETTE.muted }}>{star}</span>
-                        <div className="flex-grow h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#f3ede4" }}>
+                        <div className="flex-grow h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#F5F7F3" }}>
                           <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: PALETTE.brown }} />
                         </div>
                         <span className="text-xs w-8" style={{ color: PALETTE.muted }}>{pct}%</span>
@@ -646,10 +646,10 @@ function StorePageContent({ storeId }: { storeId: string }) {
                     <p className="text-sm text-center py-8" style={{ color: PALETTE.muted }}>No reviews yet.</p>
                   ) : (
                     reviews.map((r) => (
-                      <div key={r.id} className="border-t border-[#d2c4b9]/30 pt-6 first:border-t-0 first:pt-0">
+                      <div key={r.id} className="border-t border-[#E3E7E1]/30 pt-6 first:border-t-0 first:pt-0">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: "#eeddc7", color: PALETTE.brown }}>
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: "#E8EFEC", color: PALETTE.brown }}>
                               {r.initials}
                             </div>
                             <div>
