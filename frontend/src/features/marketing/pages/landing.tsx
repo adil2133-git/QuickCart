@@ -35,10 +35,10 @@ const container: Variants = {
 function Hero() {
   return (
     <section id="top" className="relative overflow-hidden bg-[#F7F8F5] px-6 pb-20 pt-12 md:pb-28 md:pt-16">
-      {/* Subtle Background Pattern */}
+      {/* Subtle Dot Grid Background */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.4]"
-        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #E3E7E1 1px, transparent 0)", backgroundSize: "32px 32px" }}
+        className="pointer-events-none absolute inset-0 opacity-[0.3]"
+        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #DCE3DC 1px, transparent 0)", backgroundSize: "28px 28px" }}
       />
 
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
@@ -91,28 +91,34 @@ function Hero() {
           transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
           className="relative lg:col-span-5"
         >
-          <div className="relative overflow-hidden rounded-[28px] border border-[#E3E7E1] bg-white p-2.5 shadow-xl shadow-[#16241D]/[0.06]">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-[#F5F7F3] p-3">
+          {/* Clean Floating Card */}
+          <div className="relative overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white shadow-xl shadow-black/[0.04]">
+            <div className="relative aspect-[4/3] w-full overflow-hidden">
               <img
                 src={heroProduceImg}
                 alt="Fresh Organic Produce Basket"
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
-                className="h-full w-full object-contain object-center transition-transform duration-700 hover:scale-105"
+                className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#16241D]/60 via-transparent to-transparent" />
 
-              {/* Live Status Overlay Badge */}
-              <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/30 bg-white/90 px-3.5 py-1.5 text-[11.5px] font-bold text-[#16241D] backdrop-blur-md shadow-md">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#145C43] animate-ping" />
+              {/* Floating Top Badge */}
+              <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-[#E3E7E1] bg-white/95 px-3.5 py-1.5 text-[11.5px] font-bold text-[#16241D] backdrop-blur-md shadow-md">
+                <span className="h-2 w-2 rounded-full bg-[#145C43] animate-pulse" />
                 <span>Live Supermarket Inventory</span>
               </div>
 
-              {/* Delivery ETA Floating Badge */}
+              {/* Floating Bottom-Right ETA Badge */}
               <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full bg-[#145C43] px-4 py-2 text-[12px] font-bold text-white shadow-lg border border-white/20">
                 <Clock3 size={14} className="text-[#A9CC3B]" />
                 <span>Avg Delivery: 15 min</span>
+              </div>
+
+              {/* Floating Bottom-Left Quality Pill */}
+              <div className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-full border border-[#E3E7E1] bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-[#16241D] shadow-md backdrop-blur-md">
+                <ShieldCheck size={13} className="text-[#145C43]" />
+                <span>100% Shelf Fresh</span>
               </div>
             </div>
           </div>
