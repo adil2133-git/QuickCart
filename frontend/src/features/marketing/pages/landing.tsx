@@ -1,7 +1,7 @@
 import { motion, type Variants } from "framer-motion";
 import {
   Search, Navigation, PackageCheck,
-  Boxes, Sparkles, Radar, ArrowRight, MapPin, Clock3, Zap,
+  Boxes, Sparkles, ArrowRight, MapPin, Clock3, Zap,
   ShieldCheck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -10,7 +10,7 @@ import { Footer } from "../components/footer";
 import { scrollTo } from "../utils/scroll";
 
 // Uploaded imagery assets
-import heroProduceImg from "../../../assets/hero1.png";
+import heroBgImg from "../../../assets/hero-bg.png";
 import storePartnerImg from "../../../assets/store1.png";
 import driverPartnerImg from "../../../assets/driver1.png";
 import customerImg from "../../../assets/customer1.png";
@@ -25,126 +25,111 @@ const fadeUp: Variants = {
   }),
 };
 
-const container: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
-};
-
-/* ─── Hero Section (White / Paper Light Theme) ───────────────────────────── */
+/* ─── Hero Section (Matching User Reference Mockup) ───────────────────────── */
 
 function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden bg-[#F7F8F5] px-6 pb-20 pt-12 md:pb-28 md:pt-16">
-      {/* Subtle Dot Grid Background */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.3]"
-        style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #DCE3DC 1px, transparent 0)", backgroundSize: "28px 28px" }}
-      />
-
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
-        {/* Left Copy Column */}
-        <motion.div variants={container} initial="hidden" animate="visible" className="lg:col-span-7">
-          <motion.div variants={fadeUp} className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#145C43]/20 bg-[#E8EFEC] px-4 py-1.5 text-xs font-semibold tracking-wide text-[#145C43]">
-            <Radar size={14} className="animate-pulse text-[#145C43]" /> Real-Time Neighborhood Inventory Engine
-          </motion.div>
-
-          <motion.h1
-            variants={fadeUp}
-            className="text-[2.75rem] leading-[1.06] tracking-tight text-[#16241D] md:text-[3.75rem]"
-            style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}
-          >
-            Your neighborhood <br />
-            grocery, <span className="italic text-[#145C43]">delivered fast.</span>
-          </motion.h1>
-
-          <motion.p variants={fadeUp} className="mt-5 max-w-xl text-[1.08rem] leading-relaxed text-[#6E7C74]">
-            QuickKart checks live stock across nearby supermarkets before you place an order — connecting you directly with the store that has your exact items on the shelf.
-          </motion.p>
-
-          {/* Action CTAs */}
-          <motion.div variants={fadeUp} className="mt-8 flex flex-wrap items-center gap-4">
-            <Link
-              to="/register/customer"
-              className="group inline-flex items-center gap-2.5 rounded-full bg-[#145C43] px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-[#114E39] hover:shadow-lg hover:shadow-[#145C43]/20"
-            >
-              Start Shopping Now <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
-            </Link>
-            <button
-              onClick={() => scrollTo("join")}
-              className="inline-flex items-center gap-2 rounded-full border border-[#DCE3DC] bg-white px-6 py-3.5 text-sm font-semibold text-[#16241D] transition-all hover:bg-[#F5F7F3] hover:border-[#145C43]"
-            >
-              Explore Stores & Roles
-            </button>
-          </motion.div>
-
-          {/* Feature Highlights Strip */}
-          <motion.div variants={fadeUp} className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-[#E3E7E1] pt-6 text-sm text-[#6E7C74]">
-            <span className="inline-flex items-center gap-2 font-medium text-[#16241D]"><MapPin size={16} className="text-[#145C43]" /> Hyperlocal Stores</span>
-            <span className="inline-flex items-center gap-2 font-medium text-[#16241D]"><Clock3 size={16} className="text-[#145C43]" /> Live POS Stock Sync</span>
-            <span className="inline-flex items-center gap-2 font-medium text-[#16241D]"><Zap size={16} className="text-[#145C43]" /> 15-Min Express Delivery</span>
-          </motion.div>
-        </motion.div>
-
-        {/* Right Hero Image Column */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
-          className="relative lg:col-span-5"
-        >
-          {/* Clean Floating Card */}
-          <div className="relative overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white shadow-xl shadow-black/[0.04]">
-            <div className="relative aspect-[4/3] w-full overflow-hidden">
-              <img
-                src={heroProduceImg}
-                alt="Fresh Organic Produce Basket"
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
-              />
-
-              {/* Floating Top Badge */}
-              <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-[#E3E7E1] bg-white/95 px-3.5 py-1.5 text-[11.5px] font-bold text-[#16241D] backdrop-blur-md shadow-md">
-                <span className="h-2 w-2 rounded-full bg-[#145C43] animate-pulse" />
-                <span>Live Supermarket Inventory</span>
-              </div>
-
-              {/* Floating Bottom-Right ETA Badge */}
-              <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full bg-[#145C43] px-4 py-2 text-[12px] font-bold text-white shadow-lg border border-white/20">
-                <Clock3 size={14} className="text-[#A9CC3B]" />
-                <span>Avg Delivery: 15 min</span>
-              </div>
-
-              {/* Floating Bottom-Left Quality Pill */}
-              <div className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-full border border-[#E3E7E1] bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-[#16241D] shadow-md backdrop-blur-md">
-                <ShieldCheck size={13} className="text-[#145C43]" />
-                <span>100% Shelf Fresh</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+    <section id="top" className="relative overflow-hidden bg-[#F7F8F5]">
+      {/* Background Hero Image with Soft Lighting Gradient Blend */}
+      <div className="absolute inset-0 z-0 h-[680px] w-full overflow-hidden">
+        <img
+          src={heroBgImg}
+          alt="Fresh Organic Produce Background"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          className="h-full w-full object-cover object-top opacity-45 blur-[1px] scale-105"
+        />
+        {/* Soft Radial & Linear Gradient Overlay matching reference image */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/85 to-[#F7F8F5]" />
       </div>
 
-      {/* Trust Metrics Bar */}
-      <div className="mx-auto mt-16 max-w-7xl rounded-2xl border border-[#E3E7E1] bg-white p-6 shadow-sm">
-        <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
-          <div>
-            <p className="text-2xl font-bold text-[#145C43] md:text-3xl" style={{ fontFamily: "Fraunces, serif" }}>40+</p>
-            <p className="mt-1 text-xs text-[#6E7C74] uppercase tracking-wider font-semibold">Neighborhoods Served</p>
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 pb-20 pt-16 text-center md:pb-28 md:pt-24">
+        {/* Top Floating Pill Badge */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#145C43]/20 bg-white/80 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#145C43] shadow-sm backdrop-blur-md"
+        >
+          <span className="h-2 w-2 rounded-full bg-[#145C43] animate-pulse" />
+          Hyperlocal Neighborhood Inventory
+        </motion.div>
+
+        {/* Main Headline */}
+        <motion.h1
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="max-w-4xl text-4xl leading-[1.08] tracking-tight text-[#0D2B21] md:text-6xl"
+          style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}
+        >
+          Your neighborhood grocery, <br />
+          <span className="italic font-serif text-[#145C43]">delivered fresh.</span>
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="mt-6 max-w-2xl text-base leading-relaxed text-[#16241D]/80 md:text-lg"
+        >
+          Real-time stock tracking from your local supermarkets. No more missing items—just the freshest harvest from your community, delivered in 15 minutes.
+        </motion.p>
+
+        {/* Action Buttons Row */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="mt-9 flex flex-wrap items-center justify-center gap-4"
+        >
+          <Link
+            to="/register/customer"
+            className="group inline-flex items-center gap-2.5 rounded-full bg-[#0D2B21] px-8 py-4 text-sm font-bold text-white transition-all hover:bg-[#145C43] hover:shadow-xl hover:shadow-[#0D2B21]/20"
+          >
+            Start Shopping Now <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+          </Link>
+          <button
+            onClick={() => scrollTo("how-it-works")}
+            className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-8 py-4 text-sm font-semibold text-[#16241D] shadow-md backdrop-blur-md transition-all hover:bg-white hover:shadow-lg"
+          >
+            How it Works
+          </button>
+        </motion.div>
+
+        {/* 3 Feature Badges at Bottom of Hero */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="mt-20 grid w-full max-w-4xl grid-cols-1 gap-8 border-t border-[#E3E7E1]/60 pt-10 sm:grid-cols-3"
+        >
+          <div className="flex flex-col items-center text-center">
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#A7F3D0]/70 text-[#047857] shadow-sm backdrop-blur-sm">
+              <MapPin size={20} />
+            </span>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#145C43]">Hyperlocal Stores</p>
+            <p className="mt-1 text-xs text-[#6E7C74] font-medium">500+ Partner Supermarkets</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#145C43] md:text-3xl" style={{ fontFamily: "Fraunces, serif" }}>500+</p>
-            <p className="mt-1 text-xs text-[#6E7C74] uppercase tracking-wider font-semibold">Partner Supermarkets</p>
+
+          <div className="flex flex-col items-center text-center">
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#A7F3D0]/70 text-[#047857] shadow-sm backdrop-blur-sm">
+              <Clock3 size={20} />
+            </span>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#145C43]">99.4% Accuracy</p>
+            <p className="mt-1 text-xs text-[#6E7C74] font-medium">Live POS Stock Sync</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#145C43] md:text-3xl" style={{ fontFamily: "Fraunces, serif" }}>99.4%</p>
-            <p className="mt-1 text-xs text-[#6E7C74] uppercase tracking-wider font-semibold">Stock Accuracy</p>
+
+          <div className="flex flex-col items-center text-center">
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#A7F3D0]/70 text-[#047857] shadow-sm backdrop-blur-sm">
+              <Zap size={20} />
+            </span>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#145C43]">Express Delivery</p>
+            <p className="mt-1 text-xs text-[#6E7C74] font-medium">Avg 15 Min Delivery</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#145C43] md:text-3xl" style={{ fontFamily: "Fraunces, serif" }}>&lt; 15 min</p>
-            <p className="mt-1 text-xs text-[#6E7C74] uppercase tracking-wider font-semibold">Avg Delivery Time</p>
-          </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
