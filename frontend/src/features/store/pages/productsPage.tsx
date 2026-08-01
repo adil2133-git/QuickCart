@@ -45,7 +45,7 @@ const statusConfig: Record<DerivedStatus, { label: string; className: string; pu
     className: "bg-red-50 text-red-700 ring-1 ring-red-600/15",
     pulse: true,
   },
-  HIDDEN: { label: "Hidden", className: "bg-[#2B1B0E]/[0.06] text-[#2B1B0E]/50 ring-1 ring-[#2B1B0E]/10" },
+  HIDDEN: { label: "Hidden", className: "bg-[#F5F7F3] text-[#6E7C74] ring-1 ring-[#E3E7E1]" },
 };
 
 /* -------------------------------------------------------------------------- */
@@ -64,7 +64,7 @@ function KpiCard({
   tint: string;
 }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-xl border border-[#2B1B0E]/[0.07] bg-white px-4 py-3.5">
+    <div className="flex items-center gap-3.5 rounded-xl border border-[#E3E7E1] bg-white px-4 py-3.5">
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
         style={{ backgroundColor: `${tint}1A`, color: tint }}
@@ -72,8 +72,8 @@ function KpiCard({
         <Icon size={17} strokeWidth={2} />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-[11px] font-medium text-[#2B1B0E]/55">{label}</p>
-        <span className="text-xl font-bold tabular-nums text-[#2B1B0E]">{value}</span>
+        <p className="truncate text-[11px] font-medium text-[#6E7C74]">{label}</p>
+        <span className="text-xl font-bold tabular-nums text-[#16241D]">{value}</span>
       </div>
     </div>
   );
@@ -139,26 +139,22 @@ function StockCell({
             setEditing(false);
           }
         }}
-        className="w-16 rounded-md border border-[#C2825A] bg-white px-1.5 py-1 text-sm font-medium tabular-nums text-[#2B1B0E] focus:outline-none focus:ring-2 focus:ring-[#C2825A]/25"
+        className="w-16 rounded-md border border-[#1F4D3D] bg-white px-1.5 py-1 text-sm font-medium tabular-nums text-[#16241D] focus:outline-none focus:ring-2 focus:ring-[#1F4D3D]/25"
       />
     );
   }
 
   return (
     <button
-      onClick={() => {
-        setValue(String(product.stockQuantity));
-        setEditing(true);
-      }}
-      className={`group inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium tabular-nums transition-colors hover:bg-[#2B1B0E]/[0.05] ${
-        zero ? "text-red-600" : low ? "text-amber-700" : "text-[#2B1B0E]"
+      onClick={() => setEditing(true)}
+      title="Click to edit stock quantity"
+      className={`group inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium tabular-nums transition-colors hover:bg-[#F5F7F3] ${
+        zero ? "text-rose-600" : low ? "text-amber-700" : "text-[#16241D]"
       }`}
-      title="Click to edit stock"
     >
-      {saving ? <Loader2 size={13} className="animate-spin" /> : null}
-      {product.stockQuantity}
-      <span className="text-[11px] font-normal text-[#2B1B0E]/40">{product.unit}</span>
-      <Pencil size={11} className="text-[#2B1B0E]/0 transition-colors group-hover:text-[#2B1B0E]/35" />
+      <span>{product.stockQuantity}</span>
+      <span className="text-[11px] font-normal text-[#6E7C74]">{product.unit}</span>
+      <Pencil size={11} className="text-[#6E7C74]/0 transition-colors group-hover:text-[#6E7C74]" />
     </button>
   );
 }
@@ -280,7 +276,7 @@ function SortHeader({
   return (
     <button
       onClick={() => onSort(sortKey)}
-      className={`inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#2B1B0E]/50 hover:text-[#2B1B0E] ${
+      className={`inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#6E7C74] hover:text-[#16241D] cursor-pointer ${
         align === "right" ? "justify-end" : ""
       }`}
     >
@@ -355,21 +351,23 @@ function SelectFilter({
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
-  options: { value: string; label: string }[];
+  options: { label: string; value: string }[];
 }) {
   return (
     <div className="relative">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none rounded-full border border-[#2B1B0E]/10 bg-[#FBF1E9] py-2 pl-3.5 pr-8 text-sm font-medium text-[#2B1B0E] focus:border-[#C2825A] focus:outline-none"
+        className="appearance-none rounded-full border border-[#E3E7E1] bg-[#F5F7F3] py-2 pl-3.5 pr-8 text-sm font-medium text-[#16241D] focus:border-[#1F4D3D] focus:outline-none cursor-pointer"
       >
         <option value="">{placeholder}</option>
         {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
         ))}
       </select>
-      <ChevronDown size={13} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#2B1B0E]/40" />
+      <ChevronDown size={13} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6E7C74]" />
     </div>
   );
 }
@@ -525,32 +523,31 @@ export default function ProductsPage() {
         )}
 
         {/* Table */}
-        <div className="overflow-hidden rounded-xl border border-[#2B1B0E]/[0.07] bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-hidden rounded-xl border border-[#E3E7E1] bg-white">
+          <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-[#2B1B0E]/[0.07] bg-[#FBF1E9]/60">
+              <tr className="border-b border-[#E3E7E1] bg-[#F5F7F3]">
                 <th className="px-4 py-3 text-left">
                   <SortHeader label="Product" sortKey="productName" activeKey={sortKey} dir={sortDir} onSort={setSort} />
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#2B1B0E]/50">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#6E7C74]">
                   Category
                 </th>
                 <th className="px-4 py-3 text-right">
                   <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={setSort} align="right" />
                 </th>
-                <th className="px-4 py-3 text-left">
+                <th className="px-4 py-3 text-center">
                   <SortHeader label="Stock" sortKey="stockQuantity" activeKey={sortKey} dir={sortDir} onSort={setSort} />
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#2B1B0E]/50">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#6E7C74]">
                   Status
                 </th>
-                <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#2B1B0E]/50">
-                  Available
+                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-[#6E7C74]">
+                  Actions
                 </th>
-                <th className="w-10 px-4 py-3" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#E3E7E1]">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-16 text-center text-sm text-[#2B1B0E]/45">

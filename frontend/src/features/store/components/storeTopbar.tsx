@@ -106,35 +106,35 @@ export default function Topbar({ onNotificationClick }: TopbarProps) {
             <ul role="list" className="max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
                 <li className="flex flex-col items-center justify-center gap-2 py-10">
-                  <Bell size={28} className="text-[#D6C5B0]" />
-                  <span className="text-[13px] text-[#B3A593]">No notifications yet</span>
+                  <Bell size={28} className="text-[#9BAAA1]" />
+                  <span className="text-[13px] text-[#6E7C74]">No notifications yet</span>
                 </li>
               ) : (
                 notifications.map((n) => (
-                  <li key={n._id} className="border-t border-[#F3EDE2] first:border-t-0">
+                  <li key={n._id} className="border-t border-[#E3E7E1] first:border-t-0">
                     <button
                       onClick={() => {
                         if (!n.isRead) handleMarkRead(n._id);
                         setOpen(false);
                         if (n.orderId) navigate(`/store/orders/${n.orderId}`);
                       }}
-                      className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#F9F3EA]"
-                      style={{ background: !n.isRead ? "#FDF8F2" : undefined }}
+                      className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#F5F7F3] cursor-pointer"
+                      style={{ background: !n.isRead ? "#E7EFEA" : undefined }}
                     >
                       <span
                         className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: !n.isRead ? "#C24B3F" : "transparent" }}
+                        style={{ backgroundColor: !n.isRead ? "#1F4D3D" : "transparent" }}
                       />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-baseline justify-between gap-2">
-                          <span className="text-[13px] font-semibold text-[#2B1B0E]">
+                          <span className="text-[13px] font-semibold text-[#16241D]">
                             {n.title}
                           </span>
-                          <span className="shrink-0 text-[11px] text-[#B3A593]">
+                          <span className="shrink-0 text-[11px] text-[#6E7C74]">
                             {timeAgo(n.createdAt)}
                           </span>
                         </span>
-                        <span className="block text-[12px] leading-snug text-[#80756B]">
+                        <span className="block text-[12px] leading-snug text-[#6E7C74]">
                           {n.message}
                         </span>
                       </span>

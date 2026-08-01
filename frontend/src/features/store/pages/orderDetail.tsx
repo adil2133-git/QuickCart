@@ -58,36 +58,32 @@ function getStepState(stepKey: OrderStatus, currentStatus: OrderStatus): "done" 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
+  return new Date(iso).toLocaleString("en-IN", {
     month: "short",
     day: "numeric",
-    year: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
   });
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StepIcon({ state }: { state: "done" | "active" | "idle" }) {
   if (state === "done") {
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2B1B0E]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1F4D3D]">
         <CheckCircle2 className="h-5 w-5 text-white" />
       </div>
     );
   }
   if (state === "active") {
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#2B1B0E] bg-white">
-        <div className="h-3 w-3 rounded-full bg-[#2B1B0E]" />
+      <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1F4D3D] bg-white">
+        <div className="h-3 w-3 rounded-full bg-[#1F4D3D]" />
       </div>
     );
   }
   return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#EADFD3] bg-white">
-      <Circle className="h-4 w-4 text-[#C8A37E]" />
+    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#E3E7E1] bg-white">
+      <Circle className="h-4 w-4 text-[#9BAAA1]" />
     </div>
   );
 }
@@ -97,7 +93,7 @@ function StepIcon({ state }: { state: "done" | "active" | "idle" }) {
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
- const fetchDetail = useFetchOrderDetail();
+  const fetchDetail = useFetchOrderDetail();
   const updateStatus = useUpdateOrderStatus();
   const retryDriverSearch = useRetryDriverSearch();
   const cancelUndeliverableOrder = useCancelUndeliverableOrder();
@@ -145,19 +141,19 @@ export default function OrderDetailPage() {
   // ── Loading / error states ────────────────────────────────────────────────────
   if (isLoadingDetail) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#FBF1E9] font-['Inter',sans-serif]">
-        <p className="text-sm text-[#A38F7D]">Loading order…</p>
+      <div className="flex h-full items-center justify-center bg-[#F7F8F5] font-['Inter',sans-serif]">
+        <p className="text-sm text-[#6E7C74]">Loading order…</p>
       </div>
     );
   }
 
   if (detailError || !order) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#FBF1E9] font-['Inter',sans-serif]">
-        <p className="text-sm text-red-500">{detailError ?? "Order not found"}</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#F7F8F5] font-['Inter',sans-serif]">
+        <p className="text-sm text-rose-600">{detailError ?? "Order not found"}</p>
         <button
           onClick={() => navigate("/store/orders")}
-          className="rounded-xl bg-[#2B1B0E] px-5 py-2 text-sm font-semibold text-white"
+          className="rounded-xl bg-[#1F4D3D] px-5 py-2 text-sm font-semibold text-white hover:bg-[#163D30] cursor-pointer"
         >
           Back to Orders
         </button>
@@ -166,7 +162,7 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[#FBF1E9] font-['Inter',sans-serif]">
+    <div className="flex h-full flex-col overflow-hidden bg-[#F7F8F5] font-['Inter',sans-serif]">
       {justCancelled && (
         <OrderCancelledModal
           orderNumber={order.orderNumber}
@@ -178,7 +174,7 @@ export default function OrderDetailPage() {
       )}
 
       {/* ── Progress tracker ───────────────────────────────────────────────────── */}
-      <div className="border-b border-[#EADFD3] bg-white px-8 py-5">
+      <div className="border-b border-[#E3E7E1] bg-white px-8 py-5">
         <div className="flex items-center">
           {PROGRESS_STEPS.map((step, idx) => {
             const state = getStepState(step.key, order.orderStatus);
@@ -191,8 +187,8 @@ export default function OrderDetailPage() {
                     <div
                       className={`h-0.5 flex-1 transition-colors ${
                         getStepState(PROGRESS_STEPS[idx - 1].key, order.orderStatus) === "done"
-                          ? "bg-[#2B1B0E]"
-                          : "bg-[#EADFD3]"
+                          ? "bg-[#1F4D3D]"
+                          : "bg-[#E3E7E1]"
                       }`}
                     />
                   )}
@@ -201,14 +197,14 @@ export default function OrderDetailPage() {
                   {!isLast && (
                     <div
                       className={`h-0.5 flex-1 transition-colors ${
-                        state === "done" ? "bg-[#2B1B0E]" : "bg-[#EADFD3]"
+                        state === "done" ? "bg-[#1F4D3D]" : "bg-[#E3E7E1]"
                       }`}
                     />
                   )}
                 </div>
                 <span
                   className={`mt-2 text-xs font-medium ${
-                    state === "idle" ? "text-[#A38F7D]" : "text-[#2B1B0E]"
+                    state === "idle" ? "text-[#6E7C74]" : "text-[#16241D]"
                   }`}
                 >
                   {step.label}
@@ -239,7 +235,7 @@ export default function OrderDetailPage() {
             <button
               onClick={handleRetryDriverSearch}
               disabled={isUpdatingStatus}
-              className="flex items-center gap-2 rounded-full bg-[#2B1B0E] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full bg-[#1F4D3D] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-[#163D30] disabled:opacity-50 cursor-pointer"
             >
               <RotateCcw className="h-4 w-4" />
               Retry Driver Search
@@ -247,7 +243,7 @@ export default function OrderDetailPage() {
             <button
               onClick={handleCancelUndeliverable}
               disabled={isUpdatingStatus}
-              className="flex items-center gap-2 rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
             >
               <XCircle className="h-4 w-4" />
               Cancel & Refund
@@ -261,53 +257,53 @@ export default function OrderDetailPage() {
         {/* Left column */}
         <div className="flex flex-1 flex-col gap-4">
           {/* Customer card */}
-          <div className="rounded-2xl border border-[#EADFD3] bg-white p-6">
+          <div className="rounded-2xl border border-[#E3E7E1] bg-white p-6">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-bold text-[#2B1B0E]">{order.recipientName}</h3>
-                <div className="mt-1 flex items-center gap-1.5 text-sm text-[#7A6352]">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                <h3 className="text-lg font-bold text-[#16241D]">{order.recipientName}</h3>
+                <div className="mt-1 flex items-center gap-1.5 text-sm text-[#6E7C74]">
+                  <MapPin className="h-4 w-4 flex-shrink-0 text-[#1F4D3D]" />
                   <span>{order.deliveryAddress}</span>
                 </div>
               </div>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              <span className="rounded-full bg-[#E7EFEA] px-3 py-1 text-xs font-semibold text-[#1F4D3D]">
                 Home Delivery
               </span>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[#EADFD3] pt-4">
+            <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[#E3E7E1] pt-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#A38F7D]">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#6E7C74]">
                   Placed On
                 </p>
-                <p className="mt-1 text-sm font-medium text-[#2B1B0E]">
+                <p className="mt-1 text-sm font-medium text-[#16241D]">
                   {formatDateTime(order.placedAt)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#A38F7D]">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#6E7C74]">
                   Payment Method
                 </p>
                 <div className="mt-1 flex items-center gap-1.5">
-                  <CreditCard className="h-4 w-4 text-[#7A6352]" />
-                  <p className="text-sm font-medium text-[#2B1B0E]">{order.paymentMethod}</p>
+                  <CreditCard className="h-4 w-4 text-[#1F4D3D]" />
+                  <p className="text-sm font-medium text-[#16241D]">{order.paymentMethod}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Order items */}
-          <div className="rounded-2xl border border-[#EADFD3] bg-white">
-            <div className="border-b border-[#EADFD3] px-6 py-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#A38F7D]">
+          <div className="rounded-2xl border border-[#E3E7E1] bg-white">
+            <div className="border-b border-[#E3E7E1] px-6 py-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#6E7C74]">
                 Order Items
               </p>
             </div>
 
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b border-[#F5EDE3] px-6 py-2">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b border-[#E3E7E1] bg-[#F5F7F3] px-6 py-2">
               {["PRODUCT", "PRICE", "QTY", "TOTAL"].map((h) => (
-                <span key={h} className="text-xs font-semibold tracking-wider text-[#A38F7D]">
+                <span key={h} className="text-xs font-semibold tracking-wider text-[#6E7C74]">
                   {h}
                 </span>
               ))}
@@ -317,7 +313,7 @@ export default function OrderDetailPage() {
               <div
                 key={item.productId}
                 className={`grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-6 py-4 ${
-                  idx !== order.products.length - 1 ? "border-b border-[#F5EDE3]" : ""
+                  idx !== order.products.length - 1 ? "border-b border-[#E3E7E1]" : ""
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -328,15 +324,15 @@ export default function OrderDetailPage() {
                       className="h-10 w-10 rounded-lg object-cover"
                     />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F5EDE3]">
-                      <Package className="h-5 w-5 text-[#C8A37E]" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E7EFEA]">
+                      <Package className="h-5 w-5 text-[#1F4D3D]" />
                     </div>
                   )}
-                  <span className="text-sm font-medium text-[#2B1B0E]">{item.productName}</span>
+                  <span className="text-sm font-medium text-[#16241D]">{item.productName}</span>
                 </div>
-                <span className="text-sm text-[#7A6352]">₹{item.price.toFixed(2)}</span>
-                <span className="text-sm text-[#7A6352]">{item.quantity}x</span>
-                <span className="text-sm font-semibold text-[#2B1B0E]">
+                <span className="text-sm text-[#6E7C74]">₹{item.price.toFixed(2)}</span>
+                <span className="text-sm text-[#6E7C74]">{item.quantity}x</span>
+                <span className="text-sm font-semibold text-[#16241D]">
                   ₹{(item.price * item.quantity).toFixed(2)}
                 </span>
               </div>
@@ -346,24 +342,24 @@ export default function OrderDetailPage() {
 
         {/* Right column — Order summary */}
         <div className="w-72 flex-shrink-0">
-          <div className="rounded-2xl border border-[#EADFD3] bg-white p-6">
-            <h3 className="text-base font-bold text-[#2B1B0E]">Order Summary</h3>
+          <div className="rounded-2xl border border-[#E3E7E1] bg-white p-6">
+            <h3 className="text-base font-bold text-[#16241D]">Order Summary</h3>
 
             <div className="mt-4 space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-[#7A6352]">Subtotal</span>
-                <span className="font-medium text-[#2B1B0E]">₹{order.subtotal.toFixed(2)}</span>
+                <span className="text-[#6E7C74]">Subtotal</span>
+                <span className="font-medium text-[#16241D]">₹{order.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[#7A6352]">Delivery Fee</span>
-                <span className="font-medium text-[#2B1B0E]">
+                <span className="text-[#6E7C74]">Delivery Fee</span>
+                <span className="font-medium text-[#16241D]">
                   ₹{order.deliveryCharge.toFixed(2)}
                 </span>
               </div>
-              <div className="border-t border-[#EADFD3] pt-3">
+              <div className="border-t border-[#E3E7E1] pt-3">
                 <div className="flex justify-between">
-                  <span className="text-base font-bold text-[#2B1B0E]">Total</span>
-                  <span className="text-base font-bold text-[#2B1B0E]">
+                  <span className="text-base font-bold text-[#16241D]">Total</span>
+                  <span className="text-base font-bold text-[#1F4D3D]">
                     ₹{order.totalAmount.toFixed(2)}
                   </span>
                 </div>
@@ -374,7 +370,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* ── Bottom action bar ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-t border-[#EADFD3] bg-white px-8 py-4">
+      <div className="flex items-center justify-between border-t border-[#E3E7E1] bg-white px-8 py-4">
          <div className="flex items-center gap-2">
           <span
             className={`h-2.5 w-2.5 rounded-full ${
@@ -383,7 +379,7 @@ export default function OrderDetailPage() {
                 : "bg-emerald-500"
             }`}
           />
-          <span className="text-sm font-semibold text-[#2B1B0E]">
+          <span className="text-sm font-semibold text-[#16241D]">
             CURRENTLY:{" "}
             {order.orderStatus === "READY_FOR_PICKUP" && order.driverSearchFailed
               ? "NO DRIVERS FOUND"
@@ -392,7 +388,7 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="rounded-full border border-[#EADFD3] px-6 py-2.5 text-sm font-medium text-[#5C4A37] transition-colors hover:bg-[#FBF1E9]">
+          <button className="rounded-full border border-[#E3E7E1] px-6 py-2.5 text-sm font-semibold text-[#1F4D3D] transition-colors hover:bg-[#F5F7F3] cursor-pointer">
             Contact Customer
           </button>
 
@@ -400,7 +396,7 @@ export default function OrderDetailPage() {
             <button
               onClick={handleStartPacking}
               disabled={isUpdatingStatus}
-              className="flex items-center gap-2 rounded-full bg-[#C8A37E] px-6 py-2.5 text-sm font-semibold text-[#2B1B0E] transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] px-6 py-2.5 text-sm font-bold text-[#16241D] transition-colors cursor-pointer disabled:opacity-50"
             >
               <Package className="h-4 w-4" />
               Start Packing
@@ -411,7 +407,7 @@ export default function OrderDetailPage() {
             <button
               onClick={handleMarkReady}
               disabled={isUpdatingStatus}
-              className="flex items-center gap-2 rounded-full bg-[#2B1B0E] px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] px-6 py-2.5 text-sm font-bold text-[#16241D] transition-colors cursor-pointer disabled:opacity-50"
             >
               <Truck className="h-4 w-4" />
               Mark Ready for Pickup
@@ -422,7 +418,7 @@ export default function OrderDetailPage() {
             <button
               onClick={() => updateStatus(order.id, "ACCEPTED")}
               disabled={isUpdatingStatus}
-              className="flex items-center gap-2 rounded-full bg-[#2B1B0E] px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] px-6 py-2.5 text-sm font-bold text-[#16241D] transition-colors cursor-pointer disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
               Accept Order

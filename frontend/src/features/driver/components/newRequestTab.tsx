@@ -23,7 +23,7 @@ function StatsCards() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-24 animate-pulse rounded-2xl border border-[#EADFD3] bg-white p-5"
+            className="h-24 animate-pulse rounded-2xl border border-[#E3E7E1] bg-white p-5"
           />
         ))}
       </div>
@@ -44,9 +44,9 @@ function StatsCards() {
   return (
     <div className="mb-6 grid grid-cols-3 gap-4">
       {/* Today's Earnings */}
-      <div className="rounded-2xl border border-[#EADFD3] bg-white p-5">
+      <div className="rounded-2xl border border-[#E3E7E1] bg-white p-5 shadow-sm">
         <div className="mb-1 flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wide text-[#A38F7D]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#6E7C74]">
             Today's Earnings
           </p>
           {(stats.earningsChangePercent ?? 0) !== 0 && (
@@ -55,32 +55,32 @@ function StatsCards() {
             </span>
           )}
         </div>
-        <p className="text-3xl font-bold text-[#2B1B0E]">
+        <p className="text-3xl font-bold text-[#16241D]">
           ₹{(stats.todayEarnings ?? 0).toFixed(2)}
         </p>
       </div>
 
       {/* Completed */}
-      <div className="rounded-2xl border border-[#EADFD3] bg-white p-5">
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[#A38F7D]">
+      <div className="rounded-2xl border border-[#E3E7E1] bg-white p-5 shadow-sm">
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#6E7C74]">
           Completed
         </p>
-        <p className="text-3xl font-bold text-[#2B1B0E]">
+        <p className="text-3xl font-bold text-[#16241D]">
           {stats.completedCount ?? 0}{" "}
-          <span className="text-base font-normal text-[#A38F7D]">Deliveries</span>
+          <span className="text-base font-normal text-[#6E7C74]">Deliveries</span>
         </p>
       </div>
 
       {/* Daily Target Bonus */}
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+      <div className="rounded-2xl border border-[#E7EFEA] bg-[#E7EFEA]/40 p-5">
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-semibold text-emerald-800">Daily Target Bonus</p>
-          <span className="text-xs font-bold text-emerald-800">
+          <p className="text-xs font-semibold text-[#1F4D3D]">Daily Target Bonus</p>
+          <span className="text-xs font-bold text-[#1F4D3D]">
             {stats.currentCount ?? 0} / {stats.dailyTarget ?? 0}
           </span>
         </div>
         {remaining > 0 ? (
-          <p className="mb-3 text-sm text-emerald-700">
+          <p className="mb-3 text-sm text-[#6E7C74]">
             Deliver {remaining} more to unlock ₹{stats.targetBonus ?? 0} bonus.
           </p>
         ) : (
@@ -88,13 +88,13 @@ function StatsCards() {
             🎉 Target reached! Bonus earned.
           </p>
         )}
-        <div className="h-2 overflow-hidden rounded-full bg-emerald-200">
+        <div className="h-2 overflow-hidden rounded-full bg-[#E3E7E1]">
           <div
-            className="h-full rounded-full bg-emerald-600 transition-all duration-500"
+            className="h-full rounded-full bg-[#1F4D3D] transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-emerald-700">
+        <div className="mt-2 flex items-center justify-between text-xs text-[#6E7C74]">
           <span>Daily Target: {stats.dailyTarget ?? 0}</span>
           <span>Earn: ₹{stats.targetBonus ?? 0}.00</span>
         </div>
@@ -112,9 +112,6 @@ function CountdownRing({
   expiresAt: number;
   onExpire: () => void;
 }) {
-  // Always derived from the fixed deadline — correct no matter how many
-  // times this component mounts/remounts (e.g. navigating between the
-  // dashboard popup and this tab no longer resets the clock).
   const remaining = useCountdown(expiresAt, onExpire);
 
   const radius = 18;
@@ -122,7 +119,7 @@ function CountdownRing({
   const frac = remaining / REQUEST_WINDOW_SECONDS;
   const dash = circ * frac;
   const color =
-    remaining > 15 ? "#2B7A3E" : remaining > 5 ? "#D97706" : "#DC2626";
+    remaining > 15 ? "#1F4D3D" : remaining > 5 ? "#D97706" : "#DC2626";
 
   return (
     <div className="relative flex h-12 w-12 items-center justify-center">
@@ -132,7 +129,7 @@ function CountdownRing({
           cy="24"
           r={radius}
           fill="none"
-          stroke="#EADFD3"
+          stroke="#E3E7E1"
           strokeWidth="3"
         />
         <circle
@@ -184,12 +181,12 @@ function RequestCard({ request }: { request: DeliveryRequest }) {
   };
 
   return (
-    <div className="rounded-2xl border border-[#EADFD3] bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-[#E3E7E1] bg-white p-5 shadow-sm">
       {/* Header */}
       <div className="mb-4 flex items-start justify-between gap-2">
         <div>
-          <p className="mb-0.5 text-xs text-[#A38F7D]">#{request.orderNumber}</p>
-          <h3 className="text-base font-bold text-[#2B1B0E]">{request.storeName}</h3>
+          <p className="mb-0.5 text-xs text-[#6E7C74]">#{request.orderNumber}</p>
+          <h3 className="text-base font-bold text-[#16241D]">{request.storeName}</h3>
         </div>
         <CountdownRing
           expiresAt={request.expiresAt}
@@ -198,21 +195,21 @@ function RequestCard({ request }: { request: DeliveryRequest }) {
       </div>
 
       {/* Distance info */}
-      <div className="mb-4 space-y-1.5 border-b border-[#F0E8DF] pb-4">
-        <div className="flex items-center gap-2 text-sm text-[#5C4A38]">
-          <MapPin className="h-4 w-4 text-[#A38F7D]" />
+      <div className="mb-4 space-y-1.5 border-b border-[#E3E7E1] pb-4">
+        <div className="flex items-center gap-2 text-sm text-[#6E7C74]">
+          <MapPin className="h-4 w-4 text-[#1F4D3D]" />
           <span>Pickup: {request.pickupDistanceKm} km away</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-[#5C4A38]">
-          <Navigation className="h-4 w-4 text-[#A38F7D]" />
+        <div className="flex items-center gap-2 text-sm text-[#6E7C74]">
+          <Navigation className="h-4 w-4 text-[#1F4D3D]" />
           <span>Delivery: {request.deliveryDistanceKm} km distance</span>
         </div>
       </div>
 
       {/* Earnings */}
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-sm text-[#7A6350]">Est. Earnings</span>
-        <span className="flex items-center text-base font-bold text-[#2B7A3E]">
+        <span className="text-sm text-[#6E7C74]">Est. Earnings</span>
+        <span className="flex items-center text-base font-bold text-[#1F4D3D]">
           <IndianRupee className="h-3.5 w-3.5" />
           {request.estimatedEarnings.toFixed(2)}
         </span>
@@ -224,7 +221,7 @@ function RequestCard({ request }: { request: DeliveryRequest }) {
           type="button"
           onClick={handleAccept}
           disabled={accepting || declining}
-          className="flex-1 rounded-xl bg-[#2B1B0E] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3D2A18] disabled:opacity-60"
+          className="flex-1 rounded-xl bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] py-2.5 text-sm font-bold text-[#16241D] transition-colors disabled:opacity-60 cursor-pointer shadow-sm"
         >
           {accepting ? "Accepting…" : "Accept"}
         </button>
@@ -232,7 +229,7 @@ function RequestCard({ request }: { request: DeliveryRequest }) {
           type="button"
           onClick={handleDecline}
           disabled={accepting || declining}
-          className="flex-1 rounded-xl border border-[#EADFD3] py-2.5 text-sm font-semibold text-[#5C4A38] transition-colors hover:bg-[#F5EDE5] disabled:opacity-60"
+          className="flex-1 rounded-xl border border-[#E3E7E1] py-2.5 text-sm font-semibold text-[#1F4D3D] transition-colors hover:bg-[#F5F7F3] disabled:opacity-60 cursor-pointer"
         >
           {declining ? "Declining…" : "Decline"}
         </button>
@@ -258,26 +255,26 @@ export default function NewRequestsTab({
     <div>
       <StatsCards />
 
-      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[#7A6350]">
+      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[#6E7C74]">
         Available Requests
       </h3>
 
       {loading && (
-        <div className="flex h-40 items-center justify-center text-[#A38F7D]">
+        <div className="flex h-40 items-center justify-center text-[#6E7C74]">
           Loading requests…
         </div>
       )}
 
       {error && (
-        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">
+        <div className="rounded-xl bg-rose-50 p-4 text-sm text-rose-600">
           {error}
         </div>
       )}
 
       {!loading && !error && requests.length === 0 && (
-        <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#EADFD3] text-center">
-          <p className="font-medium text-[#7A6350]">No requests right now</p>
-          <p className="text-sm text-[#A38F7D]">
+        <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#E3E7E1] text-center bg-white">
+          <p className="font-semibold text-[#16241D]">No requests right now</p>
+          <p className="text-sm text-[#6E7C74]">
             Stay online to receive new delivery requests.
           </p>
         </div>

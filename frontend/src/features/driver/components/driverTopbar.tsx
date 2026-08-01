@@ -84,13 +84,13 @@ export default function DriverTopbar() {
           type="button"
           onClick={handleToggle}
           className={[
-            "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all",
+            "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all cursor-pointer",
             isOnline
-              ? "bg-[#145C43] text-white shadow-sm"
-              : "bg-slate-100 text-[#5F7166]",
+              ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+              : "bg-rose-100 text-rose-700 border border-rose-200 hover:bg-rose-200",
           ].join(" ")}
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-white" : "bg-slate-400"}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-white animate-pulse" : "bg-rose-500"}`} />
           {isOnline ? "ONLINE" : "OFFLINE"}
         </button>
 
@@ -102,11 +102,11 @@ export default function DriverTopbar() {
             aria-label={
               unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
             }
-            className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#6F4E37] transition-colors hover:bg-[#F0E8DF]"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#16241D] transition-colors hover:bg-[#F5F7F3] cursor-pointer"
           >
             <Bell className="h-[18px] w-[18px]" />
             {(unreadCount > 0 || requests.length > 0) && (
-              <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-[#FDF8F1]">
+              <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white ring-2 ring-white">
                 {unreadCount > 9 ? "9+" : unreadCount || requests.length}
               </span>
             )}
@@ -115,16 +115,16 @@ export default function DriverTopbar() {
           {isOpen && (
             <div
               ref={panelRef}
-              className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border border-[#E8DCCF] bg-white shadow-lg"
+              className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,90vw)] overflow-hidden rounded-2xl border border-[#E3E7E1] bg-white shadow-lg"
             >
               <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8A7C72]">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6E7C74]">
                   Notifications
                 </p>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
-                    className="text-[11px] font-semibold text-[#6F4E37] hover:underline"
+                    className="text-[11px] font-semibold text-[#1F4D3D] hover:underline cursor-pointer"
                   >
                     Mark all read
                   </button>
@@ -134,35 +134,35 @@ export default function DriverTopbar() {
               <ul role="list" className="max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
                   <li className="flex flex-col items-center justify-center gap-2 py-10">
-                    <Bell size={28} className="text-[#E8DCCF]" />
-                    <span className="text-[13px] text-[#B3A593]">No notifications yet</span>
+                    <Bell size={28} className="text-[#9BAAA1]" />
+                    <span className="text-[13px] text-[#6E7C74]">No notifications yet</span>
                   </li>
                 ) : (
                   notifications.map((n) => (
-                    <li key={n._id} className="border-t border-[#F3EDE2] first:border-t-0">
+                    <li key={n._id} className="border-t border-[#E3E7E1] first:border-t-0">
                       <button
                         onClick={() => {
                           if (!n.isRead) handleMarkRead(n._id);
                           setOpen(false);
                           if (n.orderId) navigate("/driver/deliveries");
                         }}
-                        className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#FDF8F1]"
-                        style={{ background: !n.isRead ? "#FDF8F2" : undefined }}
+                        className="flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-[#F5F7F3] cursor-pointer"
+                        style={{ background: !n.isRead ? "#E7EFEA" : undefined }}
                       >
                         <span
                           className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: !n.isRead ? "#C24B3F" : "transparent" }}
+                          style={{ backgroundColor: !n.isRead ? "#1F4D3D" : "transparent" }}
                         />
                         <span className="min-w-0 flex-1">
                           <span className="flex items-baseline justify-between gap-2">
-                            <span className="text-[13px] font-semibold text-[#2B2B2B]">
+                            <span className="text-[13px] font-semibold text-[#16241D]">
                               {n.title}
                             </span>
-                            <span className="shrink-0 text-[11px] text-[#B3A593]">
+                            <span className="shrink-0 text-[11px] text-[#6E7C74]">
                               {timeAgo(n.createdAt)}
                             </span>
                           </span>
-                          <span className="block text-[12px] leading-snug text-[#80756B]">
+                          <span className="block text-[12px] leading-snug text-[#6E7C74]">
                             {n.message}
                           </span>
                         </span>
@@ -178,7 +178,7 @@ export default function DriverTopbar() {
         <button
           type="button"
           onClick={() => navigate("/driver/profile")}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-[#6F4E37] transition-colors hover:bg-[#F0E8DF]"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[#1F4D3D] transition-colors hover:bg-[#F5F7F3] cursor-pointer"
           aria-label="Profile"
         >
           <UserCircle className="h-[18px] w-[18px]" />

@@ -17,20 +17,20 @@ export default function MerchantSupportCard({ integrationStatus, onOpenTicket }:
   const config = INTEGRATION_STATUS_CONFIG[integrationStatus];
 
   return (
-    <div className="flex flex-1 flex-col rounded-2xl border border-[#EFE6DA] bg-white p-6 shadow-sm">
+    <div className="flex flex-1 flex-col rounded-2xl border border-[#E3E7E1] bg-white p-6 shadow-sm">
       <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#F6EDE3] text-[#8A6A4D]">
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#E7EFEA] text-[#1F4D3D]">
           <Headset className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-[#2B1B0E]">Merchant Support</h3>
-          <p className="text-sm text-[#A38F7D]">Live chat available 24/7</p>
+          <h3 className="text-lg font-bold text-[#16241D]">Merchant Support</h3>
+          <p className="text-sm text-[#6E7C74]">Live chat available 24/7</p>
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-between rounded-xl bg-[#FBF6F0] px-4 py-3">
-        <span className="text-sm text-[#5C4A3A]">Integration Status</span>
-        <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
+      <div className="mt-5 flex items-center justify-between rounded-xl bg-[#F5F7F3] px-4 py-3">
+        <span className="text-sm text-[#6E7C74]">Integration Status</span>
+        <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
           <span className={["h-2 w-2 rounded-full", config.dotClassName].join(" ")} />
           {config.label.toUpperCase()}
         </span>
@@ -39,7 +39,7 @@ export default function MerchantSupportCard({ integrationStatus, onOpenTicket }:
       <button
         type="button"
         onClick={onOpenTicket}
-        className="mt-4 w-full rounded-full border border-[#E3D5C4] py-2.5 text-sm font-semibold text-[#B08550] transition-colors hover:bg-[#FBF6F0]"
+        className="mt-4 w-full rounded-full border border-[#E3E7E1] py-2.5 text-sm font-semibold text-[#1F4D3D] transition-colors hover:bg-[#F5F7F3] cursor-pointer"
       >
         Open Support Ticket
       </button>

@@ -32,9 +32,9 @@ const TIER_META: Record<
 > = {
   BRONZE: {
     icon: Medal,
-    gradient: "from-[#A9714A] to-[#7A4E30]",
-    textColor: "text-[#A9714A]",
-    ringColor: "ring-[#A9714A]/30",
+    gradient: "from-[#6E7C74] to-[#16241D]",
+    textColor: "text-[#6E7C74]",
+    ringColor: "ring-[#6E7C74]/30",
   },
   SILVER: {
     icon: Award,
@@ -44,15 +44,15 @@ const TIER_META: Record<
   },
   GOLD: {
     icon: Trophy,
-    gradient: "from-[#C9A97A] to-[#A9822E]",
-    textColor: "text-[#A9822E]",
-    ringColor: "ring-[#C9A97A]/40",
+    gradient: "from-[#A9CC3B] to-emerald-600",
+    textColor: "text-emerald-700",
+    ringColor: "ring-[#A9CC3B]/40",
   },
   PLATINUM: {
     icon: Crown,
-    gradient: "from-[#145C43] to-[#0E4433]",
-    textColor: "text-[#145C43]",
-    ringColor: "ring-[#145C43]/30",
+    gradient: "from-[#1F4D3D] to-[#163D30]",
+    textColor: "text-[#1F4D3D]",
+    ringColor: "ring-[#1F4D3D]/30",
   },
 };
 
@@ -69,7 +69,7 @@ function TierHeroCard() {
   return (
     <motion.div
       variants={card}
-      className="relative overflow-hidden rounded-3xl border border-[#E8DCCF] bg-white p-6"
+      className="relative overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white p-6"
     >
       <div className={`absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gradient-to-br ${meta.gradient} opacity-10`} />
 
@@ -80,7 +80,7 @@ function TierHeroCard() {
               <meta.icon className="h-7 w-7 text-white" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#8A7C72]">Current Tier</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#6E7C74]">Current Tier</p>
               <h2 className={`text-2xl font-bold ${meta.textColor}`}>{summary.currentLevelLabel} Partner</h2>
             </div>
           </div>
@@ -89,7 +89,7 @@ function TierHeroCard() {
             {summary.currentPerks.map((perk) => (
               <span
                 key={perk}
-                className="rounded-full bg-[#F0E8DF] px-3 py-1 text-xs font-medium text-[#6F4E37]"
+                className="rounded-full bg-[#E7EFEA] px-3 py-1 text-xs font-semibold text-[#1F4D3D]"
               >
                 {perk}
               </span>
@@ -100,27 +100,27 @@ function TierHeroCard() {
         {/* Quick stats */}
         <div className="flex flex-shrink-0 gap-4 text-right">
           <div>
-            <div className="flex items-center justify-end gap-1 text-[#8A7C72]">
-              <Truck className="h-3 w-3" />
+            <div className="flex items-center justify-end gap-1 text-[#6E7C74]">
+              <Truck className="h-3 w-3 text-[#1F4D3D]" />
               <p className="text-[10px] font-semibold uppercase tracking-wide">Deliveries</p>
             </div>
-            <p className="mt-0.5 text-xl font-bold text-[#2B1B0E]">{summary.totalDeliveries}</p>
+            <p className="mt-0.5 text-xl font-bold text-[#16241D]">{summary.totalDeliveries}</p>
           </div>
           <div>
-            <div className="flex items-center justify-end gap-1 text-[#8A7C72]">
-              <Star className="h-3 w-3" />
+            <div className="flex items-center justify-end gap-1 text-[#6E7C74]">
+              <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
               <p className="text-[10px] font-semibold uppercase tracking-wide">Rating</p>
             </div>
-            <p className="mt-0.5 text-xl font-bold text-[#2B1B0E]">
+            <p className="mt-0.5 text-xl font-bold text-[#16241D]">
               {summary.averageRating > 0 ? summary.averageRating.toFixed(1) : "—"}
             </p>
           </div>
           <div>
-            <div className="flex items-center justify-end gap-1 text-[#8A7C72]">
-              <Calendar className="h-3 w-3" />
+            <div className="flex items-center justify-end gap-1 text-[#6E7C74]">
+              <Calendar className="h-3 w-3 text-[#1F4D3D]" />
               <p className="text-[10px] font-semibold uppercase tracking-wide">Since</p>
             </div>
-            <p className="mt-0.5 text-xl font-bold text-[#2B1B0E]">{formatDate(summary.memberSince)}</p>
+            <p className="mt-0.5 text-xl font-bold text-[#16241D]">{formatDate(summary.memberSince)}</p>
           </div>
         </div>
       </div>
@@ -130,12 +130,12 @@ function TierHeroCard() {
         {summary.nextLevel ? (
           <>
             <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="font-semibold text-[#4A3E33]">
+              <span className="font-semibold text-[#6E7C74]">
                 {summary.nextLevel.deliveriesRemaining} more deliveries to reach {summary.nextLevel.label}
               </span>
-              <span className="font-bold text-[#8A7C72]">{summary.progressPercent}%</span>
+              <span className="font-bold text-[#16241D]">{summary.progressPercent}%</span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-[#F0E8DF]">
+            <div className="h-2.5 overflow-hidden rounded-full bg-[#F5F7F3]">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${summary.progressPercent}%` }}
@@ -145,7 +145,7 @@ function TierHeroCard() {
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2 rounded-xl bg-[#145C43]/10 px-4 py-2.5 text-sm font-semibold text-[#145C43]">
+          <div className="flex items-center gap-2 rounded-xl bg-[#E7EFEA] px-4 py-2.5 text-sm font-semibold text-[#1F4D3D]">
             <Crown className="h-4 w-4" />
             You've reached the highest tier — Platinum Partner!
           </div>
@@ -167,12 +167,12 @@ function TierLadderCard({ tier }: { tier: TierLadderEntry }) {
         "relative rounded-2xl border bg-white p-5 transition-all",
         tier.isCurrent
           ? `border-transparent ring-2 ${meta.ringColor} shadow-md`
-          : "border-[#E8DCCF]",
+          : "border-[#E3E7E1]",
         locked ? "opacity-60" : "",
       ].join(" ")}
     >
       {tier.isCurrent && (
-        <span className="absolute -top-2.5 left-4 rounded-full bg-[#2F1B12] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+        <span className="absolute -top-2.5 left-4 rounded-full bg-[#1F4D3D] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
           Current
         </span>
       )}
@@ -182,19 +182,19 @@ function TierLadderCard({ tier }: { tier: TierLadderEntry }) {
           <meta.icon className="h-5 w-5 text-white" />
         </div>
         {tier.achieved ? (
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
         ) : (
-          <Lock className="h-4 w-4 text-[#B3A593]" />
+          <Lock className="h-4 w-4 text-[#9BAAA1]" />
         )}
       </div>
 
       <p className={`text-base font-bold ${meta.textColor}`}>{tier.label}</p>
-      <p className="mb-3 text-xs text-[#8A7C72]">{tier.minDeliveries}+ deliveries</p>
+      <p className="mb-3 text-xs text-[#6E7C74]">{tier.minDeliveries}+ deliveries</p>
 
       <ul className="space-y-1.5">
         {tier.perks.map((perk) => (
-          <li key={perk} className="flex items-start gap-1.5 text-xs text-[#4A3E33]">
-            <span className="mt-1 h-1 w-1 flex-shrink-0 rounded-full bg-[#C9A97A]" />
+          <li key={perk} className="flex items-start gap-1.5 text-xs text-[#6E7C74]">
+            <span className="mt-1 h-1 w-1 flex-shrink-0 rounded-full bg-[#1F4D3D]" />
             {perk}
           </li>
         ))}
@@ -209,9 +209,9 @@ function MilestonesCard() {
   if (!summary) return null;
 
   return (
-    <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-6">
-      <p className="mb-1 text-base font-bold text-[#2B1B0E]">Delivery Milestones</p>
-      <p className="mb-5 text-xs text-[#8A7C72]">Badges you unlock as you complete more deliveries</p>
+    <motion.div variants={card} className="rounded-2xl border border-[#E3E7E1] bg-white p-6">
+      <p className="mb-1 text-base font-bold text-[#16241D]">Delivery Milestones</p>
+      <p className="mb-5 text-xs text-[#6E7C74]">Badges you unlock as you complete more deliveries</p>
 
       <div className="grid grid-cols-6 gap-3">
         {summary.milestones.map((m) => (
@@ -220,17 +220,17 @@ function MilestonesCard() {
               className={[
                 "flex h-14 w-14 items-center justify-center rounded-full border-2",
                 m.achieved
-                  ? "border-[#C9A97A] bg-gradient-to-br from-[#C9A97A] to-[#A9822E]"
-                  : "border-dashed border-[#E8DCCF] bg-[#FDF8F1]",
+                  ? "border-[#1F4D3D] bg-gradient-to-br from-[#1F4D3D] to-[#163D30]"
+                  : "border-dashed border-[#E3E7E1] bg-[#F5F7F3]",
               ].join(" ")}
             >
               {m.achieved ? (
                 <Trophy className="h-6 w-6 text-white" />
               ) : (
-                <Lock className="h-5 w-5 text-[#C9BCAC]" />
+                <Lock className="h-5 w-5 text-[#9BAAA1]" />
               )}
             </div>
-            <p className={`text-xs font-bold ${m.achieved ? "text-[#2B1B0E]" : "text-[#B3A593]"}`}>
+            <p className={`text-xs font-bold ${m.achieved ? "text-[#16241D]" : "text-[#9BAAA1]"}`}>
               {m.deliveries}
             </p>
           </div>
@@ -253,10 +253,10 @@ export default function DriverRewardsPage() {
   if (isLoading && !summary) {
     return (
       <div className="max-w-[1400px] mx-auto space-y-4">
-        <div className="h-48 animate-pulse rounded-3xl bg-[#F0E8DF]" />
+        <div className="h-48 animate-pulse rounded-3xl bg-[#F5F7F3]" />
         <div className="grid grid-cols-4 gap-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-56 animate-pulse rounded-2xl bg-[#F0E8DF]" />
+            <div key={i} className="h-56 animate-pulse rounded-2xl bg-[#F5F7F3]" />
           ))}
         </div>
       </div>
@@ -275,7 +275,7 @@ export default function DriverRewardsPage() {
       <TierHeroCard />
 
       <div>
-        <p className="mb-3 text-base font-bold text-[#2B1B0E]">Tier Ladder</p>
+        <p className="mb-3 text-base font-bold text-[#16241D]">Tier Ladder</p>
         <div className="grid grid-cols-4 gap-4">
           {summary.ladder.map((tier) => (
             <TierLadderCard key={tier.key} tier={tier} />

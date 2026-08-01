@@ -57,39 +57,41 @@ function HeroCard() {
       className={[
         "relative overflow-hidden rounded-3xl p-6 transition-all duration-500",
         isOnline
-          ? "bg-gradient-to-br from-[#DDF8EF] to-[#F6FFF8] border border-emerald-200"
-          : "bg-white border border-[#E8DCCF]",
+          ? "bg-[#E7EFEA]/70 border border-[#1F4D3D]/25"
+          : "bg-white border border-[#E3E7E1]",
       ].join(" ")}
     >
       {/* Decorative circle */}
-      <div className={`absolute -right-8 -top-8 h-36 w-36 rounded-full opacity-20 transition-colors ${
-        isOnline ? "bg-emerald-400" : "bg-[#E8DCCF]"
+      <div className={`absolute -right-8 -top-8 h-36 w-36 rounded-full opacity-15 transition-colors ${
+        isOnline ? "bg-[#1F4D3D]" : "bg-rose-300"
       }`} />
 
       <div className="relative flex items-start justify-between">
         <div>
-          <div className="mb-1 flex items-center gap-2">
+          <div className="mb-1.5 flex items-center gap-2">
             <motion.span
               animate={isOnline ? { scale: [1, 1.3, 1] } : { scale: 1 }}
               transition={{ repeat: Infinity, duration: 2 }}
-              className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-[#8A7C72]"}`}
+              className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-rose-500"}`}
             />
-            <span className={`text-xs font-bold uppercase tracking-widest ${
-              isOnline ? "text-emerald-700" : "text-[#8A7C72]"
+            <span className={`text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${
+              isOnline
+                ? "bg-emerald-50 text-[#1F4D3D] border-emerald-200"
+                : "bg-rose-50 text-rose-700 border-rose-200"
             }`}>
               {isOnline ? "Online" : "Offline"}
             </span>
           </div>
-          <h2 className={`text-xl font-bold ${isOnline ? "text-emerald-900" : "text-[#2B2B2B]"}`}>
+          <h2 className={`text-xl font-bold ${isOnline ? "text-[#1F4D3D]" : "text-[#16241D]"}`}>
             {isOnline ? "Receiving requests" : "You're offline"}
           </h2>
           {isOnline && shiftLabel && (
-            <p className="mt-0.5 text-xs text-emerald-600">
+            <p className="mt-0.5 text-xs text-[#1F4D3D]/90 font-medium">
               Shift started at {shiftLabel}
             </p>
           )}
           {!isOnline && (
-            <p className="mt-0.5 text-xs text-[#8A7C72]">
+            <p className="mt-0.5 text-xs text-[#6E7C74]">
               Go online to start receiving delivery requests
             </p>
           )}
@@ -99,10 +101,10 @@ function HeroCard() {
           whileTap={{ scale: 0.96 }}
           onClick={handleToggle}
           className={[
-            "mt-1 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all",
+            "mt-1 rounded-2xl px-6 py-2.5 text-sm font-bold transition-all shadow-sm cursor-pointer",
             isOnline
-              ? "bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50 shadow-sm"
-              : "bg-[#2F1B12] text-white hover:bg-[#3D2A18] shadow-md",
+              ? "bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white"
+              : "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white",
           ].join(" ")}
         >
           {isOnline ? "Go Offline" : "Go Online"}
@@ -128,28 +130,28 @@ function KpiCards() {
       sub: stats?.earningsChangePercent != null
         ? `${stats.earningsChangePercent > 0 ? "+" : ""}${stats.earningsChangePercent}% vs yesterday`
         : "Today",
-      subColor: (stats?.earningsChangePercent ?? 0) >= 0 ? "text-emerald-600" : "text-red-500",
+      subColor: (stats?.earningsChangePercent ?? 0) >= 0 ? "text-emerald-600" : "text-rose-500",
     },
     {
       icon: PackageCheck,
       label: "Deliveries",
       value: String(stats?.completedCount ?? 0),
       sub: "Today",
-      subColor: "text-[#8A7C72]",
+      subColor: "text-[#6E7C74]",
     },
     {
       icon: Star,
       label: "Rating",
       value: "—",
       sub: "Coming soon",
-      subColor: "text-[#8A7C72]",
+      subColor: "text-[#6E7C74]",
     },
     {
       icon: Wallet,
       label: "Wallet",
       value: "₹0",
       sub: "Available balance",
-      subColor: "text-[#8A7C72]",
+      subColor: "text-[#6E7C74]",
     },
   ];
 
@@ -160,23 +162,23 @@ function KpiCards() {
           key={kpi.label}
           variants={card}
           custom={i}
-          className="rounded-2xl border border-[#E8DCCF] bg-white p-4"
+          className="rounded-2xl border border-[#E3E7E1] bg-white p-4"
         >
           {statsLoading && !stats ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-7 w-7 rounded-lg bg-[#E8DCCF]" />
-              <div className="h-4 w-16 rounded bg-[#E8DCCF]" />
-              <div className="h-7 w-12 rounded bg-[#E8DCCF]" />
+              <div className="h-7 w-7 rounded-lg bg-[#F5F7F3]" />
+              <div className="h-4 w-16 rounded bg-[#F5F7F3]" />
+              <div className="h-7 w-12 rounded bg-[#F5F7F3]" />
             </div>
           ) : (
             <>
-              <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#F0E8DF]">
-                <kpi.icon className="h-3.5 w-3.5 text-[#6F4E37]" />
+              <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-[#E7EFEA]">
+                <kpi.icon className="h-3.5 w-3.5 text-[#1F4D3D]" />
               </div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8A7C72]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6E7C74]">
                 {kpi.label}
               </p>
-              <p className="mt-0.5 text-2xl font-bold text-[#2B2B2B] leading-none">{kpi.value}</p>
+              <p className="mt-0.5 text-2xl font-bold text-[#16241D] leading-none">{kpi.value}</p>
               <p className={`mt-1 text-[11px] font-medium ${kpi.subColor}`}>{kpi.sub}</p>
             </>
           )}
@@ -197,10 +199,10 @@ function ActiveDeliveryCard() {
 
   if (activeLoading && !delivery) {
     return (
-      <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-5">
+      <motion.div variants={card} className="rounded-2xl border border-[#E3E7E1] bg-white p-5">
         <div className="animate-pulse space-y-3">
-          <div className="h-4 w-28 rounded bg-[#E8DCCF]" />
-          <div className="h-20 rounded-xl bg-[#E8DCCF]" />
+          <div className="h-4 w-28 rounded bg-[#F5F7F3]" />
+          <div className="h-20 rounded-xl bg-[#F5F7F3]" />
         </div>
       </motion.div>
     );
@@ -210,59 +212,59 @@ function ActiveDeliveryCard() {
     return (
       <motion.div
         variants={card}
-        className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#E8DCCF] bg-white p-8 text-center"
+        className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#E3E7E1] bg-white p-8 text-center"
       >
         <motion.div
           animate={{ y: [0, -6, 0] }}
           transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-          className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#F0E8DF]"
+          className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#E7EFEA]"
         >
-          <PackageCheck className="h-7 w-7 text-[#6F4E37]" />
+          <PackageCheck className="h-7 w-7 text-[#1F4D3D]" />
         </motion.div>
-        <p className="text-sm font-semibold text-[#2B2B2B]">No Active Delivery</p>
-        <p className="mt-1 text-xs text-[#8A7C72]">New requests will appear when assigned to you</p>
+        <p className="text-sm font-semibold text-[#16241D]">No Active Delivery</p>
+        <p className="mt-1 text-xs text-[#6E7C74]">New requests will appear when assigned to you</p>
       </motion.div>
     );
   }
 
   return (
-    <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white overflow-hidden">
-      <div className="border-b border-[#E8DCCF] bg-[#FDF8F1] px-5 py-3 flex items-center justify-between">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#6F4E37]">Active Delivery</p>
-        <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+    <motion.div variants={card} className="rounded-2xl border border-[#E3E7E1] bg-white overflow-hidden">
+      <div className="border-b border-[#E3E7E1] bg-[#F5F7F3] px-5 py-3 flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-widest text-[#1F4D3D]">Active Delivery</p>
+        <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           In progress
         </span>
       </div>
 
       <div className="p-5">
-        <p className="mb-4 text-xs font-semibold text-[#8A7C72]">Order #{delivery.orderNumber}</p>
+        <p className="mb-4 text-xs font-semibold text-[#6E7C74]">Order #{delivery.orderNumber}</p>
 
         {/* Route */}
         <div className="mb-4 space-y-3">
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#6F4E37]">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#1F4D3D]">
               <Store className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase text-[#8A7C72]">Pickup</p>
-              <p className="text-sm font-semibold text-[#2B2B2B]">{delivery.store.name}</p>
-              <p className="text-xs text-[#8A7C72]">{delivery.store.address}</p>
+              <p className="text-[10px] font-semibold uppercase text-[#6E7C74]">Pickup</p>
+              <p className="text-sm font-semibold text-[#16241D]">{delivery.store.name}</p>
+              <p className="text-xs text-[#6E7C74]">{delivery.store.address}</p>
             </div>
           </div>
 
-          <div className="ml-4 flex items-center gap-2 text-[#E8DCCF]">
-            <div className="h-px flex-1 border-b border-dashed border-[#E8DCCF]" />
+          <div className="ml-4 flex items-center gap-2 text-[#E3E7E1]">
+            <div className="h-px flex-1 border-b border-dashed border-[#E3E7E1]" />
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-600">
               <MapPin className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase text-[#8A7C72]">Drop</p>
-              <p className="text-sm font-semibold text-[#2B2B2B]">{delivery.customer.name}</p>
-              <p className="text-xs text-[#8A7C72]">{delivery.customer.address}</p>
+              <p className="text-[10px] font-semibold uppercase text-[#6E7C74]">Drop</p>
+              <p className="text-sm font-semibold text-[#16241D]">{delivery.customer.name}</p>
+              <p className="text-xs text-[#6E7C74]">{delivery.customer.address}</p>
             </div>
           </div>
         </div>
@@ -272,7 +274,7 @@ function ActiveDeliveryCard() {
           {delivery.customer.phone && (
             <a
               href={`tel:${delivery.customer.phone}`}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#E8DCCF] py-2.5 text-xs font-semibold text-[#6F4E37] hover:bg-[#F0E8DF] transition-colors"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#E3E7E1] py-2.5 text-xs font-semibold text-[#1F4D3D] hover:bg-[#F5F7F3] transition-colors"
             >
               <Phone className="h-3.5 w-3.5" />
               Call Customer
@@ -280,7 +282,7 @@ function ActiveDeliveryCard() {
           )}
           <button
             onClick={() => navigate("/driver/deliveries")}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#2F1B12] py-2.5 text-xs font-bold text-white hover:opacity-90 transition-opacity"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#1F4D3D] py-2.5 text-xs font-bold text-white hover:bg-[#163D30] transition-colors"
           >
             <Navigation className="h-3.5 w-3.5" />
             Open Map
@@ -300,33 +302,33 @@ function BonusCard() {
   const remaining = Math.max(0, stats.dailyTarget - stats.currentCount);
 
   return (
-    <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-5">
+    <motion.div variants={card} className="rounded-2xl border border-[#E3E7E1] bg-white p-5">
       <div className="mb-3 flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#6F4E37]">Daily Bonus</p>
-          <p className="mt-0.5 text-sm font-semibold text-[#2B2B2B]">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1F4D3D]">Daily Bonus</p>
+          <p className="mt-0.5 text-sm font-semibold text-[#16241D]">
             {remaining > 0
               ? `${remaining} more to unlock ₹${stats.targetBonus}`
               : "🎉 Bonus unlocked!"}
           </p>
         </div>
-        <span className="text-xs font-bold text-[#8A7C72]">
+        <span className="text-xs font-bold text-[#6E7C74]">
           {stats.currentCount} / {stats.dailyTarget}
         </span>
       </div>
 
-      <div className="mb-2 h-2 overflow-hidden rounded-full bg-[#F0E8DF]">
+      <div className="mb-2 h-2 overflow-hidden rounded-full bg-[#F5F7F3]">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
+          className="h-full rounded-full bg-gradient-to-r from-[#1F4D3D] to-emerald-500"
         />
       </div>
 
-      <div className="flex justify-between text-[10px] text-[#8A7C72]">
+      <div className="flex justify-between text-[10px] text-[#6E7C74]">
         <span>Target: {stats.dailyTarget} deliveries</span>
-        <span className="font-semibold text-emerald-600">Earn ₹{stats.targetBonus}</span>
+        <span className="font-semibold text-[#1F4D3D]">Earn ₹{stats.targetBonus}</span>
       </div>
     </motion.div>
   );
@@ -347,7 +349,7 @@ function LocationAndChart() {
   const statusDot: Record<string, string> = {
     active: "bg-emerald-500",
     acquiring: "bg-amber-400 animate-pulse",
-    denied: "bg-red-500",
+    denied: "bg-rose-500",
     unavailable: "bg-slate-400",
     idle: "bg-slate-300",
   };
@@ -363,39 +365,39 @@ function LocationAndChart() {
   return (
     <div className="space-y-3">
       {/* Location */}
-      <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-4 flex items-center gap-3">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#F0E8DF]">
-          <Navigation className="h-4 w-4 text-[#6F4E37]" />
+      <motion.div variants={card} className="rounded-2xl border border-[#E3E7E1] bg-white p-4 flex items-center gap-3">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#E7EFEA]">
+          <Navigation className="h-4 w-4 text-[#1F4D3D]" />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8A7C72]">Location</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6E7C74]">Location</p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className={`h-2 w-2 flex-shrink-0 rounded-full ${statusDot[locationStatus]}`} />
-            <p className="text-xs font-medium text-[#2B2B2B] truncate">{statusLabel[locationStatus]}</p>
+            <p className="text-xs font-medium text-[#16241D] truncate">{statusLabel[locationStatus]}</p>
           </div>
         </div>
       </motion.div>
 
       {/* Weekly sparkline */}
-      <motion.div variants={card} className="rounded-2xl border border-[#E8DCCF] bg-white p-4">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[#8A7C72]">Weekly Earnings</p>
+      <motion.div variants={card} className="rounded-2xl border border-[#E3E7E1] bg-white p-4">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[#6E7C74]">Weekly Earnings</p>
         <div className="h-20">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={weekData}>
               <defs>
                 <linearGradient id="earningsGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6F4E37" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#6F4E37" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#1F4D3D" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#1F4D3D" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <Tooltip
-                contentStyle={{ fontSize: 10, borderRadius: 8, border: "1px solid #E8DCCF" }}
+                contentStyle={{ fontSize: 10, borderRadius: 8, border: "1px solid #E3E7E1" }}
                 formatter={(v: unknown) => [`₹${v}`, "Earnings"]}
               />
               <Area
                 type="monotone"
                 dataKey="v"
-                stroke="#6F4E37"
+                stroke="#1F4D3D"
                 strokeWidth={2}
                 fill="url(#earningsGrad)"
                 dot={false}
@@ -403,7 +405,7 @@ function LocationAndChart() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-1 flex justify-between text-[10px] text-[#8A7C72]">
+        <div className="mt-1 flex justify-between text-[10px] text-[#6E7C74]">
           {weekData.map((d) => <span key={d.day}>{d.day}</span>)}
         </div>
       </motion.div>
@@ -420,23 +422,23 @@ function QuickNav() {
     <motion.div variants={card}>
       <button
         onClick={() => navigate("/driver/deliveries")}
-        className="flex w-full items-center gap-3 rounded-2xl border border-[#E8DCCF] bg-white p-4 text-left hover:bg-[#FDF8F1] transition-colors"
+        className="flex w-full items-center gap-3 rounded-2xl border border-[#E3E7E1] bg-white p-4 text-left hover:bg-[#F5F7F3] transition-colors cursor-pointer"
       >
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F0E8DF]">
-          <PackageCheck className="h-4 w-4 text-[#6F4E37]" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E7EFEA]">
+          <PackageCheck className="h-4 w-4 text-[#1F4D3D]" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-[#2B2B2B]">View Deliveries</p>
-          <p className="text-xs text-[#8A7C72]">
+          <p className="text-sm font-semibold text-[#16241D]">View Deliveries</p>
+          <p className="text-xs text-[#6E7C74]">
             {requests.length > 0 ? `${requests.length} request${requests.length > 1 ? "s" : ""} waiting` : "Manage your orders"}
           </p>
         </div>
         {requests.length > 0 && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
             {requests.length}
           </span>
         )}
-        <ChevronRight className="h-4 w-4 text-[#C9A97A]" />
+        <ChevronRight className="h-4 w-4 text-[#1F4D3D]" />
       </button>
     </motion.div>
   );
