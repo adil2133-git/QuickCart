@@ -62,8 +62,8 @@ const ROLE_HOME: Record<UserRole, string> = {
 }
 
 const PageLoader = () => (
-  <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff8f4' }}>
-    <span style={{ color: '#c9a96e', fontWeight: 600, fontSize: 18 }}>QuickKart...</span>
+  <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7F8F5' }}>
+    <span style={{ color: '#145C43', fontWeight: 600, fontSize: 18 }}>QuickKart...</span>
   </div>
 )
 
