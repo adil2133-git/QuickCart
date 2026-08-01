@@ -11,19 +11,8 @@ import {
 } from "recharts";
 import { useDashboardState } from "../../state/dashboardState";
 
-/**
- * QuickOps Admin — Operations Intelligence Card
- * Stack: React + TypeScript + Tailwind CSS + recharts
- *
- * Single card, three tabs — all fed from GET /admin/dashboard/operations:
- * Revenue Trend (last 7 days, bar), Order Status (last 30 days, donut),
- * System Health (driver/store live status, simple bars).
- *
- * Order Status only shows the 4 buckets the real orderStatus enum maps to
- * (Delivered / Processing / Out for Delivery / Cancelled) — "Refunded" was
- * dropped from the old mock because refunds aren't tracked as a distinct
- * state anywhere in the schema yet.
- */
+// Operations Intelligence card showing revenue trend, order status, and system health.
+// Data sourced from GET /admin/dashboard/operations.
 
 type TabId = "revenue" | "orders" | "health";
 

@@ -1,14 +1,5 @@
-/**
- * Builds a branded HTML email for QuickKart.
- *
- * @param {object} opts
- * @param {string} opts.heading        - Main heading inside the card
- * @param {string} [opts.greeting]     - E.g. "Hi Adil,"
- * @param {string[]} [opts.paragraphs] - Body paragraphs
- * @param {{ label: string, value: string }[]} [opts.details] - Key/value table rows
- * @param {{ text: string, url: string }} [opts.cta]          - Call-to-action button
- * @param {string} [opts.footerNote]   - Override the default footer line
- */
+// Builds a branded HTML email template for QuickKart notifications.
+// Accepts heading, greeting, paragraphs, details table, CTA link, and footer options.
 const buildEmailHTML = ({
     heading,
     greeting,

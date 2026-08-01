@@ -2,18 +2,8 @@ import { useEffect, useState } from "react";
 import { Search, Download } from "lucide-react";
 import { useDashboardState, type OrderStatusLabel, type PaymentLabel } from "../../state/dashboardState";
 
-/**
- * QuickOps Admin — Recent Orders Table
- * Stack: React + TypeScript + Tailwind CSS + lucide-react
- *
- * Live data via GET /admin/dashboard/recent-orders. Search is debounced
- * and sent to the server rather than filtered client-side, since the
- * server only returns a capped recent slice.
- *
- * "Filters" from the old mock was dropped — payment method here is only
- * ever Online/COD (that's all the schema tracks), so a dedicated filter
- * button didn't add anything real to filter by yet.
- */
+// Admin Recent Orders Table displaying live orders slice with debounced search.
+// Data sourced from GET /admin/dashboard/recent-orders.
 
 const STATUS_STYLES: Record<OrderStatusLabel, string> = {
   Delivered: "bg-[#E8EFEC] text-[#145C43]",

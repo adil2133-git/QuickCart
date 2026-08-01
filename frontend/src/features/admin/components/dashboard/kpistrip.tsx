@@ -2,14 +2,8 @@ import { useEffect } from "react";
 import { TrendingUp, TrendingDown, type LucideIcon } from "lucide-react";
 import { useDashboardState } from "../../state/dashboardState";
 
-/**
- * QuickOps Admin — KPI Strip
- * Stack: React + TypeScript + Tailwind CSS + lucide-react
- *
- * Compact, glanceable KPI row — pulled live from
- * GET /admin/dashboard/kpis. Five cards: Orders Today, Revenue Today,
- * Drivers Online, Stores Active, Avg Delivery time.
- */
+// Admin KPI strip displaying live stats (Orders, Revenue, Drivers, Stores, Avg Time).
+// Sourced from GET /admin/dashboard/kpis.
 
 function formatCurrency(value: number): string {
   if (value >= 100000) return `₹${(value / 100000).toFixed(2)}L`;

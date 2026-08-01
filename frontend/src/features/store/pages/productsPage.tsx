@@ -29,10 +29,7 @@ import {
   LOW_STOCK_THRESHOLD,
 } from "../types/product";
 
-/* -------------------------------------------------------------------------- */
-/*  Status badge config                                                       */
-/* -------------------------------------------------------------------------- */
-
+// Status badge config
 const statusConfig: Record<DerivedStatus, { label: string; className: string; pulse?: boolean }> = {
   ACTIVE: { label: "Active", className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15" },
   LOW_STOCK: {
@@ -48,10 +45,7 @@ const statusConfig: Record<DerivedStatus, { label: string; className: string; pu
   HIDDEN: { label: "Hidden", className: "bg-[#F5F7F3] text-[#6E7C74] ring-1 ring-[#E3E7E1]" },
 };
 
-/* -------------------------------------------------------------------------- */
-/*  KPI strip                                                                 */
-/* -------------------------------------------------------------------------- */
-
+// KPI strip
 function KpiCard({
   icon: Icon,
   label,
@@ -79,10 +73,7 @@ function KpiCard({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Inline-editable stock cell                                                */
-/* -------------------------------------------------------------------------- */
-
+// Inline-editable stock cell
 function StockCell({
   product,
   onCommit,
@@ -159,10 +150,7 @@ function StockCell({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Row actions menu                                                          */
-/* -------------------------------------------------------------------------- */
-
+// Row actions menu
 function RowMenu({
   onEdit,
   onDelete,
@@ -253,10 +241,7 @@ function RowMenu({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Sortable column header                                                    */
-/* -------------------------------------------------------------------------- */
-
+// Sortable column header
 function SortHeader({
   label,
   sortKey,
@@ -290,10 +275,7 @@ function SortHeader({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Confirm-delete dialog                                                     */
-/* -------------------------------------------------------------------------- */
-
+// Confirm-delete dialog
 function ConfirmDeleteDialog({
   productName,
   onCancel,
@@ -338,10 +320,7 @@ function ConfirmDeleteDialog({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Filter select                                                             */
-/* -------------------------------------------------------------------------- */
-
+// Filter select
 function SelectFilter({
   value,
   onChange,
@@ -372,10 +351,7 @@ function SelectFilter({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Page                                                                      */
-/* -------------------------------------------------------------------------- */
-
+// Products Page Component
 export default function ProductsPage() {
   const navigate = useNavigate();
 

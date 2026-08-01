@@ -13,24 +13,8 @@ import {
 import { useDashboardState, type AttentionItem, type ApprovalCard } from "../../state/dashboardState";
 import { useState } from "react";
 
-/**
- * QuickOps Admin — Action Rail (right column)
- * Stack: React + TypeScript + Tailwind CSS + lucide-react
- *
- * Live data via GET /admin/dashboard/action-rail.
- *
- * "Needs Attention" only surfaces signals we can actually compute:
- * stale (>48h) pending store/driver applications, and orders stuck
- * >45min without being delivered or cancelled. The old mock's COD
- * reconciliation and SLA-breach cards are gone — nothing in the
- * codebase tracks COD remittance or delivery SLAs yet, so faking
- * those numbers here would just be lying with better formatting.
- *
- * Approve/Reject quick-buttons were removed from the queue cards —
- * a real decision needs the application detail (documents, notes),
- * so these cards now link through to the review page instead of
- * pretending a one-tap approve is a real workflow.
- */
+// Admin Action Rail displaying attention items and application review queue.
+// Fetches live dashboard signals from GET /admin/dashboard/action-rail.
 
 const ICON_MAP: Record<AttentionItem["type"], typeof AlertCircle> = {
   orders: AlertCircle,
