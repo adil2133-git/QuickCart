@@ -92,14 +92,14 @@ function Hero() {
           className="relative lg:col-span-5"
         >
           <div className="relative overflow-hidden rounded-[28px] border border-[#E3E7E1] bg-white p-2.5 shadow-xl shadow-[#16241D]/[0.06]">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px]">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-[#F5F7F3] p-3">
               <img
                 src={heroProduceImg}
                 alt="Fresh Organic Produce Basket"
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
-                className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
+                className="h-full w-full object-contain object-center transition-transform duration-700 hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#16241D]/60 via-transparent to-transparent" />
 
