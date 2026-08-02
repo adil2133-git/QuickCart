@@ -5,6 +5,7 @@ import ProtectedRoute from './router/protectedRoute'
 import NotFound from './router/notFound'
 import { connectSocket, disconnectSocket } from "./lib/socket";
 import { useAuthStore, type UserRole } from './features/auth/state/authState'
+import SplashScreen from './components/splashScreen'
 
 // Lazy load route pages for code-splitting and faster initial page loads
 const QuickKartLogin = lazy(() => import('./features/auth/pages/login'))
@@ -80,11 +81,20 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 function App() {
   const hydrate = useAuthStore((state) => state.hydrate)
   const [ready, setReady] = useState(false)
+  const [isSplashing, setIsSplashing] = useState(true)
 
   // checks the session once on load before rendering any routes
   useEffect(() => {
     hydrate().finally(() => setReady(true))
   }, [hydrate])
+
+  // ensures splash screen animation completes sequence before fading out
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsSplashing(false);
+    }, 1400);
+    return () => clearTimeout(timer);
+  }, []);
 
   const user = useAuthStore((state) => state.user);
 
@@ -96,14 +106,12 @@ function App() {
     }
   }, [user]);
 
-  if (!ready) {
-    return <PageLoader />
-  }
-
   return (
-    <BrowserRouter>
-      <Toaster position="top-right" richColors closeButton expand gap={10} visibleToasts={4} />
-      <Suspense fallback={<PageLoader />}>
+    <>
+      <SplashScreen isLoading={!ready || isSplashing} />
+      <BrowserRouter>
+        <Toaster position="top-right" richColors closeButton expand gap={10} visibleToasts={4} />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
 
           {/* public routes */}
@@ -179,6 +187,7 @@ function App() {
         </Routes>
       </Suspense>
     </BrowserRouter>
+    </>
   )
 }
 
