@@ -295,7 +295,7 @@ export function usePlaceOrder() {
 
       const message = getApiErrorMessage(
         err,
-        err instanceof Error ? err.message : "Couldn't place your order. Please try again."
+        "Couldn't place your order. Please try again."
       );
       toast.error(message, { id: "place-order-error" });
       return null;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getApiErrorMessage } from "../../../api/apiError";
 import { motion, type Variants } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -149,7 +150,7 @@ function WithdrawModal({
       toast.success(`${formatINR(parsed)} withdrawal initiated.`);
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Withdrawal failed.");
+      toast.error(getApiErrorMessage(err, "Withdrawal failed. Please try again."));
     }
   };
 
@@ -399,7 +400,7 @@ function CodSettlementTab() {
       const settled = await settleCod();
       toast.success(`${formatINR(settled)} settled successfully.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Settlement failed.");
+      toast.error(getApiErrorMessage(err, "Settlement failed. Please try again."));
     }
   };
 

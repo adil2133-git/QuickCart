@@ -10,6 +10,7 @@ import type {
   OrderStatus,
 } from "../types/storeOrders";
 import api from "../../../api/axios";
+import { getApiErrorMessage } from "../../../api/apiError";
 
 const BASE = "/store";
 
@@ -32,7 +33,7 @@ export function useFetchStoreOrders() {
         setOrders(data.orders);
         if (data.pagination) setPagination(data.pagination);
       } catch (err) {
-        setOrdersError(err instanceof Error ? err.message : "Failed to load orders");
+        setOrdersError(getApiErrorMessage(err, "Failed to load orders. Please try again."));
       }
     },
     [setLoadingOrders, setOrders, setOrdersError, setPagination]
@@ -59,7 +60,7 @@ export function useFetchOrderDetail() {
         }));
         setPackingItems(items);
       } catch (err) {
-        setDetailError(err instanceof Error ? err.message : "Failed to load order");
+        setDetailError(getApiErrorMessage(err, "Failed to load order details. Please try again."));
       }
     },
     [setLoadingDetail, setSelectedOrder, setDetailError, setPackingItems]
