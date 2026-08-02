@@ -17,7 +17,7 @@ export default function RestockBanner({ imageUrl = DEFAULT_IMAGE, onRestockClick
         <button
           type="button"
           onClick={onRestockClick}
-          className="w-fit rounded-full bg-[#B47800] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#92400E] cursor-pointer shadow-sm"
+          className="w-fit rounded-full bg-[#78350F] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#451A03] cursor-pointer shadow-sm"
         >
           Restock Now
         </button>
