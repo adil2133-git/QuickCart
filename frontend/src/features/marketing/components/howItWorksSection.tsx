@@ -28,10 +28,10 @@ export function HowItWorksSection() {
           {steps.map((s, i) => (
             <motion.div
               key={s.title}
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
+              initial={{ opacity: 0, y: 40, scale: 0.96 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.55, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.85, delay: i * 0.16, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ y: -6, scale: 1.02 }}
               className="group relative flex flex-col items-center rounded-3xl border border-[#E3E7E1] bg-[#F5F7F3] p-8 text-center shadow-sm transition-all duration-300 hover:bg-white hover:border-[#145C43] hover:shadow-xl"
             >

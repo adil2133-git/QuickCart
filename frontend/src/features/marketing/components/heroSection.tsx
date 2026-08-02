@@ -11,33 +11,33 @@ const containerVariants: Variants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.1,
+      staggerChildren: 0.16,
+      delayChildren: 0.15,
     },
   },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 30, scale: 0.98 },
+  hidden: { opacity: 0, y: 40, scale: 0.97 },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1],
+      duration: 0.9,
+      ease: [0.16, 1, 0.3, 1],
     },
   },
 };
 
 const heroImageVariants: Variants = {
-  hidden: { opacity: 0, scale: 1.08 },
+  hidden: { opacity: 0, scale: 1.06 },
   visible: {
     opacity: 0.85,
     scale: 1,
     transition: {
-      duration: 1.2,
-      ease: [0.22, 1, 0.36, 1],
+      duration: 1.5,
+      ease: [0.16, 1, 0.3, 1],
     },
   },
 };

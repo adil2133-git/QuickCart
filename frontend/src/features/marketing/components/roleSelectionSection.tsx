@@ -7,11 +7,11 @@ import driverPartnerImg from "../../../assets/driver1.png";
 import customerImg from "../../../assets/customer1.png";
 
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 35 },
+  hidden: { opacity: 0, y: 45 },
   visible: (i: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.9, delay: i * 0.16, ease: [0.16, 1, 0.3, 1] },
   }),
 };
 
