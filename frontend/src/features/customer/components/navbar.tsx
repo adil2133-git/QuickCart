@@ -763,7 +763,7 @@ export default function NavBar({ cartCount: _cartCount }: NavBarProps) {
 
     const logoHref = isAuthenticated && user
         ? (ROLE_HOME[user.role] ?? "/customer/home")
-        : "/landing";
+        : "/";
 
     useEffect(() => {
         if (isAuthenticated) {

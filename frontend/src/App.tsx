@@ -115,8 +115,8 @@ function App() {
         <Routes>
 
           {/* public routes */}
-          <Route path="/" element={<Navigate to="/landing" replace />} />
-          <Route path="/landing" element={<PublicOnlyRoute><QuickKartLanding /></PublicOnlyRoute>} />
+          <Route path="/" element={<PublicOnlyRoute><QuickKartLanding /></PublicOnlyRoute>} />
+          <Route path="/landing" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<PublicOnlyRoute><QuickKartLogin /></PublicOnlyRoute>} />
           <Route path="/about" element={<QuickKartAbout />} />
           <Route path="/create-account" element={<CreateAccountModal />} />
