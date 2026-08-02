@@ -1,5 +1,5 @@
 // components/Navbar.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingCart, Menu, X } from "lucide-react";
@@ -7,7 +7,16 @@ import { scrollTo } from "../utils/scroll";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 450);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinks: { label: string; action: () => void }[] = [
     { label: "How it works", action: () => { setOpen(false); scrollTo("how-it-works"); } },
@@ -17,7 +26,13 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#16241D]/[0.06] bg-[#F7F8F5]/90 backdrop-blur-md">
+    <header
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-[#F7F8F5]/95 border-b border-[#E3E7E1] shadow-sm backdrop-blur-md"
+          : "bg-white/60 border-b border-white/50 shadow-sm backdrop-blur-md"
+      }`}
+    >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <button onClick={() => scrollTo("top")} className="flex items-center gap-2">
