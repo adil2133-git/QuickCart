@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ShoppingBag, Bike, Store, ArrowRight, Check } from "lucide-react";
+
+// Same kitchen background asset used on the login page
+import loginBgImg from "../../../assets/login-bg.png";
 
 type AccountType = "customer" | "delivery" | "store" | null;
 
@@ -18,124 +22,125 @@ export default function CreateAccountModal() {
       id: "customer",
       label: "Customer",
       description: "Shop for groceries from nearby stores",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      ),
+      icon: <ShoppingBag size={20} className="text-[#145C43]" />,
     },
     {
       id: "delivery",
       label: "Delivery Partner",
       description: "Deliver orders and earn commissions",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="5.5" cy="17.5" r="2.5" />
-          <circle cx="17.5" cy="17.5" r="2.5" />
-          <path d="M15 6H3v11.5" />
-          <path d="M3 9h10l2 5h3l1-5" />
-        </svg>
-      ),
+      icon: <Bike size={20} className="text-[#145C43]" />,
     },
     {
       id: "store",
       label: "Store / Supermarket",
       description: "List your store and manage orders online",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l1-5h16l1 5" />
-          <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
-          <path d="M9 9v12" />
-          <path d="M15 9v12" />
-        </svg>
-      ),
+      icon: <Store size={20} className="text-[#145C43]" />,
     },
   ];
 
   return (
-    /* Backdrop */
-    <div
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ backgroundColor: "rgba(22,36,29,0.45)" }}
-    >
-      {/* Modal */}
-      <div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 px-7 py-7"
-        style={{ boxShadow: "0 8px 40px rgba(22,36,29,0.12)" }}
-      >
-        {/* Close */}
-        <button
-          onClick={() => navigate("/login")}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#F0F2ED] font-sans p-4 text-[#16241D]">
+      
+      {/* Full-Screen Background Image matching Login Page */}
+      <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
+        <img
+          src={loginBgImg}
+          alt="Sunlit Kitchen Produce Background"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          className="h-full w-full object-cover object-center opacity-85 blur-[2px] transition-opacity duration-300"
+        />
+        {/* Soft Radial & Linear Vignette Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/60 via-white/35 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-[#F0F2ED]/60" />
+      </div>
 
-        {/* Header */}
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Create an Account</h2>
-        <p className="text-sm text-gray-500 mb-5">Choose the type of account you want to create</p>
+      {/* Centered Glassmorphic Modal Card */}
+      <div className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-[36px] border border-white/80 bg-white/85 p-8 text-center shadow-2xl backdrop-blur-2xl sm:p-10">
+        
+        {/* Brand Header */}
+        <div className="mb-2">
+          <span className="text-2xl font-bold tracking-tight text-[#0A1F17]" style={{ fontFamily: "Fraunces, serif" }}>
+            QuickKart
+          </span>
+        </div>
 
-        {/* Options */}
-        <div className="flex flex-col gap-3 mb-5">
+        {/* Modal Title & Subtitle */}
+        <h2 className="text-3xl font-semibold text-[#0A1F17] sm:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
+          Create an Account
+        </h2>
+        <p className="mt-2 text-xs leading-relaxed text-[#6E7C74] sm:text-sm">
+          Choose the type of account you want to create to get started.
+        </p>
+
+        {/* 3 Selectable Account Types */}
+        <div className="mt-8 space-y-3.5 text-left">
           {options.map((opt) => {
             const isSelected = selected === opt.id;
             return (
               <button
                 key={opt.id}
+                type="button"
                 onClick={() => setSelected(opt.id)}
-                className="flex items-center gap-3 w-full text-left rounded-xl px-4 py-3 transition-all"
-                style={{
-                  border: isSelected ? "1.5px solid #145C43" : "1.5px solid #E3E7E1",
-                  backgroundColor: isSelected ? "#E8EFEC" : "#FFFFFF",
-                }}
+                className={`group relative flex w-full items-center gap-4 rounded-3xl border p-4 transition-all duration-200 ${
+                  isSelected
+                    ? "border-[#145C43] bg-white/95 shadow-md ring-2 ring-[#145C43]/15"
+                    : "border-white/60 bg-white/60 hover:border-[#145C43]/40 hover:bg-white/80"
+                }`}
               >
-                <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-[#145C43]/10 text-[#145C43]">
+                {/* Icon Tile */}
+                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-colors ${
+                  isSelected ? "bg-[#E8EFEC]" : "bg-[#F5F7F3]"
+                }`}>
                   {opt.icon}
                 </div>
+
+                {/* Text Content */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#16241D]">{opt.label}</p>
-                  <p className="text-xs text-gray-500 leading-snug mt-0.5">{opt.description}</p>
+                  <p className="text-sm font-semibold text-[#0A1F17]">{opt.label}</p>
+                  <p className="mt-0.5 text-xs text-[#6E7C74]">{opt.description}</p>
                 </div>
+
+                {/* Radio Indicator Circle */}
                 <div
-                  className="flex-shrink-0 rounded-full border-2 flex items-center justify-center"
-                  style={{ width: 18, height: 18, borderColor: isSelected ? "#145C43" : "#D1D5DB", backgroundColor: "white" }}
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all ${
+                    isSelected
+                      ? "border-[#145C43] bg-[#145C43] text-white"
+                      : "border-[#C2CCC6] bg-transparent group-hover:border-[#145C43]"
+                  }`}
                 >
-                  {isSelected && (
-                    <div className="rounded-full" style={{ width: 9, height: 9, backgroundColor: "#145C43" }} />
-                  )}
+                  {isSelected && <Check size={12} strokeWidth={3} />}
                 </div>
               </button>
             );
           })}
         </div>
 
-        {/* Continue Button */}
+        {/* Continue Action Button */}
         <button
           disabled={!selected}
           onClick={handleContinue}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all text-white disabled:opacity-50"
-          style={{
-            backgroundColor: selected ? "#145C43" : "#9CA3AF",
-            cursor: selected ? "pointer" : "not-allowed",
-          }}
+          className={`group mt-8 flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white shadow-lg transition-all ${
+            selected
+              ? "bg-[#708B7F] hover:bg-[#145C43] hover:shadow-xl active:bg-[#0E402F]"
+              : "bg-[#9BAAA1] cursor-not-allowed opacity-60"
+          }`}
         >
-          Continue
+          Continue <ArrowRight size={16} className={`transition-transform ${selected ? "group-hover:translate-x-1" : ""}`} />
         </button>
 
-        {/* Login Link */}
-        <p className="text-center text-sm mt-4">
-          <span className="text-gray-500">Already have an account? </span>
+        {/* Footer Link */}
+        <div className="mt-6 text-center text-xs text-[#6E7C74]">
+          Already have an account?{" "}
           <button
             onClick={() => navigate("/login")}
-            className="font-medium hover:underline text-[#145C43]"
+            className="font-bold text-[#0A1F17] hover:underline"
           >
             Login
           </button>
-        </p>
+        </div>
+
       </div>
     </div>
   );
