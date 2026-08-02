@@ -7,10 +7,11 @@ import driverPartnerImg from "../../../assets/driver1.png";
 import customerImg from "../../../assets/customer1.png";
 
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 35 },
   visible: (i: number = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.5, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] },
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
@@ -18,7 +19,13 @@ export function RoleSelectionSection() {
   return (
     <section id="join" className="bg-[#F7F8F5] px-6 py-24 border-t border-[#E3E7E1]">
       <div className="mx-auto max-w-7xl">
-        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto mb-16 max-w-xl text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto mb-16 max-w-xl text-center"
+        >
           <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#145C43]">Get Started Today</p>
           <h2 className="text-3xl text-[#16241D] md:text-4xl" style={{ fontFamily: "Fraunces, serif", fontWeight: 480 }}>
             One platform, three ways to join
@@ -27,16 +34,24 @@ export function RoleSelectionSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {/* Customer Card */}
-          <div className="group flex flex-col overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white transition-all hover:-translate-y-1.5 hover:shadow-xl">
+          <motion.div
+            custom={0}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            whileHover={{ y: -8 }}
+            className="group flex flex-col overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white transition-all duration-300 hover:shadow-2xl"
+          >
             <div className="relative h-64 w-full overflow-hidden bg-[#F5F7F3]">
               <img
                 src={customerImg}
                 alt="Order Groceries"
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-108"
               />
-              <div className="absolute left-4 top-4 rounded-full bg-[#145C43] px-3.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider shadow-sm">
+              <div className="absolute left-4 top-4 rounded-full bg-[#145C43] px-3.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider shadow-md backdrop-blur-sm">
                 For Shoppers
               </div>
             </div>
@@ -47,24 +62,32 @@ export function RoleSelectionSection() {
               </p>
               <Link
                 to="/register/customer"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#A9CC3B] px-5 py-3 text-sm font-bold text-[#16241D] transition-transform hover:bg-[#98B933]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#A9CC3B] px-5 py-3 text-sm font-bold text-[#16241D] transition-all hover:bg-[#98B933] hover:shadow-md active:scale-98"
               >
-                Start Shopping <ArrowRight size={16} />
+                Start Shopping <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
           {/* Store Partner Card */}
-          <div className="group flex flex-col overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white transition-all hover:-translate-y-1.5 hover:shadow-xl">
+          <motion.div
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            whileHover={{ y: -8 }}
+            className="group flex flex-col overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white transition-all duration-300 hover:shadow-2xl"
+          >
             <div className="relative h-64 w-full overflow-hidden bg-[#F5F7F3]">
               <img
                 src={storePartnerImg}
                 alt="Partner Store"
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-108"
               />
-              <div className="absolute left-4 top-4 rounded-full bg-[#145C43] px-3.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider shadow-sm">
+              <div className="absolute left-4 top-4 rounded-full bg-[#145C43] px-3.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider shadow-md backdrop-blur-sm">
                 For Supermarkets
               </div>
             </div>
@@ -75,24 +98,32 @@ export function RoleSelectionSection() {
               </p>
               <Link
                 to="/register/store"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#145C43] px-5 py-3 text-sm font-bold text-[#145C43] transition-colors hover:bg-[#145C43] hover:text-white"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#145C43] px-5 py-3 text-sm font-bold text-[#145C43] transition-all hover:bg-[#145C43] hover:text-white hover:shadow-md active:scale-98"
               >
-                Register Store <ArrowRight size={16} />
+                Register Store <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
           {/* Delivery Partner Card */}
-          <div className="group flex flex-col overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white transition-all hover:-translate-y-1.5 hover:shadow-xl">
+          <motion.div
+            custom={2}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            whileHover={{ y: -8 }}
+            className="group flex flex-col overflow-hidden rounded-3xl border border-[#E3E7E1] bg-white transition-all duration-300 hover:shadow-2xl"
+          >
             <div className="relative h-64 w-full overflow-hidden bg-[#F5F7F3]">
               <img
                 src={driverPartnerImg}
                 alt="Become a Delivery Partner"
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-108"
               />
-              <div className="absolute left-4 top-4 rounded-full bg-[#145C43] px-3.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider shadow-sm">
+              <div className="absolute left-4 top-4 rounded-full bg-[#145C43] px-3.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider shadow-md backdrop-blur-sm">
                 For Drivers
               </div>
             </div>
@@ -103,12 +134,12 @@ export function RoleSelectionSection() {
               </p>
               <Link
                 to="/register/delivery"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#145C43] px-5 py-3 text-sm font-bold text-[#145C43] transition-colors hover:bg-[#145C43] hover:text-white"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#145C43] px-5 py-3 text-sm font-bold text-[#145C43] transition-all hover:bg-[#145C43] hover:text-white hover:shadow-md active:scale-98"
               >
-                Start Delivering <ArrowRight size={16} />
+                Start Delivering <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
