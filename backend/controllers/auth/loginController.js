@@ -25,21 +25,35 @@ const Login = async (req, res) => {
         }
 
         if (user.blocked) {
-            return res.status(403).json({ message: "Your account has been blocked" });
+            return res.status(403).json({
+                title: "Account Restricted",
+                message: "Your account has been restricted by an administrator. Please contact support.",
+                status: "BLOCKED",
+            });
         }
 
-        // drivers go through an approval process, so they need extra status checks
-        if (user.role === "DRIVER") {
+        // Drivers and Store partners go through an approval process, check status
+        if (user.role === "DRIVER" || user.role === "STORE") {
+            if (user.status === "PENDING_APPROVAL") {
+                return res.status(403).json({
+                    title: "Application Under Review",
+                    message: "Your application is currently under review by our administration team.",
+                    status: user.status,
+                });
+            }
+
             if (user.status === "REJECTED") {
                 return res.status(403).json({
-                    message: "Your driver application was rejected. Please contact support for more details.",
+                    title: "Application Not Approved",
+                    message: "Your application was not approved. Please contact support for assistance.",
                     status: user.status,
                 });
             }
 
             if (user.status === "SUSPENDED") {
                 return res.status(403).json({
-                    message: "Your driver account has been suspended. Please contact support.",
+                    title: "Account Restricted",
+                    message: "Your account has been suspended. Please contact support for assistance.",
                     status: user.status,
                 });
             }
