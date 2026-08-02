@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ForgotPasswordModal from "../components/forgotPasswordModal";
+import CreateAccountModal from "../components/createAccountModal";
 import api from "../../../api/axios";
 import { getApiErrorMessage } from "../../../api/apiError";
 import { useAuthStore, type UserRole, type UserStatus } from "../state/authState";
@@ -31,6 +32,7 @@ interface LoginResponse {
 export default function QuickKartLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -76,6 +78,7 @@ export default function QuickKartLogin() {
   return (
     <div className="relative flex min-h-screen w-full flex-col justify-between overflow-hidden bg-[#F0F2ED] font-sans text-[#16241D]">
       {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
+      {showCreateAccount && <CreateAccountModal onClose={() => setShowCreateAccount(false)} />}
 
       {/* Full-Screen Background Image with Soft Lighting */}
       <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
@@ -216,7 +219,8 @@ export default function QuickKartLogin() {
               <div className="mt-8 border-t border-[#E3E7E1]/80 pt-6 text-center text-xs text-[#6E7C74]">
                 New to QuickKart?{" "}
                 <button
-                  onClick={() => navigate("/create-account")}
+                  type="button"
+                  onClick={() => setShowCreateAccount(true)}
                   className="font-bold text-[#0A1F17] hover:underline"
                 >
                   Create an Account

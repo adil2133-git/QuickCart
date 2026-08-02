@@ -119,7 +119,7 @@ function App() {
           <Route path="/landing" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<PublicOnlyRoute><QuickKartLogin /></PublicOnlyRoute>} />
           <Route path="/about" element={<QuickKartAbout />} />
-          <Route path="/create-account" element={<CreateAccountModal />} />
+          <Route path="/create-account" element={<CreateAccountModal standalone={true} />} />
           <Route path="/register/customer" element={<CustomerRegistration />} />
           <Route path="/register/store" element={<StoreRegistration />} />
           <Route path="/register/delivery" element={<DeliveryPartnerRegistration />} />
