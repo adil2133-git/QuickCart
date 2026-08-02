@@ -126,10 +126,10 @@ export default function QuickKartLogin() {
 
           {/* Right Column: Floating Glassmorphic Login Card */}
           <div className="flex justify-center lg:col-span-6 lg:justify-end">
-            <div className="relative w-full max-w-md overflow-hidden rounded-[32px] border border-white/70 bg-white/80 p-8 shadow-2xl backdrop-blur-xl md:p-10">
+            <div className="relative w-full max-w-md overflow-hidden rounded-[32px] border border-white/80 bg-white/65 p-8 shadow-2xl backdrop-blur-2xl md:p-10">
               
               {/* Top Right Shopping Bag Icon */}
-              <div className="absolute right-8 top-8 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8EFEC] text-[#145C43]">
+              <div className="absolute right-8 top-8 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8EFEC]/80 text-[#145C43] backdrop-blur-md">
                 <ShoppingBag size={20} />
               </div>
 
@@ -162,7 +162,7 @@ export default function QuickKartLogin() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@premium.com"
-                    className="w-full rounded-full border border-[#DCE3DC] bg-[#F5F7F3]/90 px-5 py-3 text-sm text-[#16241D] placeholder-[#9BAAA1] outline-none transition-all focus:border-[#145C43] focus:bg-white focus:ring-2 focus:ring-[#145C43]/10"
+                    className="w-full rounded-full border border-white/80 bg-white/50 px-5 py-3 text-sm text-[#16241D] placeholder-[#9BAAA1] outline-none backdrop-blur-md transition-all focus:border-[#145C43] focus:bg-white/90 focus:ring-2 focus:ring-[#145C43]/15"
                   />
                 </div>
 
@@ -187,7 +187,7 @@ export default function QuickKartLogin() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-full border border-[#DCE3DC] bg-[#F5F7F3]/90 px-5 py-3 pr-12 text-sm text-[#16241D] placeholder-[#9BAAA1] outline-none transition-all focus:border-[#145C43] focus:bg-white focus:ring-2 focus:ring-[#145C43]/10"
+                      className="w-full rounded-full border border-white/80 bg-white/50 px-5 py-3 pr-12 text-sm text-[#16241D] placeholder-[#9BAAA1] outline-none backdrop-blur-md transition-all focus:border-[#145C43] focus:bg-white/90 focus:ring-2 focus:ring-[#145C43]/15"
                     />
                     <button
                       type="button"

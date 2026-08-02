@@ -149,8 +149,8 @@ export default function CreateAccountModal({ onClose, standalone = false }: Crea
           onClick={handleContinue}
           className={`group mt-5 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold text-white shadow-md transition-all ${
             selected
-              ? "bg-[#708B7F] hover:bg-[#145C43] hover:shadow-lg active:bg-[#0E402F]"
-              : "bg-[#9BAAA1] cursor-not-allowed opacity-60"
+              ? "bg-[#0A1F17] hover:bg-[#145C43] shadow-lg active:bg-[#0E402F]"
+              : "bg-[#9BAAA1] cursor-not-allowed opacity-50"
           }`}
         >
           Continue <ArrowRight size={14} className={`transition-transform ${selected ? "group-hover:translate-x-1" : ""}`} />
