@@ -8,10 +8,10 @@ const app = express();
 app.set("trust proxy", 1);
 
 
-// Parse allowed CORS origins from environment
-const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
-    .split(",")
-    .map((origin) => origin.trim());
+const { corsOptions } = require("./utils/corsOptions");
+
+// CORS Configuration
+app.use(cors(corsOptions));
 
 // Body parser with raw body retention for webhook verification (e.g. Razorpay)
 app.use(express.json({
@@ -34,21 +34,6 @@ const DriverWithdrawalRoutes = require("./routes/driver/driverWithdrawalRoutes")
 const CustomerRoutes = require("./routes/customer/customerRoutes");
 const notificationRoutes = require("./routes/shared/notificationRoutes");
 const RazorpayWebhookRoutes = require("./routes/webhooks/razorpayWebhookRoutes");
-
-// CORS Configuration
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            // Allow requests with no origin (e.g. mobile apps, server-to-server)
-            if (!origin || allowedOrigins.includes(origin)) {
-                callback(null, true);
-            } else {
-                callback(new Error(`CORS blocked for origin: ${origin}`));
-            }
-        },
-        credentials: true,
-    })
-);
 
 // API Routes
 app.use("/api/auth", AuthRoutes);
