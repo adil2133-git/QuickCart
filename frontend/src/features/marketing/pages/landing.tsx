@@ -31,17 +31,18 @@ function Hero() {
   return (
     <section id="top" className="relative overflow-hidden bg-[#F7F8F5]">
       {/* Background Hero Image with Soft Lighting Gradient Blend */}
-      <div className="absolute inset-0 z-0 h-[680px] w-full overflow-hidden">
+      <div className="absolute inset-0 z-0 min-h-full w-full overflow-hidden">
         <img
           src={heroBgImg}
           alt="Fresh Organic Produce Background"
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          className="h-full w-full object-cover object-top opacity-45 blur-[1px] scale-105"
+          className="h-full w-full object-cover object-center opacity-85"
         />
-        {/* Soft Radial & Linear Gradient Overlay matching reference image */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/85 to-[#F7F8F5]" />
+        {/* Soft Radial & Linear Gradient Overlay for perfect text contrast & full produce image visibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/55 to-[#F7F8F5]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/60 via-transparent to-transparent" />
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 pb-20 pt-16 text-center md:pb-28 md:pt-24">
