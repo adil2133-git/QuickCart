@@ -1,11 +1,4 @@
-/**
- * QuickCart Auth Zod Validation Schemas
- * 
- * CROSS-REFERENCE NOTE:
- * Frontend counterparts are defined in:
- * `frontend/src/features/auth/validation/authSchemas.ts`
- * Always update both files in tandem when modifying validation rules.
- */
+// Auth Zod Validation Schemas (pairs with frontend/src/features/auth/validation/authSchemas.ts)
 
 const { z } = require("zod");
 

@@ -7,7 +7,7 @@ import { connectSocket, disconnectSocket } from "./lib/socket";
 import { useAuthStore, type UserRole } from './features/auth/state/authState'
 import SplashScreen from './components/splashScreen'
 
-// Lazy load route pages for code-splitting and faster initial page loads
+// Lazy loaded routes
 const QuickKartLogin = lazy(() => import('./features/auth/pages/login'))
 const CreateAccountModal = lazy(() => import('./features/auth/components/createAccountModal'))
 const CustomerRegistration = lazy(() => import('./features/auth/pages/customerRegistration'))

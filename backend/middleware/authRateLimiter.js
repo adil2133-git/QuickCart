@@ -1,11 +1,8 @@
 const rateLimit = require("express-rate-limit");
 
-/**
- * Login rate limiter: Max 10 attempts per 15-minute window.
- * Keyed by IP + normalized email to protect shared WiFi / mobile NAT environments.
- */
+// Login rate limiter: Max 10 attempts per 15-minute window (IP + email)
 const loginRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
@@ -23,9 +20,7 @@ const loginRateLimiter = rateLimit({
   },
 });
 
-/**
- * OTP dispatch rate limiter: Max 5 OTP requests per 15-minute window.
- */
+// OTP dispatch rate limiter: Max 5 requests per 15-minute window
 const otpRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,

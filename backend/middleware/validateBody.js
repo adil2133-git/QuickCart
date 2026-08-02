@@ -1,7 +1,4 @@
-/**
- * Express middleware to validate req.body against a Zod schema.
- * Formats errors into clean human messages (no 'body.field:' or JSON path leaks).
- */
+// Express middleware to validate req.body against a Zod schema
 
 const validateBody = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body);

@@ -10,11 +10,7 @@ type ApiErrorShape = {
   message?: string;
 };
 
-/**
- * Extracts a human-friendly backend error message.
- * Sanitizes technical Axios messages ("Request failed with status code 401", "Network Error")
- * to ensure zero raw HTTP codes or dev-speak ever leak into the UI.
- */
+// Extracts and sanitizes human backend error messages
 export function getApiErrorMessage(err: unknown, fallback: string = "Something went wrong. Please try again."): string {
   const apiErr = err as ApiErrorShape;
   const backendMessage = apiErr?.response?.data?.message;

@@ -8,11 +8,7 @@ interface ToastOptions {
   duration?: number;
 }
 
-/**
- * QuickKart Luxury Frosted Glass Toast System
- * Matches the reference design with pill-shaped glass cards, circular icon tiles,
- * serif titles, truncated subtitles, optional action links, and close buttons.
- */
+// Frosted Glass Toast Notification Helpers
 
 // ─── SUCCESS TOAST ────────────────────────────────────────────────────────────
 export function showSuccessToast(title: string, options?: ToastOptions) {

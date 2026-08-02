@@ -1,11 +1,4 @@
-/**
- * QuickCart Auth Yup Validation Schemas
- * 
- * CROSS-REFERENCE NOTE:
- * Backend Zod schemas are defined in:
- * `backend/validators/authValidators.js`
- * Always update both files in tandem when modifying validation rules.
- */
+// Auth Yup Validation Schemas (pairs with backend/validators/authValidators.js)
 
 import * as Yup from "yup";
 
