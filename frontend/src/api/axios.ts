@@ -40,6 +40,12 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
     const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
+    const isLoginCall = originalRequest?.url?.includes("/auth/login");
+
+    // Login endpoint 401s mean invalid credentials — reject immediately
+    if (status === 401 && isLoginCall) {
+      return Promise.reject(error);
+    }
 
     // the refresh call itself failed — refresh token is expired/invalid.
     // if this came from hydrate()'s initial "do I have a session?" check,
