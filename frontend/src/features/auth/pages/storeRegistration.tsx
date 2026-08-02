@@ -1,6 +1,7 @@
 // src/features/auth/components/StoreRegistration.tsx
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../../../api/axios";
@@ -8,6 +9,8 @@ import { getApiErrorMessage } from "../../../api/apiError";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
+import { storeRegisterValidationSchema } from "../validation/authSchemas";
+import { showSuccessToast, showErrorToast } from "../../../components/ui/toastService";
 
 type UploadState = { file: File | null };
 
@@ -403,7 +406,7 @@ function LocationStep({
                   type="button"
                   onClick={handleConfirm}
                   className="w-full h-10 rounded-lg text-sm font-semibold transition-all hover:brightness-95 active:scale-[0.98]"
-                  style={{ backgroundColor: "#A9CC3B", color: "#16241D" }}
+                  style={{ backgroundColor: "#145C43", color: "#FFFFFF" }}
                 >
                   Confirm Location
                 </button>
@@ -431,16 +434,6 @@ function LocationStep({
 export default function StoreRegistration() {
   const navigate = useNavigate();
 
-  // Text fields
-  const [storeName, setStoreName] = useState("");
-  const [ownerName, setOwnerName] = useState("");
-  const [address, setAddress] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
   // Location — null until the user explicitly confirms a pin
   const [location, setLocation] = useState<ConfirmedLocation | null>(null);
 
@@ -451,81 +444,82 @@ export default function StoreRegistration() {
 
   // UI state
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [targetEmail, setTargetEmail] = useState("");
   const [showOtpModal, setShowOtpModal] = useState(false);
 
-const { handleFocus, handleBlur } = useInputFocusStyle("muted");
+  const { handleFocus } = useInputFocusStyle("muted");
   const inputClass =
     "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
   const inputStyle = { borderColor: "#DCE3DC" };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const formik = useFormik({
+    initialValues: {
+      storeName: "",
+      ownerName: "",
+      address: "",
+      pincode: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationSchema: storeRegisterValidationSchema,
+    onSubmit: async (values, { setSubmitting }) => {
+      setError("");
 
-    if (
-      !storeName.trim() || !ownerName.trim() || !address.trim() ||
-      !pincode.trim() || !email.trim() || !phone.trim() ||
-      !password || !confirmPassword
-    ) {
-      setError("All fields are required");
-      return;
-    }
+      if (!location) {
+        const locErr = "Please confirm your store location on the map";
+        setError(locErr);
+        showErrorToast("Location Required", { subtitle: locErr });
+        setSubmitting(false);
+        return;
+      }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+      if (!tradeLicense.file || !ownerID.file || !storeFront.file) {
+        const docErr = "Trade license, owner ID, and store front photo are all required";
+        setError(docErr);
+        showErrorToast("Documents Required", { subtitle: docErr });
+        setSubmitting(false);
+        return;
+      }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
+      try {
+        const lowerEmail = values.email.trim().toLowerCase();
+        const formData = new FormData();
+        formData.append("storeName", values.storeName.trim());
+        formData.append("ownerName", values.ownerName.trim());
+        formData.append("address", values.address.trim());
+        formData.append("pincode", values.pincode.trim());
+        formData.append("email", lowerEmail);
+        formData.append("phone", values.phone.trim());
+        formData.append("password", values.password);
+        formData.append("confirmPassword", values.confirmPassword);
+        formData.append("lat", String(location.lat));
+        formData.append("lng", String(location.lng));
+        formData.append("tradeLicense", tradeLicense.file);
+        formData.append("ownerId", ownerID.file);
+        formData.append("storeFront", storeFront.file);
 
-    if (!location) {
-      setError("Please confirm your store location on the map");
-      return;
-    }
+        await api.post("/auth/register/store", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
 
-    if (!tradeLicense.file || !ownerID.file || !storeFront.file) {
-      setError("Trade license, owner ID, and store front photo are all required");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const formData = new FormData();
-      formData.append("storeName", storeName.trim());
-      formData.append("ownerName", ownerName.trim());
-      formData.append("address", address.trim());
-      formData.append("pincode", pincode.trim());
-      formData.append("email", email.trim());
-      formData.append("phone", phone.trim());
-      formData.append("password", password);
-      formData.append("confirmPassword", confirmPassword);
-      // ── Location ──────────────────────────────────────────────────────────
-      formData.append("lat", String(location.lat));
-      formData.append("lng", String(location.lng));
-      // ─────────────────────────────────────────────────────────────────────
-      formData.append("tradeLicense", tradeLicense.file);
-      formData.append("ownerId", ownerID.file);
-      formData.append("storeFront", storeFront.file);
-
-      await api.post("/auth/register/store", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setShowOtpModal(true);
-    } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Something went wrong"));
-    } finally {
-      setLoading(false);
-    }
-  };
+        setTargetEmail(lowerEmail);
+        showSuccessToast("Verification OTP Sent", { subtitle: `Check your email: ${lowerEmail}` });
+        setShowOtpModal(true);
+      } catch (err: unknown) {
+        const errMsg = getApiErrorMessage(err, "Registration failed. Please check your details.");
+        setError(errMsg);
+        showErrorToast("Registration Issue", { subtitle: errMsg });
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
 
   const handleStoreVerified = () => {
     setShowOtpModal(false);
+    showSuccessToast("Application Submitted", { subtitle: "We will review your supermarket application soon." });
     navigate("/store/pending");
   };
 
@@ -533,7 +527,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
     <div className="flex min-h-screen w-full font-sans" style={{ backgroundColor: "#F7F8F5" }}>
       {showOtpModal && (
         <OtpVerificationModal
-          email={email.trim().toLowerCase()}
+          email={targetEmail}
           onClose={() => setShowOtpModal(false)}
           onVerified={handleStoreVerified}
         />
@@ -646,7 +640,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={formik.handleSubmit} className="space-y-8" noValidate>
             {/* ── Section 1: Store Info ─────────────────────────────────────── */}
             <section className="space-y-5">
               <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#E3E7E1" }}>
@@ -672,16 +666,21 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                       </svg>
                     </span>
                     <input
+                      id="storeName"
+                      name="storeName"
                       type="text"
                       placeholder="e.g. Green Valley Organics"
-                      className={`${inputClass} pl-9`}
+                      className={`${inputClass} pl-9 ${formik.touched.storeName && formik.errors.storeName ? "border-red-400 focus:border-red-500" : ""}`}
                       style={inputStyle}
-                      value={storeName}
-                      onChange={(e) => setStoreName(e.target.value)}
+                      value={formik.values.storeName}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
                       onFocus={handleFocus}
-                      onBlur={handleBlur}
                     />
                   </div>
+                  {formik.touched.storeName && formik.errors.storeName && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.storeName}</p>
+                  )}
                 </div>
 
                 {/* Owner Name */}
@@ -690,15 +689,20 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                     Owner Name
                   </label>
                   <input
+                    id="ownerName"
+                    name="ownerName"
                     type="text"
                     placeholder="Legal full name"
-                    className={inputClass}
+                    className={`${inputClass} ${formik.touched.ownerName && formik.errors.ownerName ? "border-red-400 focus:border-red-500" : ""}`}
                     style={inputStyle}
-                    value={ownerName}
-                    onChange={(e) => setOwnerName(e.target.value)}
+                    value={formik.values.ownerName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     onFocus={handleFocus}
-                    onBlur={handleBlur}
                   />
+                  {formik.touched.ownerName && formik.errors.ownerName && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.ownerName}</p>
+                  )}
                 </div>
 
                 {/* Address */}
@@ -707,15 +711,22 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                     Address
                   </label>
                   <textarea
+                    id="address"
+                    name="address"
                     placeholder="Full street address, building number, landmark"
                     rows={3}
-                    className="w-full p-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 resize-none transition-all"
+                    className={`w-full p-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 resize-none transition-all ${
+                      formik.touched.address && formik.errors.address ? "border-red-400 focus:border-red-500" : ""
+                    }`}
                     style={inputStyle}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    value={formik.values.address}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     onFocus={handleFocus}
-                    onBlur={handleBlur}
                   />
+                  {formik.touched.address && formik.errors.address && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.address}</p>
+                  )}
                 </div>
 
                 {/* Pincode */}
@@ -731,16 +742,21 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                       </svg>
                     </span>
                     <input
+                      id="pincode"
+                      name="pincode"
                       type="text"
                       placeholder="6-digit postal code"
-                      className={`${inputClass} pl-9`}
+                      className={`${inputClass} pl-9 ${formik.touched.pincode && formik.errors.pincode ? "border-red-400 focus:border-red-500" : ""}`}
                       style={inputStyle}
-                      value={pincode}
-                      onChange={(e) => setPincode(e.target.value)}
+                      value={formik.values.pincode}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
                       onFocus={handleFocus}
-                      onBlur={handleBlur}
                     />
                   </div>
+                  {formik.touched.pincode && formik.errors.pincode && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.pincode}</p>
+                  )}
                 </div>
 
                 {/* ── Location Step ───────────────────────────────────────── */}
@@ -766,7 +782,9 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                     confirmed={location}
                     onConfirm={setLocation}
                     initialAddressHint={
-                      address.trim() && pincode.trim() ? `${address.trim()}, ${pincode.trim()}, India` : ""
+                      formik.values.address.trim() && formik.values.pincode.trim()
+                        ? `${formik.values.address.trim()}, ${formik.values.pincode.trim()}, India`
+                        : ""
                     }
                   />
                 </div>
@@ -787,28 +805,38 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Email</label>
                   <input
+                    id="email"
+                    name="email"
                     type="email"
                     placeholder="name@store.com"
-                    className={inputClass}
+                    className={`${inputClass} ${formik.touched.email && formik.errors.email ? "border-red-400 focus:border-red-500" : ""}`}
                     style={inputStyle}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     onFocus={handleFocus}
-                    onBlur={handleBlur}
                   />
+                  {formik.touched.email && formik.errors.email && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.email}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Phone</label>
                   <input
+                    id="phone"
+                    name="phone"
                     type="tel"
-                    placeholder="+91 00000 00000"
-                    className={inputClass}
+                    placeholder="10-digit mobile number"
+                    className={`${inputClass} ${formik.touched.phone && formik.errors.phone ? "border-red-400 focus:border-red-500" : ""}`}
                     style={inputStyle}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    value={formik.values.phone}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     onFocus={handleFocus}
-                    onBlur={handleBlur}
                   />
+                  {formik.touched.phone && formik.errors.phone && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.phone}</p>
+                  )}
                 </div>
               </div>
 
@@ -816,29 +844,39 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Password</label>
                   <input
+                    id="password"
+                    name="password"
                     type="password"
-                    placeholder="Min. 8 characters"
-                    className={inputClass}
+                    placeholder="Enter password (min. 8 characters)"
+                    className={`${inputClass} ${formik.touched.password && formik.errors.password ? "border-red-400 focus:border-red-500" : ""}`}
                     style={inputStyle}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     onFocus={handleFocus}
-                    onBlur={handleBlur}
                   />
-                  <PasswordStrengthBar password={password} />
+                  <PasswordStrengthBar password={formik.values.password} />
+                  {formik.touched.password && formik.errors.password && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.password}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Confirm Password</label>
                   <input
+                    id="confirmPassword"
+                    name="confirmPassword"
                     type="password"
-                    placeholder="Repeat password"
-                    className={inputClass}
+                    placeholder="Re-enter your password"
+                    className={`${inputClass} ${formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-400 focus:border-red-500" : ""}`}
                     style={inputStyle}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={formik.values.confirmPassword}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     onFocus={handleFocus}
-                    onBlur={handleBlur}
                   />
+                  {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.confirmPassword}</p>
+                  )}
                 </div>
               </div>
             </section>
@@ -900,15 +938,15 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full h-12 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70"
+                disabled={formik.isSubmitting}
+                className="w-full h-12 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70 cursor-pointer"
                 style={{
                   backgroundColor: "#A9CC3B",
                   color: "#16241D",
                   boxShadow: "0 8px 24px rgba(20,92,67,0.12)",
                 }}
               >
-                {loading ? (
+                {formik.isSubmitting ? (
                   <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12a9 9 0 11-6.219-8.56" />
                   </svg>
@@ -918,7 +956,7 @@ const { handleFocus, handleBlur } = useInputFocusStyle("muted");
                     <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
                   </svg>
                 )}
-                {loading ? "Submitting..." : "Submit Store Application"}
+                {formik.isSubmitting ? "Submitting..." : "Submit Store Application"}
               </button>
               <p className="mt-3 text-xs text-center text-gray-500">
                 By clicking submit, you agree to QuickKart's{" "}

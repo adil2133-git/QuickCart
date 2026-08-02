@@ -1,68 +1,68 @@
-// src/features/auth/components/CustomerRegistration.tsx
+// src/features/auth/pages/customerRegistration.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import api from "../../../api/axios";
 import { getApiErrorMessage } from "../../../api/apiError";
 import { useAuthStore } from "../state/authState";
 import EyeIcon from "../components/shared/eyeIcon";
 import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
+import { customerRegisterValidationSchema } from "../validation/authSchemas";
+import { showSuccessToast, showErrorToast } from "../../../components/ui/toastService";
 
 export default function CustomerRegistration() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [targetEmail, setTargetEmail] = useState("");
+  const [serverError, setServerError] = useState("");
 
   const navigate = useNavigate();
   const hydrate = useAuthStore((state) => state.hydrate);
-  const { handleFocus, handleBlur } = useInputFocusStyle();
+  const { handleFocus } = useInputFocusStyle();
 
   const inputClass =
-    "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400";
+    "w-full pl-9 pr-4 py-2.5 text-sm border rounded-md outline-none text-gray-700 placeholder-gray-400 transition-all";
   const inputStyle = { borderColor: "#D6C5B0", backgroundColor: "#FAFAF8" };
 
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      phone: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationSchema: customerRegisterValidationSchema,
+    onSubmit: async (values, { setSubmitting }) => {
+      setServerError("");
+      try {
+        const lowerEmail = values.email.trim().toLowerCase();
+        await api.post("/auth/register/customer", {
+          name: values.name.trim(),
+          phone: values.phone.trim(),
+          email: lowerEmail,
+          password: values.password,
+        });
 
-
-
-  const handleCreateAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await api.post("/auth/register/customer", {
-        name,
-        phone,
-        email,
-        password,
-      });
-      setShowOtp(true);
-    } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Registration failed. Please try again."));
-    } finally {
-      setLoading(false);
-    }
-  };
+        setTargetEmail(lowerEmail);
+        showSuccessToast("Verification OTP Sent", { subtitle: `Check your email: ${lowerEmail}` });
+        setShowOtp(true);
+      } catch (err: unknown) {
+        const errMsg = getApiErrorMessage(err, "Registration failed. Please check your details.");
+        setServerError(errMsg);
+        showErrorToast("Registration Issue", { subtitle: errMsg });
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
 
   const handleVerified = async () => {
     setShowOtp(false);
     await hydrate();
+    showSuccessToast("Account Created", { subtitle: "Welcome to QuickKart!" });
     navigate("/customer/home");
   };
 
@@ -79,8 +79,8 @@ export default function CustomerRegistration() {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="white"
-            strokeWidth="2"
+            stroke="#8FCDB0"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -88,35 +88,41 @@ export default function CustomerRegistration() {
             <line x1="3" y1="6" x2="21" y2="6" />
             <path d="M16 10a4 4 0 01-8 0" />
           </svg>
-          <span className="text-white font-semibold text-lg tracking-tight">
-            QuickKart
-          </span>
+          <span className="font-bold text-white tracking-wide">QuickKart</span>
         </div>
-        <div className="flex flex-col gap-8">
-          <h1 className="text-white text-3xl font-bold leading-tight">
-            Your neighbourhood
-            <br />
-            grocery, delivered fast.
+
+        <div className="my-auto py-12">
+          <span
+            className="text-xs font-semibold uppercase tracking-widest block mb-3"
+            style={{ color: "#8FCDB0" }}
+          >
+            Join as Customer
+          </span>
+
+          <h1
+            className="text-3xl font-bold text-white leading-tight mb-4"
+            style={{ fontFamily: "Fraunces, serif" }}
+          >
+            Fresh groceries from local stores, delivered in minutes.
           </h1>
-          <div className="flex flex-col gap-4">
+
+          <p className="text-sm leading-relaxed mb-8" style={{ color: "#C2E8D7" }}>
+            Real-time store inventory, transparent prices, and zero missing items.
+            Enjoy instant delivery from your community supermarkets.
+          </p>
+
+          <div className="space-y-3">
             {[
               {
-                label: "Hyperlocal",
-                icon: (
-                  <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" />
-                ),
+                label: "Live store inventory tracking",
+                icon: <polyline points="20 6 9 17 4 12" />,
               },
               {
-                label: "Real-time availability",
-                icon: (
-                  <>
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 8 12 12 14 14" />
-                  </>
-                ),
+                label: "Store-direct shelf prices",
+                icon: <polyline points="20 6 9 17 4 12" />,
               },
               {
-                label: "Fast delivery",
+                label: "Express 15-minute delivery",
                 icon: <polyline points="20 6 9 17 4 12" />,
               },
             ].map(({ label, icon }, i) => (
@@ -149,6 +155,7 @@ export default function CustomerRegistration() {
       <div className="flex flex-col flex-1 bg-white px-10 py-8 overflow-y-auto">
         <div className="flex items-center gap-1.5 text-xs mb-6">
           <button
+            type="button"
             onClick={() => navigate("/login")}
             className="hover:underline"
             style={{ color: "#145C43" }}
@@ -166,6 +173,7 @@ export default function CustomerRegistration() {
             <polyline points="9 18 15 12 9 6" />
           </svg>
           <button
+            type="button"
             onClick={() => navigate("/create-account")}
             className="hover:underline"
             style={{ color: "#145C43" }}
@@ -212,8 +220,9 @@ export default function CustomerRegistration() {
             </span>
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-md px-4 py-3 mb-4 bg-red-50 border border-red-200">
+          {/* In-Card Error Alert Banner */}
+          {serverError && (
+            <div className="flex items-center gap-2 rounded-md px-4 py-3 mb-4 bg-red-50 border border-red-200 text-sm text-red-600">
               <svg
                 width="15"
                 height="15"
@@ -223,16 +232,18 @@ export default function CustomerRegistration() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className="shrink-0"
               >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <p className="text-sm text-red-600">{error}</p>
+              <p>{serverError}</p>
             </div>
           )}
 
-          <form onSubmit={handleCreateAccount}>
+          {/* Formik Customer Registration Form */}
+          <form onSubmit={formik.handleSubmit} noValidate>
             {/* Full Name */}
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -255,21 +266,27 @@ export default function CustomerRegistration() {
                   </svg>
                 </span>
                 <input
+                  id="name"
+                  name="name"
                   type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="Enter your full name"
-                  className={inputClass}
+                  className={`${inputClass} ${
+                    formik.touched.name && formik.errors.name ? "border-red-400 focus:border-red-500" : ""
+                  }`}
                   style={{ ...inputStyle }}
                   onFocus={handleFocus}
-                  onBlur={handleBlur}
                 />
               </div>
+              {formik.touched.name && formik.errors.name && (
+                <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.name}</p>
+              )}
             </div>
 
             {/* Phone */}
-            <div className="mb-1.5">
+            <div className="mb-4">
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 Phone Number
               </label>
@@ -289,21 +306,26 @@ export default function CustomerRegistration() {
                   </svg>
                 </span>
                 <input
+                  id="phone"
+                  name="phone"
                   type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className={inputClass}
+                  value={formik.values.phone}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="10-digit mobile number"
+                  className={`${inputClass} ${
+                    formik.touched.phone && formik.errors.phone ? "border-red-400 focus:border-red-500" : ""
+                  }`}
                   style={{ ...inputStyle }}
                   onFocus={handleFocus}
-                  onBlur={handleBlur}
                 />
               </div>
+              {formik.touched.phone && formik.errors.phone ? (
+                <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.phone}</p>
+              ) : (
+                <p className="text-[11px] text-gray-400 mt-1">Used for delivery updates and driver communication.</p>
+              )}
             </div>
-            <p className="text-xs text-gray-400 mb-4">
-              Used for delivery updates and driver communication.
-            </p>
 
             {/* Email */}
             <div className="mb-4">
@@ -327,17 +349,23 @@ export default function CustomerRegistration() {
                   </svg>
                 </span>
                 <input
+                  id="email"
+                  name="email"
                   type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="name@example.com"
-                  className={inputClass}
+                  className={`${inputClass} ${
+                    formik.touched.email && formik.errors.email ? "border-red-400 focus:border-red-500" : ""
+                  }`}
                   style={{ ...inputStyle }}
                   onFocus={handleFocus}
-                  onBlur={handleBlur}
                 />
               </div>
+              {formik.touched.email && formik.errors.email && (
+                <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.email}</p>
+              )}
             </div>
 
             {/* Password */}
@@ -362,15 +390,18 @@ export default function CustomerRegistration() {
                   </svg>
                 </span>
                 <input
+                  id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 8 characters"
-                  className={`${inputClass} pr-10`}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter password (min. 8 characters)"
+                  className={`${inputClass} pr-10 ${
+                    formik.touched.password && formik.errors.password ? "border-red-400 focus:border-red-500" : ""
+                  }`}
                   style={{ ...inputStyle }}
                   onFocus={handleFocus}
-                  onBlur={handleBlur}
                 />
                 <button
                   type="button"
@@ -380,10 +411,13 @@ export default function CustomerRegistration() {
                   <EyeIcon open={showPassword} />
                 </button>
               </div>
+              {formik.touched.password && formik.errors.password && (
+                <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.password}</p>
+              )}
             </div>
 
             {/* Confirm Password */}
-            <div className="mb-4">
+            <div className="mb-6">
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 Confirm Password
               </label>
@@ -404,15 +438,20 @@ export default function CustomerRegistration() {
                   </svg>
                 </span>
                 <input
+                  id="confirmPassword"
+                  name="confirmPassword"
                   type={showConfirm ? "text" : "password"}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat your password"
-                  className={`${inputClass} pr-10`}
+                  value={formik.values.confirmPassword}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Re-enter your password"
+                  className={`${inputClass} pr-10 ${
+                    formik.touched.confirmPassword && formik.errors.confirmPassword
+                      ? "border-red-400 focus:border-red-500"
+                      : ""
+                  }`}
                   style={{ ...inputStyle }}
                   onFocus={handleFocus}
-                  onBlur={handleBlur}
                 />
                 <button
                   type="button"
@@ -422,75 +461,29 @@ export default function CustomerRegistration() {
                   <EyeIcon open={showConfirm} />
                 </button>
               </div>
+              {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+                <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.confirmPassword}</p>
+              )}
             </div>
 
-            {/* Info Banner */}
-            <div
-              className="flex items-start gap-3 rounded-lg px-4 py-3 mb-5"
-              style={{
-                backgroundColor: "#F5F7F3",
-                borderLeft: "3px solid #145C43",
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#145C43"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mt-0.5 flex-shrink-0"
-              >
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Your account will be activated immediately upon clicking create
-                account.
-              </p>
-            </div>
-
-            {/* Submit */}
+            {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-2.5 text-sm font-bold rounded-md text-[#16241D] transition-all bg-[#A9CC3B] hover:bg-[#98B933] active:bg-[#87A62C] mb-4 flex items-center justify-center gap-2 disabled:opacity-70"
+              disabled={formik.isSubmitting}
+              className="w-full py-3 rounded-md font-medium text-sm text-white shadow-sm transition-colors cursor-pointer"
+              style={{ backgroundColor: "#145C43" }}
             >
-              {loading && (
-                <svg
-                  className="animate-spin"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M21 12a9 9 0 11-6.219-8.56" />
-                </svg>
-              )}
-              {loading ? "Sending OTP..." : "Create Account"}
+              {formik.isSubmitting ? "Sending OTP..." : "Create Account"}
             </button>
           </form>
-
-          <p className="text-center text-sm text-gray-500">
-            Already have an account?{" "}
-            <button
-              onClick={() => navigate("/login")}
-              className="font-semibold hover:underline text-[#145C43]"
-            >
-              Login
-            </button>
-          </p>
         </div>
       </div>
 
       {showOtp && (
         <OtpVerificationModal
-          email={email}
-          onClose={() => setShowOtp(false)}
+          email={targetEmail}
           onVerified={handleVerified}
+          onClose={() => setShowOtp(false)}
         />
       )}
     </div>
