@@ -5,7 +5,7 @@ const { uploadDriverDocs } = require("../../middleware/uploadDriverDocs");
 const { uploadStoreDocs } = require("../../middleware/uploadStoreDocs");
 
 const validateBody = require("../../middleware/validateBody");
-const loginRateLimiter = require("../../middleware/authRateLimiter");
+const { loginRateLimiter, otpRateLimiter } = require("../../middleware/authRateLimiter");
 
 const {
   loginSchema,
@@ -61,14 +61,14 @@ router.post(
 );
 
 // Forgot Password Routes
-router.post("/forgot-password/send-otp", sendForgotPasswordOtp);
+router.post("/forgot-password/send-otp", otpRateLimiter, sendForgotPasswordOtp);
 router.post("/forgot-password/verify-otp", verifyForgotPasswordOtp);
-router.post("/forgot-password/resend-otp", resendForgotPasswordOtp);
+router.post("/forgot-password/resend-otp", otpRateLimiter, resendForgotPasswordOtp);
 router.post("/forgot-password/reset", resetPassword);
 
 // Common OTP Routes
 router.post("/register/verify-otp", verifyOtpController);
-router.post("/register/resend-otp", resendOTPController);
+router.post("/register/resend-otp", otpRateLimiter, resendOTPController);
 
 // Login Route with Rate Limiter & Zod Validation
 router.post("/login", loginRateLimiter, validateBody(loginSchema), Login);

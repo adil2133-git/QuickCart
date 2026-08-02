@@ -20,4 +20,7 @@ const userSchema = new mongoose.Schema(
     { timestamps: { createdAt: "createdAt", updatedAt: "updatedAt" } }
 );
 
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+
 module.exports = mongoose.model("User", userSchema);
