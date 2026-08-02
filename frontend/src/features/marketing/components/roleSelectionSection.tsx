@@ -2,9 +2,9 @@ import { motion, type Variants } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import storePartnerImg from "../../../assets/store1.png";
-import driverPartnerImg from "../../../assets/driver1.png";
-import customerImg from "../../../assets/customer1.png";
+import storePartnerImg from "../../../assets/store1.webp";
+import driverPartnerImg from "../../../assets/driver1.webp";
+import customerImg from "../../../assets/customer1.webp";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 45 },

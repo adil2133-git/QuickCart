@@ -2,7 +2,7 @@ import { motion, type Variants } from "framer-motion";
 import { ArrowRight, MapPin, Clock3, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { scrollTo } from "../utils/scroll";
-import heroBgImg from "../../../assets/hero-bg1.png";
+import heroBgImg from "../../../assets/hero-bg1.webp";
 
 /* ─── Motion Variants for Fluid Staggered Entrance ────────────────────────── */
 

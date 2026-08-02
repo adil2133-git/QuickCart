@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { scrollTo } from "../utils/scroll";
 
 // Uploaded store imagery asset
-import qualityControlBgImg from "../../../assets/quality-control-bg.png";
+import qualityControlBgImg from "../../../assets/quality-control-bg.webp";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40, scale: 0.96 },

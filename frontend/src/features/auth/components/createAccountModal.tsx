@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ShoppingBag, Bike, Store, ArrowRight, Check, X } from "lucide-react";
 
 // Same kitchen background asset used on the login page
-import loginBgImg from "../../../assets/login-bg.png";
+import loginBgImg from "../../../assets/login-bg.webp";
 
 type AccountType = "customer" | "delivery" | "store" | null;
 

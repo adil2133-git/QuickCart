@@ -11,7 +11,7 @@ import { showSuccessToast, showErrorToast } from "../../../components/ui/toastSe
 import { ShoppingBag, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 // Uploaded background asset
-import loginBgImg from "../../../assets/login-bg.png";
+import loginBgImg from "../../../assets/login-bg.webp";
 
 const ROLE_ROUTES: Record<string, string> = {
   CUSTOMER: "/customer/home",
