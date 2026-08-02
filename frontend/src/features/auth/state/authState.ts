@@ -39,7 +39,6 @@ export const useAuthStore = create<AuthState>()(
             // server call failed — clear local state anyway
           } finally {
             set({ user: null, isAuthenticated: false });
-            window.location.href = "/login";
           }
         },
 

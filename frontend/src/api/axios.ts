@@ -32,9 +32,6 @@ const logoutUser = () => {
     id: "session-expired",
     duration: 4000,
   });
-  setTimeout(() => {
-    window.location.href = "/login";
-  }, 500);
 };
 
 api.interceptors.response.use(
