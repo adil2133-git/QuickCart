@@ -9,7 +9,6 @@ import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
 import { driverRegisterValidationSchema } from "../validation/authSchemas";
 import { showSuccessToast, showErrorToast } from "../../../components/ui/toastService";
 
-// Optional left panel background asset if added later
 import driverRegBg from "../../../assets/driver_reg_bg.webp";
 
 type VehicleType = "Bike" | "Scooter";
@@ -40,7 +39,7 @@ function DocumentUploadZone({
       className={`relative flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${
         uploaded 
           ? "border-[#063826] bg-[#E2EDE7]/60 text-[#063826]" 
-          : "border-[#DCE3DC] bg-[#FAFAF8] hover:bg-[#F2F0EB] text-[#6E7C74]"
+          : "border-[#E5E7EB] bg-[#FAF9F6] hover:bg-[#F2F0EB] text-[#6E7C74]"
       }`}
     >
       <input
@@ -81,6 +80,9 @@ export default function DeliveryPartnerRegistration() {
   const [apiError, setApiError] = useState("");
   const [targetEmail, setTargetEmail] = useState("");
   const [showOtp, setShowOtp] = useState(false);
+
+  const inputPillClass =
+    "w-full px-5 py-3 text-xs sm:text-sm rounded-full bg-[#FAF9F6] border border-[#E5E7EB] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#063826] focus:bg-white outline-none transition-all shadow-sm";
 
   const formik = useFormik({
     initialValues: {
@@ -135,20 +137,20 @@ export default function DeliveryPartnerRegistration() {
   });
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans bg-[#F9F8F6]">
+    <div className="flex h-screen w-screen overflow-hidden font-sans bg-[#F9F8F6] select-none">
       
-      {/* Left Panel: Hero Branding & Image Area */}
-      <aside className="hidden md:flex flex-col justify-between w-[38%] lg:w-[40%] h-full p-8 lg:p-10 relative overflow-hidden bg-[#063826] text-white flex-shrink-0">
+      {/* Left Panel: Hero Image & Branding */}
+      <aside className="hidden md:flex flex-col justify-between w-[42%] lg:w-[45%] h-full p-8 lg:p-12 relative overflow-hidden bg-[#063826] text-white flex-shrink-0">
         
-        {/* Full Image Background matching reference design */}
+        {/* Full Left Hero Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
             src={driverRegBg} 
             alt="QuickKart Delivery Partner" 
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-[65%_center]"
           />
-          {/* Subtle bottom vignette gradient so white text is 100% crisp */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          {/* Bottom vignette gradient matching reference design */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
         </div>
 
         {/* Top Spacer */}
@@ -162,38 +164,38 @@ export default function DeliveryPartnerRegistration() {
           >
             QuickKart
           </h1>
-          <p className="text-sm lg:text-base text-white/90 font-normal leading-relaxed max-w-sm">
+          <p className="text-sm lg:text-base text-white/95 font-normal leading-relaxed max-w-sm">
             Join our community of logistics champions and start your journey today.
           </p>
         </div>
       </aside>
 
-      {/* Right Panel: Scrollable Form Area */}
+      {/* Right Panel: Form Area */}
       <main className="flex-1 h-full overflow-y-auto p-6 sm:p-10 lg:p-12">
-        <div className="max-w-[540px] mx-auto">
+        <div className="max-w-[560px] mx-auto">
 
-          {/* Heading */}
+          {/* Page Heading */}
           <div className="mb-4">
             <h2 
-              className="text-2xl sm:text-3xl font-bold text-[#063826]"
+              className="text-3xl sm:text-4xl font-bold text-[#063826]"
               style={{ fontFamily: "Fraunces, serif" }}
             >
               Join as a Delivery Partner
             </h2>
-            <p className="text-xs sm:text-sm text-[#5D6F65] mt-1">
+            <p className="text-xs sm:text-sm text-[#5D6F65] mt-1.5">
               Fill in your details to start your journey with QuickKart.
             </p>
           </div>
 
           {/* Admin Review Notice Pill */}
-          <div className="flex items-center gap-3 p-3.5 mb-6 rounded-full bg-[#E2EDE7]/70 border border-[#C5DCD0] text-xs text-[#063826]">
+          <div className="flex items-center gap-3 p-4 mb-6 rounded-full bg-[#E2EDE7]/70 border border-[#C5DCD0] text-xs text-[#063826]">
             <Info size={18} className="shrink-0 text-[#063826]" />
-            <p className="leading-tight">
+            <p className="leading-tight italic">
               Your account will be reviewed by our admin team once submitted. We'll notify you via phone once approved.
             </p>
           </div>
 
-          {/* API Error Banner */}
+          {/* API Error Alert Banner */}
           {apiError && (
             <div className="p-3.5 mb-5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-600">
               <p>{apiError}</p>
@@ -205,75 +207,75 @@ export default function DeliveryPartnerRegistration() {
             {/* Section 1: Personal Info */}
             <div className="space-y-3.5">
               <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
-                <span className="text-xs font-semibold text-[#8AA094] uppercase tracking-wider">
+                <span className="text-xs font-semibold text-[#6E7C74] tracking-wider">
                   ── Personal Info
                 </span>
               </div>
 
-              {/* Grid: Full Name & Email */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
-                    Full Name
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="e.g. Julian Henderson"
-                    value={formik.values.name}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
-                  />
-                  {formik.touched.name && formik.errors.name && (
-                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
-                    Email Address
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="julian@example.com"
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
-                  />
-                  {formik.touched.email && formik.errors.email && (
-                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.email}</p>
-                  )}
-                </div>
+              {/* Full Name */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="e.g. Julian Henderson"
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.name && formik.errors.name && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.name}</p>
+                )}
               </div>
 
-              {/* Grid: Phone Number & Password */}
+              {/* Email Address */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="julian@example.com"
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.email && formik.errors.email && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.email}</p>
+                )}
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  value={formik.values.phone}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.phone && formik.errors.phone && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.phone}</p>
+                )}
+              </div>
+
+              {/* Grid: Password & Confirm Password side-by-side */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
-                    Phone Number
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
-                    value={formik.values.phone}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
-                  />
-                  {formik.touched.phone && formik.errors.phone && (
-                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.phone}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                  <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
                     Password
                   </label>
                   <input
@@ -284,57 +286,56 @@ export default function DeliveryPartnerRegistration() {
                     value={formik.values.password}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                    className={inputPillClass}
                   />
                   <PasswordStrengthBar password={formik.values.password} />
                   {formik.touched.password && formik.errors.password && (
                     <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.password}</p>
                   )}
                 </div>
-              </div>
 
-              {/* Confirm Password */}
-              <div>
-                <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formik.values.confirmPassword}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
-                />
-                {formik.touched.confirmPassword && formik.errors.confirmPassword && (
-                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.confirmPassword}</p>
-                )}
+                <div>
+                  <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                    Confirm Password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formik.values.confirmPassword}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={inputPillClass}
+                  />
+                  {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.confirmPassword}</p>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Section 2: Vehicle & License */}
             <div className="space-y-3.5">
               <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
-                <span className="text-xs font-semibold text-[#8AA094] uppercase tracking-wider">
+                <span className="text-xs font-semibold text-[#6E7C74] tracking-wider">
                   ── Vehicle & License
                 </span>
               </div>
 
               {/* Vehicle Type Pills */}
               <div>
-                <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1.5 pl-1">
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1.5 pl-1">
                   Vehicle Type
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => formik.setFieldValue("vehicleType", "Bike")}
-                    className={`py-2.5 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    className={`py-3 px-5 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer ${
                       formik.values.vehicleType === "Bike"
-                        ? "border-2 border-[#063826] bg-[#EFECE6]/80 text-[#063826] shadow-sm"
-                        : "border border-[#DCE3DC] bg-white text-gray-600 hover:bg-gray-50"
+                        ? "border-2 border-[#063826] bg-[#EFECE6]/80 text-[#063826] shadow-sm font-semibold"
+                        : "border border-[#E5E7EB] bg-[#FAF9F6] text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <Bike size={16} />
@@ -344,10 +345,10 @@ export default function DeliveryPartnerRegistration() {
                   <button
                     type="button"
                     onClick={() => formik.setFieldValue("vehicleType", "Scooter")}
-                    className={`py-2.5 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    className={`py-3 px-5 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all cursor-pointer ${
                       formik.values.vehicleType === "Scooter"
-                        ? "border-2 border-[#063826] bg-[#EFECE6]/80 text-[#063826] shadow-sm"
-                        : "border border-[#DCE3DC] bg-white text-gray-600 hover:bg-gray-50"
+                        ? "border-2 border-[#063826] bg-[#EFECE6]/80 text-[#063826] shadow-sm font-semibold"
+                        : "border border-[#E5E7EB] bg-[#FAF9F6] text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <Scooter size={16} />
@@ -359,7 +360,7 @@ export default function DeliveryPartnerRegistration() {
               {/* Grid: Vehicle Reg & License Number */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                  <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
                     Vehicle Registration Number
                   </label>
                   <input
@@ -370,7 +371,7 @@ export default function DeliveryPartnerRegistration() {
                     value={formik.values.vehicleNumber}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                    className={inputPillClass}
                   />
                   {formik.touched.vehicleNumber && formik.errors.vehicleNumber && (
                     <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.vehicleNumber}</p>
@@ -378,7 +379,7 @@ export default function DeliveryPartnerRegistration() {
                 </div>
 
                 <div>
-                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                  <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
                     Driving License Number
                   </label>
                   <input
@@ -389,7 +390,7 @@ export default function DeliveryPartnerRegistration() {
                     value={formik.values.licenseNumber}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                    className={inputPillClass}
                   />
                   {formik.touched.licenseNumber && formik.errors.licenseNumber && (
                     <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.licenseNumber}</p>
@@ -401,7 +402,7 @@ export default function DeliveryPartnerRegistration() {
             {/* Section 3: Documents Verification */}
             <div className="space-y-3.5">
               <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
-                <span className="text-xs font-semibold text-[#8AA094] uppercase tracking-wider">
+                <span className="text-xs font-semibold text-[#6E7C74] tracking-wider">
                   ── Documents Verification
                 </span>
               </div>
