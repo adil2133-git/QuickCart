@@ -1,35 +1,18 @@
-// src/features/auth/pages/deliveryPartnerRegistration.tsx
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
+import { Bike, Scooter, ArrowRight, Info, Upload, CheckCircle2 } from "lucide-react";
 import { registerDriver } from "../../driver/driverAuthService";
 import { getApiErrorMessage } from "../../../api/apiError";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
-import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 import { driverRegisterValidationSchema } from "../validation/authSchemas";
 import { showSuccessToast, showErrorToast } from "../../../components/ui/toastService";
 
+// Optional left panel background asset if added later
+import driverRegBg from "../../../assets/driver_reg_bg.webp";
+
 type VehicleType = "Bike" | "Scooter";
-
-interface SectionHeaderProps {
-  icon: React.ReactNode;
-  label: string;
-}
-
-function SectionHeader({ icon, label }: SectionHeaderProps) {
-  return (
-    <div className="flex items-center gap-2 mb-4">
-      <span style={{ color: "#145C43" }}>{icon}</span>
-      <span
-        className="text-xs font-bold tracking-widest uppercase"
-        style={{ color: "#145C43" }}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
 
 interface UploadState {
   file: File | null;
@@ -37,14 +20,12 @@ interface UploadState {
   uploaded: boolean;
 }
 
-function DocumentCard({
-  icon,
+function DocumentUploadZone({
   label,
   sub,
   upload,
   onUpload,
 }: {
-  icon: React.ReactNode;
   label: string;
   sub: string;
   upload: UploadState;
@@ -52,15 +33,15 @@ function DocumentCard({
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const { uploaded, name } = upload;
+
   return (
     <div
       onClick={() => ref.current?.click()}
-      className="relative flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
-      style={{
-        borderStyle: uploaded ? "solid" : "dashed",
-        borderColor: uploaded ? "#145C43" : "#DCE3DC",
-        backgroundColor: uploaded ? "#E8EFEC" : "#F5F7F3",
-      }}
+      className={`relative flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${
+        uploaded 
+          ? "border-[#063826] bg-[#E2EDE7]/60 text-[#063826]" 
+          : "border-[#DCE3DC] bg-[#FAFAF8] hover:bg-[#F2F0EB] text-[#6E7C74]"
+      }`}
     >
       <input
         ref={ref}
@@ -72,33 +53,19 @@ function DocumentCard({
           if (f) onUpload(f);
         }}
       />
-      <div className="flex-shrink-0" style={{ color: uploaded ? "#145C43" : "#6E7C74" }}>
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold tracking-wide uppercase text-gray-800">
-          {label}
-        </p>
-        <p
-          className="text-xs mt-0.5 truncate"
-          style={{
-            color: uploaded ? "#145C43" : "#6E7C74",
-            fontWeight: uploaded ? 600 : 400,
-          }}
-        >
-          {uploaded ? `${name} uploaded` : sub}
-        </p>
-      </div>
-      {uploaded && (
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="#145C43"
-          stroke="none"
-        >
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14l-4-4 1.41-1.41L10 13.17l6.59-6.59L18 8l-8 8z" />
-        </svg>
+      
+      {uploaded ? (
+        <div className="flex flex-col items-center text-center">
+          <CheckCircle2 size={24} className="text-[#063826] mb-1" />
+          <span className="text-xs font-bold text-[#063826]">{label}</span>
+          <span className="text-[11px] text-[#2C4E3F] truncate max-w-[140px] font-medium">{name}</span>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center text-center">
+          <Upload size={20} className="text-[#8AA094] mb-1.5" />
+          <span className="text-xs font-semibold text-[#1A3326]">{label}</span>
+          <span className="text-[10px] text-[#7A8C82] mt-0.5">{sub}</span>
+        </div>
       )}
     </div>
   );
@@ -107,7 +74,6 @@ function DocumentCard({
 export default function DeliveryPartnerRegistration() {
   const navigate = useNavigate();
 
-  const { handleFocus } = useInputFocusStyle("muted");
   const [drivingLicense, setDrivingLicense] = useState<UploadState>({ file: null, name: null, uploaded: false });
   const [vehicleRC, setVehicleRC] = useState<UploadState>({ file: null, name: null, uploaded: false });
   const [profilePhoto, setProfilePhoto] = useState<UploadState>({ file: null, name: null, uploaded: false });
@@ -115,10 +81,6 @@ export default function DeliveryPartnerRegistration() {
   const [apiError, setApiError] = useState("");
   const [targetEmail, setTargetEmail] = useState("");
   const [showOtp, setShowOtp] = useState(false);
-
-  const inputClass =
-    "w-full h-11 px-3 bg-white border outline-none text-sm text-gray-800 placeholder-gray-400 rounded-lg transition-all";
-  const inputStyle = { borderColor: "#DCE3DC" };
 
   const formik = useFormik({
     initialValues: {
@@ -173,323 +135,317 @@ export default function DeliveryPartnerRegistration() {
   });
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans bg-white">
-      {/* ── Left panel ──────────────────────────────────────────────────── */}
-      <aside
-        className="hidden md:flex flex-col justify-between w-[320px] lg:w-[380px] h-full p-8 flex-shrink-0"
-        style={{ backgroundColor: "#145C43" }}
-      >
-        <div className="flex items-center gap-2">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#8FCDB0"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <path d="M16 10a4 4 0 01-8 0" />
-          </svg>
-          <span className="font-bold text-white tracking-wide">QuickKart</span>
+    <div className="flex h-screen w-screen overflow-hidden font-sans bg-[#F9F8F6]">
+      
+      {/* Left Panel: Hero Branding & Image Area */}
+      <aside className="hidden md:flex flex-col justify-between w-[38%] lg:w-[40%] h-full p-8 lg:p-10 relative overflow-hidden bg-[#063826] text-white flex-shrink-0">
+        
+        {/* Full Image Background matching reference design */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={driverRegBg} 
+            alt="QuickKart Delivery Partner" 
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Subtle bottom vignette gradient so white text is 100% crisp */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         </div>
 
-        <div className="my-auto py-12">
-          <span
-            className="text-xs font-semibold tracking-widest uppercase block mb-2"
-            style={{ color: "#8FCDB0" }}
-          >
-            Driver Network
-          </span>
-          <h1
-            className="text-3xl font-bold text-white leading-tight mb-4"
+        {/* Top Spacer */}
+        <div className="relative z-10" />
+
+        {/* Bottom Hero Typography & Statement */}
+        <div className="relative z-10 mt-auto">
+          <h1 
+            className="text-4xl lg:text-5xl font-bold tracking-tight text-white mb-2" 
             style={{ fontFamily: "Fraunces, serif" }}
           >
-            Deliver freshness. Earn on your terms.
+            QuickKart
           </h1>
-          <p className="text-xs leading-relaxed" style={{ color: "#C2E8D7" }}>
-            Join thousands of neighborhood delivery partners with weekly payouts and per-order bonuses.
+          <p className="text-sm lg:text-base text-white/90 font-normal leading-relaxed max-w-sm">
+            Join our community of logistics champions and start your journey today.
           </p>
-        </div>
-
-        <div className="space-y-6">
-          <nav className="divide-y divide-white/10 border-t border-white/10">
-            {[
-              { label: "Flexible shifts", icon: <polyline points="20 6 9 17 4 12" />, bright: true },
-              { label: "Transparent earnings", icon: <polyline points="20 6 9 17 4 12" />, bright: true },
-              { label: "Fast delivery", icon: <polyline points="20 6 9 17 4 12" />, bright: false },
-            ].map(({ label, icon, bright }, i) => (
-              <div key={i} className="flex items-center gap-3 py-3" style={{ opacity: bright ? 1 : 0.7 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {icon}
-                </svg>
-                <span className="text-xs font-bold tracking-widest uppercase text-white">{label}</span>
-              </div>
-            ))}
-          </nav>
-          <div className="flex items-center gap-1">
-            <span className="text-xs" style={{ color: "#8FCDB0" }}>© 2024 QuickKart</span>
-          </div>
         </div>
       </aside>
 
-      {/* ── Right panel ──────────────────────────────────────────────────── */}
-      <section className="flex-1 h-full overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#DCE3DC #F5F7F3" }}>
-        <div className="max-w-[480px] mx-auto px-6 py-10">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs mb-6">
-            <button type="button" onClick={() => navigate("/login")} className="hover:underline" style={{ color: "#145C43" }}>
-              Login
-            </button>
-            <span className="text-gray-400">/</span>
-            <button type="button" onClick={() => navigate("/create-account")} className="hover:underline" style={{ color: "#145C43" }}>
-              Create Account
-            </button>
-            <span className="text-gray-400">/</span>
-            <span className="font-bold" style={{ color: "#145C43" }}>Driver Registration</span>
-          </nav>
+      {/* Right Panel: Scrollable Form Area */}
+      <main className="flex-1 h-full overflow-y-auto p-6 sm:p-10 lg:p-12">
+        <div className="max-w-[540px] mx-auto">
 
           {/* Heading */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Join as a Delivery Partner</h2>
-            <p className="text-sm text-gray-500 mt-1">Fill in your details to start your journey with QuickKart.</p>
-          </div>
-
-          {/* Admin review notice */}
-          <div className="flex items-start gap-3 p-4 mb-8 rounded" style={{ backgroundColor: "#F5F7F3", borderLeft: "3px solid #145C43" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <p className="text-xs leading-relaxed" style={{ color: "#6E7C74" }}>
-              Your account will be reviewed by our admin team once submitted. We'll notify you via phone once your application is approved.
+          <div className="mb-4">
+            <h2 
+              className="text-2xl sm:text-3xl font-bold text-[#063826]"
+              style={{ fontFamily: "Fraunces, serif" }}
+            >
+              Join as a Delivery Partner
+            </h2>
+            <p className="text-xs sm:text-sm text-[#5D6F65] mt-1">
+              Fill in your details to start your journey with QuickKart.
             </p>
           </div>
 
-          {/* API error banner */}
+          {/* Admin Review Notice Pill */}
+          <div className="flex items-center gap-3 p-3.5 mb-6 rounded-full bg-[#E2EDE7]/70 border border-[#C5DCD0] text-xs text-[#063826]">
+            <Info size={18} className="shrink-0 text-[#063826]" />
+            <p className="leading-tight">
+              Your account will be reviewed by our admin team once submitted. We'll notify you via phone once approved.
+            </p>
+          </div>
+
+          {/* API Error Banner */}
           {apiError && (
-            <div className="flex items-start gap-3 p-4 mb-6 rounded bg-red-50 border border-red-200 text-sm text-red-600">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <p className="text-xs leading-relaxed">{apiError}</p>
+            <div className="p-3.5 mb-5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-600">
+              <p>{apiError}</p>
             </div>
           )}
 
-          <form onSubmit={formik.handleSubmit} className="space-y-8" noValidate>
-            {/* Section 1 — Personal Info */}
-            <fieldset className="space-y-4">
-              <SectionHeader label="Personal Info" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>} />
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Full Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formik.values.name}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`${inputClass} ${formik.touched.name && formik.errors.name ? "border-red-400 focus:border-red-500" : ""}`}
-                  style={inputStyle}
-                  onFocus={handleFocus}
-                />
-                {formik.touched.name && formik.errors.name && (
-                  <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.name}</p>
-                )}
+          <form onSubmit={formik.handleSubmit} className="space-y-6" noValidate>
+            
+            {/* Section 1: Personal Info */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
+                <span className="text-xs font-semibold text-[#8AA094] uppercase tracking-wider">
+                  ── Personal Info
+                </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={formik.values.email}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`${inputClass} ${formik.touched.email && formik.errors.email ? "border-red-400 focus:border-red-500" : ""}`}
-                  style={inputStyle}
-                  onFocus={handleFocus}
-                />
-                {formik.touched.email && formik.errors.email && (
-                  <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.email}</p>
-                )}
+              {/* Grid: Full Name & Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    placeholder="e.g. Julian Henderson"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                  />
+                  {formik.touched.name && formik.errors.name && (
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="julian@example.com"
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                  />
+                  {formik.touched.email && formik.errors.email && (
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.email}</p>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="10-digit mobile number"
-                  value={formik.values.phone}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`${inputClass} ${formik.touched.phone && formik.errors.phone ? "border-red-400 focus:border-red-500" : ""}`}
-                  style={inputStyle}
-                  onFocus={handleFocus}
-                />
-                {formik.touched.phone && formik.errors.phone && (
-                  <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.phone}</p>
-                )}
+              {/* Grid: Phone Number & Password */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                    Phone Number
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={formik.values.phone}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                  />
+                  {formik.touched.phone && formik.errors.phone && (
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.phone}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                  />
+                  <PasswordStrengthBar password={formik.values.password} />
+                  {formik.touched.password && formik.errors.password && (
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.password}</p>
+                  )}
+                </div>
               </div>
 
+              {/* Confirm Password */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Password</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Enter password (min. 8 characters)"
-                  value={formik.values.password}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`${inputClass} ${formik.touched.password && formik.errors.password ? "border-red-400 focus:border-red-500" : ""}`}
-                  style={inputStyle}
-                  onFocus={handleFocus}
-                />
-                <PasswordStrengthBar password={formik.values.password} />
-                {formik.touched.password && formik.errors.password && (
-                  <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.password}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Confirm Password</label>
+                <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                  Confirm Password
+                </label>
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
-                  placeholder="Re-enter your password"
+                  placeholder="••••••••"
                   value={formik.values.confirmPassword}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  className={`${inputClass} ${formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-400 focus:border-red-500" : ""}`}
-                  style={inputStyle}
-                  onFocus={handleFocus}
+                  className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
                 />
                 {formik.touched.confirmPassword && formik.errors.confirmPassword && (
-                  <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.confirmPassword}</p>
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.confirmPassword}</p>
                 )}
               </div>
-            </fieldset>
+            </div>
 
-            {/* Section 2 — Vehicle & License */}
-            <fieldset className="space-y-4">
-              <SectionHeader label="Vehicle & License" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polygon points="12 8 8 12 12 16 12 8" /></svg>} />
+            {/* Section 2: Vehicle & License */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
+                <span className="text-xs font-semibold text-[#8AA094] uppercase tracking-wider">
+                  ── Vehicle & License
+                </span>
+              </div>
 
+              {/* Vehicle Type Pills */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Vehicle Type</label>
+                <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1.5 pl-1">
+                  Vehicle Type
+                </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {(["Bike", "Scooter"] as VehicleType[]).map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => formik.setFieldValue("vehicleType", v)}
-                      className="py-2.5 px-3 border rounded-lg text-xs font-semibold transition-all"
-                      style={{
-                        borderColor: formik.values.vehicleType === v ? "#145C43" : "#DCE3DC",
-                        backgroundColor: formik.values.vehicleType === v ? "#E8EFEC" : "#FAFAF8",
-                        color: formik.values.vehicleType === v ? "#145C43" : "#4B5563",
-                      }}
-                    >
-                      {v}
-                    </button>
-                  ))}
+                  <button
+                    type="button"
+                    onClick={() => formik.setFieldValue("vehicleType", "Bike")}
+                    className={`py-2.5 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      formik.values.vehicleType === "Bike"
+                        ? "border-2 border-[#063826] bg-[#EFECE6]/80 text-[#063826] shadow-sm"
+                        : "border border-[#DCE3DC] bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Bike size={16} />
+                    Bike
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => formik.setFieldValue("vehicleType", "Scooter")}
+                    className={`py-2.5 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      formik.values.vehicleType === "Scooter"
+                        ? "border-2 border-[#063826] bg-[#EFECE6]/80 text-[#063826] shadow-sm"
+                        : "border border-[#DCE3DC] bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Scooter size={16} />
+                    Scooter
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Vehicle Registration Number</label>
-                <input
-                  id="vehicleNumber"
-                  name="vehicleNumber"
-                  type="text"
-                  placeholder="e.g. KA 01 AB 1234"
-                  value={formik.values.vehicleNumber}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`${inputClass} ${formik.touched.vehicleNumber && formik.errors.vehicleNumber ? "border-red-400 focus:border-red-500" : ""}`}
-                  style={inputStyle}
-                  onFocus={handleFocus}
-                />
-                {formik.touched.vehicleNumber && formik.errors.vehicleNumber && (
-                  <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.vehicleNumber}</p>
-                )}
+              {/* Grid: Vehicle Reg & License Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                    Vehicle Registration Number
+                  </label>
+                  <input
+                    id="vehicleNumber"
+                    name="vehicleNumber"
+                    type="text"
+                    placeholder="ABC-1234"
+                    value={formik.values.vehicleNumber}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                  />
+                  {formik.touched.vehicleNumber && formik.errors.vehicleNumber && (
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.vehicleNumber}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-left text-xs font-semibold text-[#2D3A34] mb-1 pl-1">
+                    Driving License Number
+                  </label>
+                  <input
+                    id="licenseNumber"
+                    name="licenseNumber"
+                    type="text"
+                    placeholder="DL-0987654321"
+                    value={formik.values.licenseNumber}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-full bg-white border border-[#DCE3DC] text-[#063826] placeholder-[#A0ACA5] focus:border-[#063826] outline-none transition-all shadow-sm"
+                  />
+                  {formik.touched.licenseNumber && formik.errors.licenseNumber && (
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.licenseNumber}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Documents Verification */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
+                <span className="text-xs font-semibold text-[#8AA094] uppercase tracking-wider">
+                  ── Documents Verification
+                </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Driving License Number</label>
-                <input
-                  id="licenseNumber"
-                  name="licenseNumber"
-                  type="text"
-                  placeholder="e.g. DL1420110012345"
-                  value={formik.values.licenseNumber}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`${inputClass} ${formik.touched.licenseNumber && formik.errors.licenseNumber ? "border-red-400 focus:border-red-500" : ""}`}
-                  style={inputStyle}
-                  onFocus={handleFocus}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <DocumentUploadZone
+                  label="Driving License"
+                  sub="Front DL photo"
+                  upload={drivingLicense}
+                  onUpload={(f) => setDrivingLicense({ file: f, name: f.name, uploaded: true })}
                 />
-                {formik.touched.licenseNumber && formik.errors.licenseNumber && (
-                  <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.licenseNumber}</p>
-                )}
+
+                <DocumentUploadZone
+                  label="Vehicle RC"
+                  sub="RC Certificate"
+                  upload={vehicleRC}
+                  onUpload={(f) => setVehicleRC({ file: f, name: f.name, uploaded: true })}
+                />
+
+                <DocumentUploadZone
+                  label="Profile Photo"
+                  sub="Clear headshot"
+                  upload={profilePhoto}
+                  onUpload={(f) => setProfilePhoto({ file: f, name: f.name, uploaded: true })}
+                />
               </div>
-            </fieldset>
-
-            {/* Section 3 — Documents Upload */}
-            <fieldset className="space-y-4">
-              <SectionHeader label="Documents Verification" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>} />
-
-              <DocumentCard
-                label="Driving License"
-                sub="Front side of your physical DL"
-                upload={drivingLicense}
-                onUpload={(f) => setDrivingLicense({ file: f, name: f.name, uploaded: true })}
-                icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="M15 8h2m-2 4h2m-6 4h6" /></svg>}
-              />
-
-              <DocumentCard
-                label="Vehicle RC"
-                sub="Registration certificate of your vehicle"
-                upload={vehicleRC}
-                onUpload={(f) => setVehicleRC({ file: f, name: f.name, uploaded: true })}
-                icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /></svg>}
-              />
-
-              <DocumentCard
-                label="Profile Photo"
-                sub="Clear headshot for customer verification"
-                upload={profilePhoto}
-                onUpload={(f) => setProfilePhoto({ file: f, name: f.name, uploaded: true })}
-                icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>}
-              />
-            </fieldset>
+            </div>
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={formik.isSubmitting}
-              className="w-full py-3.5 rounded-lg font-bold text-sm text-white shadow-md transition-all cursor-pointer disabled:opacity-60"
-              style={{ backgroundColor: "#145C43" }}
-            >
-              {formik.isSubmitting ? "Submitting Application..." : "Submit Driver Application"}
-            </button>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={formik.isSubmitting}
+                className="w-full py-3.5 rounded-full bg-[#063826] hover:bg-[#042418] active:scale-[0.99] text-white font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#063826]/20 cursor-pointer disabled:opacity-70"
+              >
+                {formik.isSubmitting ? "Submitting Application..." : "Submit Driver Application"}
+                {!formik.isSubmitting && <ArrowRight size={16} />}
+              </button>
+            </div>
           </form>
         </div>
-      </section>
+      </main>
 
+      {/* OTP Verification Modal */}
       {showOtp && (
         <OtpVerificationModal
           email={targetEmail}
