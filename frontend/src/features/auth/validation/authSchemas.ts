@@ -22,7 +22,7 @@ export const customerRegisterValidationSchema = Yup.object({
     .required("Full name is required"),
   phone: Yup.string()
     .trim()
-    .matches(/^\d{10}$/, "Please enter a valid 10-digit mobile number")
+    .matches(/^(\+91[\-\s]?)?\d{10}$/, "Please enter a valid 10-digit mobile number")
     .required("Phone number is required"),
   email: Yup.string()
     .trim()
@@ -42,7 +42,7 @@ export const driverRegisterValidationSchema = Yup.object({
     .required("Full name is required"),
   phone: Yup.string()
     .trim()
-    .matches(/^\d{10}$/, "Please enter a valid 10-digit mobile number")
+    .matches(/^(\+91[\-\s]?)?\d{10}$/, "Please enter a valid 10-digit mobile number")
     .required("Phone number is required"),
   email: Yup.string()
     .trim()
@@ -93,7 +93,7 @@ export const storeRegisterValidationSchema = Yup.object({
     .required("Email address is required"),
   phone: Yup.string()
     .trim()
-    .matches(/^\d{10}$/, "Please enter a valid 10-digit mobile number")
+    .matches(/^(\+91[\-\s]?)?\d{10}$/, "Please enter a valid 10-digit mobile number")
     .required("Phone number is required"),
   password: Yup.string()
     .min(8, "Password must be at least 8 characters")

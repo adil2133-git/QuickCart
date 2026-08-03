@@ -23,7 +23,7 @@ const customerRegisterSchema = z.object({
   phone: z
     .string({ required_error: "Phone number is required" })
     .trim()
-    .regex(/^\d{10}$/, { message: "Please enter a valid 10-digit mobile number" }),
+    .regex(/^(\+91[\-\s]?)?\d{10}$/, { message: "Please enter a valid 10-digit mobile number" }),
   email: z
     .string({ required_error: "Email address is required" })
     .trim()
@@ -44,7 +44,7 @@ const driverRegisterSchema = z
     phone: z
       .string({ required_error: "Phone number is required" })
       .trim()
-      .regex(/^\d{10}$/, { message: "Please enter a valid 10-digit mobile number" }),
+      .regex(/^(\+91[\-\s]?)?\d{10}$/, { message: "Please enter a valid 10-digit mobile number" }),
     email: z
       .string({ required_error: "Email address is required" })
       .trim()
@@ -99,7 +99,7 @@ const storeRegisterSchema = z
     phone: z
       .string({ required_error: "Phone number is required" })
       .trim()
-      .regex(/^\d{10}$/, { message: "Please enter a valid 10-digit mobile number" }),
+      .regex(/^(\+91[\-\s]?)?\d{10}$/, { message: "Please enter a valid 10-digit mobile number" }),
     password: z
       .string({ required_error: "Password is required" })
       .min(8, { message: "Password must be at least 8 characters" }),

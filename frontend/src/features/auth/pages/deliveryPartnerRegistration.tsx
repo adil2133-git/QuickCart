@@ -281,7 +281,7 @@ export default function DeliveryPartnerRegistration() {
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  placeholder="10-digit mobile number, e.g. 9876543210"
                   value={formik.values.phone}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
