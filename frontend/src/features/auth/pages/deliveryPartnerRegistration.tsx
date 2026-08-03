@@ -140,14 +140,14 @@ export default function DeliveryPartnerRegistration() {
     <div className="flex h-screen w-screen overflow-hidden font-sans bg-[#F9F8F6] select-none">
       
       {/* Left Panel: Hero Image & Branding */}
-      <aside className="hidden md:flex flex-col justify-between w-[42%] lg:w-[45%] h-full p-8 lg:p-12 relative overflow-hidden bg-[#063826] text-white flex-shrink-0">
+      <aside className="hidden md:flex flex-col justify-between w-[360px] lg:w-[440px] xl:w-[480px] h-full p-8 lg:p-12 relative overflow-hidden bg-[#063826] text-white flex-shrink-0">
         
         {/* Full Left Hero Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
             src={driverRegBg} 
             alt="QuickKart Delivery Partner" 
-            className="w-full h-full object-cover object-[65%_center]"
+            className="w-full h-full object-cover object-[50%_35%]"
           />
           {/* Bottom vignette gradient matching reference design */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
@@ -399,11 +399,11 @@ export default function DeliveryPartnerRegistration() {
               </div>
             </div>
 
-            {/* Section 3: Documents Verification */}
+            {/* Section 3: Document Upload */}
             <div className="space-y-3.5">
               <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
                 <span className="text-xs font-semibold text-[#6E7C74] tracking-wider">
-                  ── Documents Verification
+                  ── Document Upload
                 </span>
               </div>
 
