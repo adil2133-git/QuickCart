@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
-import { Bike, Scooter, ArrowRight, Info, Upload, CheckCircle2 } from "lucide-react";
+import { Bike, Scooter, ArrowRight, Info, Upload, CheckCircle2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { registerDriver } from "../../driver/driverAuthService";
 import { getApiErrorMessage } from "../../../api/apiError";
 import OtpVerificationModal from "../components/otpVerificationModal";
@@ -16,7 +16,16 @@ type VehicleType = "Bike" | "Scooter";
 interface UploadState {
   file: File | null;
   name: string | null;
+  size: string | null;
   uploaded: boolean;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 function DocumentUploadZone({
@@ -31,14 +40,14 @@ function DocumentUploadZone({
   onUpload: (file: File) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const { uploaded, name } = upload;
+  const { uploaded, name, size } = upload;
 
   return (
     <div
       onClick={() => ref.current?.click()}
       className={`relative flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${
         uploaded 
-          ? "border-[#063826] bg-[#E2EDE7]/60 text-[#063826]" 
+          ? "border-[#063826] bg-[#E2EDE7]/70 text-[#063826]" 
           : "border-[#E5E7EB] bg-[#FAF9F6] hover:bg-[#F2F0EB] text-[#6E7C74]"
       }`}
     >
@@ -46,10 +55,16 @@ function DocumentUploadZone({
         ref={ref}
         type="file"
         className="hidden"
-        accept="image/*,.pdf"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) onUpload(f);
+          if (f) {
+            if (f.size > 5 * 1024 * 1024) {
+              showErrorToast("File Too Large", { subtitle: "Document must be under 5MB" });
+              return;
+            }
+            onUpload(f);
+          }
         }}
       />
       
@@ -57,13 +72,15 @@ function DocumentUploadZone({
         <div className="flex flex-col items-center text-center">
           <CheckCircle2 size={24} className="text-[#063826] mb-1" />
           <span className="text-xs font-bold text-[#063826]">{label}</span>
-          <span className="text-[11px] text-[#2C4E3F] truncate max-w-[140px] font-medium">{name}</span>
+          <span className="text-[11px] text-[#2C4E3F] truncate max-w-[130px] font-medium">{name}</span>
+          <span className="text-[9.5px] text-[#6E7C74] mt-0.5">{size} • Click to change</span>
         </div>
       ) : (
         <div className="flex flex-col items-center text-center">
           <Upload size={20} className="text-[#8AA094] mb-1.5" />
           <span className="text-xs font-semibold text-[#1A3326]">{label}</span>
           <span className="text-[10px] text-[#7A8C82] mt-0.5">{sub}</span>
+          <span className="text-[9px] text-[#94A3B8] mt-1 font-medium">JPG, PNG or PDF (Max 5MB)</span>
         </div>
       )}
     </div>
@@ -73,9 +90,12 @@ function DocumentUploadZone({
 export default function DeliveryPartnerRegistration() {
   const navigate = useNavigate();
 
-  const [drivingLicense, setDrivingLicense] = useState<UploadState>({ file: null, name: null, uploaded: false });
-  const [vehicleRC, setVehicleRC] = useState<UploadState>({ file: null, name: null, uploaded: false });
-  const [profilePhoto, setProfilePhoto] = useState<UploadState>({ file: null, name: null, uploaded: false });
+  const [drivingLicense, setDrivingLicense] = useState<UploadState>({ file: null, name: null, size: null, uploaded: false });
+  const [vehicleRC, setVehicleRC] = useState<UploadState>({ file: null, name: null, size: null, uploaded: false });
+  const [profilePhoto, setProfilePhoto] = useState<UploadState>({ file: null, name: null, size: null, uploaded: false });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [apiError, setApiError] = useState("");
   const [targetEmail, setTargetEmail] = useState("");
@@ -187,6 +207,19 @@ export default function DeliveryPartnerRegistration() {
             </p>
           </div>
 
+          {/* 3-Step Form Progress Indicator */}
+          <div className="grid grid-cols-3 gap-2 mb-5 p-2 rounded-2xl bg-[#EFECE6]/60 border border-[#DCE3DC] text-center text-[10.5px] font-semibold text-[#063826]">
+            <div className="py-1.5 rounded-xl bg-[#063826] text-white shadow-sm flex items-center justify-center gap-1">
+              <span>1.</span> Personal Info
+            </div>
+            <div className="py-1.5 rounded-xl bg-white/70 text-[#063826] flex items-center justify-center gap-1">
+              <span>2.</span> Vehicle Info
+            </div>
+            <div className="py-1.5 rounded-xl bg-white/70 text-[#063826] flex items-center justify-center gap-1">
+              <span>3.</span> Documents
+            </div>
+          </div>
+
           {/* Admin Review Notice Pill */}
           <div className="flex items-center gap-3 p-4 mb-6 rounded-full bg-[#E2EDE7]/70 border border-[#C5DCD0] text-xs text-[#063826]">
             <Info size={18} className="shrink-0 text-[#063826]" />
@@ -252,7 +285,7 @@ export default function DeliveryPartnerRegistration() {
                 )}
               </div>
 
-              {/* Phone Number */}
+              {/* Phone Number (Indian Format Placeholder) */}
               <div>
                 <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
                   Phone Number
@@ -261,7 +294,7 @@ export default function DeliveryPartnerRegistration() {
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+91 98765 43210"
                   value={formik.values.phone}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -272,22 +305,31 @@ export default function DeliveryPartnerRegistration() {
                 )}
               </div>
 
-              {/* Grid: Password & Confirm Password side-by-side */}
+              {/* Grid: Password & Confirm Password side-by-side with Eye Icons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
                     Password
                   </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={inputPillClass}
-                  />
+                  <div className="relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formik.values.password}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`${inputPillClass} pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B]"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <PasswordStrengthBar password={formik.values.password} />
                   {formik.touched.password && formik.errors.password && (
                     <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.password}</p>
@@ -298,16 +340,25 @@ export default function DeliveryPartnerRegistration() {
                   <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
                     Confirm Password
                   </label>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formik.values.confirmPassword}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={inputPillClass}
-                  />
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formik.values.confirmPassword}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`${inputPillClass} pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B]"
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   {formik.touched.confirmPassword && formik.errors.confirmPassword && (
                     <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.confirmPassword}</p>
                   )}
@@ -357,7 +408,7 @@ export default function DeliveryPartnerRegistration() {
                 </div>
               </div>
 
-              {/* Grid: Vehicle Reg & License Number */}
+              {/* Grid: Vehicle Reg & License Number (Indian Format Placeholders) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
@@ -367,7 +418,7 @@ export default function DeliveryPartnerRegistration() {
                     id="vehicleNumber"
                     name="vehicleNumber"
                     type="text"
-                    placeholder="ABC-1234"
+                    placeholder="e.g. KL-07-AB-1234"
                     value={formik.values.vehicleNumber}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -386,7 +437,7 @@ export default function DeliveryPartnerRegistration() {
                     id="licenseNumber"
                     name="licenseNumber"
                     type="text"
-                    placeholder="DL-0987654321"
+                    placeholder="e.g. KL07 20230012345"
                     value={formik.values.licenseNumber}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -412,21 +463,21 @@ export default function DeliveryPartnerRegistration() {
                   label="Driving License"
                   sub="Front DL photo"
                   upload={drivingLicense}
-                  onUpload={(f) => setDrivingLicense({ file: f, name: f.name, uploaded: true })}
+                  onUpload={(f) => setDrivingLicense({ file: f, name: f.name, size: formatFileSize(f.size), uploaded: true })}
                 />
 
                 <DocumentUploadZone
                   label="Vehicle RC"
                   sub="RC Certificate"
                   upload={vehicleRC}
-                  onUpload={(f) => setVehicleRC({ file: f, name: f.name, uploaded: true })}
+                  onUpload={(f) => setVehicleRC({ file: f, name: f.name, size: formatFileSize(f.size), uploaded: true })}
                 />
 
                 <DocumentUploadZone
                   label="Profile Photo"
                   sub="Clear headshot"
                   upload={profilePhoto}
-                  onUpload={(f) => setProfilePhoto({ file: f, name: f.name, uploaded: true })}
+                  onUpload={(f) => setProfilePhoto({ file: f, name: f.name, size: formatFileSize(f.size), uploaded: true })}
                 />
               </div>
             </div>
@@ -436,10 +487,18 @@ export default function DeliveryPartnerRegistration() {
               <button
                 type="submit"
                 disabled={formik.isSubmitting}
-                className="w-full py-3.5 rounded-full bg-[#063826] hover:bg-[#042418] active:scale-[0.99] text-white font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#063826]/20 cursor-pointer disabled:opacity-70"
+                className="w-full py-3.5 rounded-full bg-[#063826] hover:bg-[#042418] active:scale-[0.99] text-white font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#063826]/20 cursor-pointer disabled:opacity-60"
               >
-                {formik.isSubmitting ? "Submitting Application..." : "Submit Driver Application"}
-                {!formik.isSubmitting && <ArrowRight size={16} />}
+                {formik.isSubmitting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin text-white" />
+                    Uploading Documents & Registering...
+                  </>
+                ) : (
+                  <>
+                    Submit Driver Application <ArrowRight size={16} />
+                  </>
+                )}
               </button>
             </div>
           </form>
