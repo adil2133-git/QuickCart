@@ -114,15 +114,15 @@ function App() {
         <Suspense fallback={<PageLoader />}>
         <Routes>
 
-          {/* public routes */}
+          {/* public auth & registration routes (redirect logged-in users to their role home) */}
           <Route path="/" element={<PublicOnlyRoute><QuickKartLanding /></PublicOnlyRoute>} />
           <Route path="/landing" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<PublicOnlyRoute><QuickKartLogin /></PublicOnlyRoute>} />
           <Route path="/about" element={<QuickKartAbout />} />
-          <Route path="/create-account" element={<CreateAccountModal standalone={true} />} />
-          <Route path="/register/customer" element={<CustomerRegistration />} />
-          <Route path="/register/store" element={<StoreRegistration />} />
-          <Route path="/register/delivery" element={<DeliveryPartnerRegistration />} />
+          <Route path="/create-account" element={<PublicOnlyRoute><CreateAccountModal standalone={true} /></PublicOnlyRoute>} />
+          <Route path="/register/customer" element={<PublicOnlyRoute><CustomerRegistration /></PublicOnlyRoute>} />
+          <Route path="/register/store" element={<PublicOnlyRoute><StoreRegistration /></PublicOnlyRoute>} />
+          <Route path="/register/delivery" element={<PublicOnlyRoute><DeliveryPartnerRegistration /></PublicOnlyRoute>} />
           <Route path="/driver/pending" element={<PendingApproval role="driver" />} />
           <Route path="/store/pending" element={<PendingApproval role="store" />} />
 
