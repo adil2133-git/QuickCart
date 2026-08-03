@@ -65,28 +65,28 @@ export default function CustomerRegistration() {
 
   return (
     <div 
-      className="relative flex min-h-screen w-full items-center justify-center p-3 sm:p-5 font-sans bg-cover bg-center bg-no-repeat overflow-y-auto"
+      className="relative flex h-screen w-full items-center justify-center p-3 sm:p-4 overflow-hidden font-sans bg-cover bg-center bg-no-repeat select-none"
       style={{ backgroundImage: `url(${customerRegBg})` }}
     >
-      {/* Soft overlay for depth and focus */}
+      {/* Soft dark vignette overlay for focus */}
       <div className="absolute inset-0 bg-black/15 backdrop-brightness-[0.96]" />
 
       {/* Centered Glassmorphic Registration Card */}
-      <div className="relative z-10 w-full max-w-[430px] my-auto rounded-[32px] border border-white/80 bg-white/80 p-6 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition-all">
+      <div className="relative z-10 w-full max-w-[420px] rounded-[32px] border border-white/90 bg-gradient-to-b from-white/90 via-white/85 to-white/75 p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.22)] backdrop-blur-2xl transition-all">
         
         {/* Top Branding Header */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-3">
           <h1 
             className="text-2xl sm:text-3xl font-bold text-[#063826] tracking-tight mb-0.5" 
             style={{ fontFamily: "Fraunces, serif" }}
           >
             QuickKart
           </h1>
-          <p className="text-[9px] font-bold tracking-[0.24em] text-[#4A5D54] uppercase mb-3">
+          <p className="text-[8.5px] font-extrabold tracking-[0.24em] text-[#42594D] uppercase mb-2">
             JOIN THE FRESHNESS REVOLUTION
           </p>
           <h2 
-            className="text-xl sm:text-2xl font-semibold text-[#0F1E17]" 
+            className="text-lg sm:text-xl font-semibold text-[#0F1E17]" 
             style={{ fontFamily: "Fraunces, serif" }}
           >
             Create Your Account
@@ -95,21 +95,21 @@ export default function CustomerRegistration() {
 
         {/* Server Error Alert Banner */}
         {serverError && (
-          <div className="flex items-center gap-2 rounded-2xl px-3.5 py-2.5 mb-3 bg-red-50/90 border border-red-200 text-xs font-medium text-red-600 text-left">
+          <div className="flex items-center gap-2 rounded-2xl px-3.5 py-2 mb-2 bg-red-50/90 border border-red-200 text-xs font-medium text-red-600 text-left">
             <p>{serverError}</p>
           </div>
         )}
 
         {/* Registration Form */}
-        <form onSubmit={formik.handleSubmit} noValidate className="space-y-3">
+        <form onSubmit={formik.handleSubmit} noValidate className="space-y-2.5">
           
           {/* Full Name */}
           <div>
-            <label className="block text-left text-[11px] font-semibold text-[#33463D] mb-1 pl-1">
+            <label className="block text-left text-[11px] font-semibold text-[#1A3326] mb-1 pl-1">
               Full Name
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7A8B83]">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7F75]">
                 <User size={15} />
               </span>
               <input
@@ -120,25 +120,25 @@ export default function CustomerRegistration() {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 placeholder="John Doe"
-                className={`w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-full bg-[#EFECE6]/75 border ${
+                className={`w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-full bg-[#FAFAF7]/90 border ${
                   formik.touched.name && formik.errors.name 
                     ? "border-red-400 focus:border-red-500 bg-red-50/30" 
-                    : "border-transparent focus:border-[#063826]/40 focus:bg-white"
-                } text-[#0F1E17] placeholder-[#A0ACA5] transition-all outline-none`}
+                    : "border-white/80 focus:border-[#063826]/40 focus:bg-white"
+                } text-[#0B2016] placeholder-[#94A39A] shadow-sm transition-all outline-none`}
               />
             </div>
             {formik.touched.name && formik.errors.name && (
-              <p className="mt-1 text-[10px] font-medium text-red-600 pl-3 text-left">{formik.errors.name}</p>
+              <p className="mt-0.5 text-[9.5px] font-medium text-red-600 pl-3 text-left">{formik.errors.name}</p>
             )}
           </div>
 
           {/* Email Address */}
           <div>
-            <label className="block text-left text-[11px] font-semibold text-[#33463D] mb-1 pl-1">
+            <label className="block text-left text-[11px] font-semibold text-[#1A3326] mb-1 pl-1">
               Email Address
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7A8B83]">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7F75]">
                 <Mail size={15} />
               </span>
               <input
@@ -149,25 +149,25 @@ export default function CustomerRegistration() {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 placeholder="john@example.com"
-                className={`w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-full bg-[#EFECE6]/75 border ${
+                className={`w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-full bg-[#FAFAF7]/90 border ${
                   formik.touched.email && formik.errors.email 
                     ? "border-red-400 focus:border-red-500 bg-red-50/30" 
-                    : "border-transparent focus:border-[#063826]/40 focus:bg-white"
-                } text-[#0F1E17] placeholder-[#A0ACA5] transition-all outline-none`}
+                    : "border-white/80 focus:border-[#063826]/40 focus:bg-white"
+                } text-[#0B2016] placeholder-[#94A39A] shadow-sm transition-all outline-none`}
               />
             </div>
             {formik.touched.email && formik.errors.email && (
-              <p className="mt-1 text-[10px] font-medium text-red-600 pl-3 text-left">{formik.errors.email}</p>
+              <p className="mt-0.5 text-[9.5px] font-medium text-red-600 pl-3 text-left">{formik.errors.email}</p>
             )}
           </div>
 
           {/* Phone Number */}
           <div>
-            <label className="block text-left text-[11px] font-semibold text-[#33463D] mb-1 pl-1">
+            <label className="block text-left text-[11px] font-semibold text-[#1A3326] mb-1 pl-1">
               Phone Number
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7A8B83]">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7F75]">
                 <Phone size={15} />
               </span>
               <input
@@ -178,27 +178,27 @@ export default function CustomerRegistration() {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 placeholder="10-digit mobile number"
-                className={`w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-full bg-[#EFECE6]/75 border ${
+                className={`w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-full bg-[#FAFAF7]/90 border ${
                   formik.touched.phone && formik.errors.phone 
                     ? "border-red-400 focus:border-red-500 bg-red-50/30" 
-                    : "border-transparent focus:border-[#063826]/40 focus:bg-white"
-                } text-[#0F1E17] placeholder-[#A0ACA5] transition-all outline-none`}
+                    : "border-white/80 focus:border-[#063826]/40 focus:bg-white"
+                } text-[#0B2016] placeholder-[#94A39A] shadow-sm transition-all outline-none`}
               />
             </div>
             {formik.touched.phone && formik.errors.phone && (
-              <p className="mt-1 text-[10px] font-medium text-red-600 pl-3 text-left">{formik.errors.phone}</p>
+              <p className="mt-0.5 text-[9.5px] font-medium text-red-600 pl-3 text-left">{formik.errors.phone}</p>
             )}
           </div>
 
           {/* Password & Confirm Side-by-Side Grid */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             {/* Password */}
             <div>
-              <label className="block text-left text-[11px] font-semibold text-[#33463D] mb-1 pl-1">
+              <label className="block text-left text-[11px] font-semibold text-[#1A3326] mb-1 pl-1">
                 Password
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A8B83]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7F75]">
                   <Lock size={14} />
                 </span>
                 <input
@@ -209,11 +209,11 @@ export default function CustomerRegistration() {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   placeholder="••••••••"
-                  className={`w-full pl-9 pr-3 py-2.5 text-xs rounded-full bg-[#EFECE6]/75 border ${
+                  className={`w-full pl-9 pr-3 py-2 text-xs rounded-full bg-[#FAFAF7]/90 border ${
                     formik.touched.password && formik.errors.password 
                       ? "border-red-400 focus:border-red-500 bg-red-50/30" 
-                      : "border-transparent focus:border-[#063826]/40 focus:bg-white"
-                  } text-[#0F1E17] placeholder-[#A0ACA5] transition-all outline-none`}
+                      : "border-white/80 focus:border-[#063826]/40 focus:bg-white"
+                  } text-[#0B2016] placeholder-[#94A39A] shadow-sm transition-all outline-none`}
                 />
               </div>
               {formik.touched.password && formik.errors.password && (
@@ -223,11 +223,11 @@ export default function CustomerRegistration() {
 
             {/* Confirm */}
             <div>
-              <label className="block text-left text-[11px] font-semibold text-[#33463D] mb-1 pl-1">
+              <label className="block text-left text-[11px] font-semibold text-[#1A3326] mb-1 pl-1">
                 Confirm
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A8B83]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7F75]">
                   <KeyRound size={14} />
                 </span>
                 <input
@@ -238,11 +238,11 @@ export default function CustomerRegistration() {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   placeholder="••••••••"
-                  className={`w-full pl-9 pr-3 py-2.5 text-xs rounded-full bg-[#EFECE6]/75 border ${
+                  className={`w-full pl-9 pr-3 py-2 text-xs rounded-full bg-[#FAFAF7]/90 border ${
                     formik.touched.confirmPassword && formik.errors.confirmPassword 
                       ? "border-red-400 focus:border-red-500 bg-red-50/30" 
-                      : "border-transparent focus:border-[#063826]/40 focus:bg-white"
-                  } text-[#0F1E17] placeholder-[#A0ACA5] transition-all outline-none`}
+                      : "border-white/80 focus:border-[#063826]/40 focus:bg-white"
+                  } text-[#0B2016] placeholder-[#94A39A] shadow-sm transition-all outline-none`}
                 />
               </div>
               {formik.touched.confirmPassword && formik.errors.confirmPassword && (
@@ -253,7 +253,7 @@ export default function CustomerRegistration() {
 
           {/* Terms Agreement Checkbox */}
           <div className="pt-0.5">
-            <label className="flex items-center gap-2 text-[11px] text-[#4A5D54] cursor-pointer text-left pl-1 select-none">
+            <label className="flex items-center gap-2 text-[10.5px] text-[#4A5D54] cursor-pointer text-left pl-1 select-none">
               <input
                 type="checkbox"
                 checked={agreedTerms}
@@ -267,11 +267,11 @@ export default function CustomerRegistration() {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-1.5">
+          <div className="pt-1">
             <button
               type="submit"
               disabled={formik.isSubmitting}
-              className="w-full py-3 rounded-full bg-[#063826] hover:bg-[#042418] active:scale-[0.99] text-white font-medium text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#063826]/20 cursor-pointer disabled:opacity-70"
+              className="w-full py-2.5 sm:py-3 rounded-full bg-[#063826] hover:bg-[#042418] active:scale-[0.99] text-white font-medium text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-[#063826]/20 cursor-pointer disabled:opacity-70"
             >
               {formik.isSubmitting ? "Sending OTP..." : "Create Account"}
               {!formik.isSubmitting && <ArrowRight size={15} />}
@@ -279,7 +279,7 @@ export default function CustomerRegistration() {
           </div>
 
           {/* Already have an account link */}
-          <div className="pt-2 text-center text-[11px] text-[#5D6F66]">
+          <div className="pt-1.5 text-center text-[11px] text-[#5D6F66]">
             <span>Already have an account? </span>
             <button
               type="button"
@@ -292,8 +292,8 @@ export default function CustomerRegistration() {
         </form>
 
         {/* Bottom Decorative Tagline */}
-        <div className="mt-4 border-t border-black/5 pt-2.5 text-center">
-          <span className="text-[9px] tracking-[0.2em] font-semibold text-[#90A197] uppercase">
+        <div className="mt-3 border-t border-black/5 pt-2 text-center">
+          <span className="text-[8.5px] tracking-[0.2em] font-semibold text-[#829489] uppercase">
             ─── PREMIUM FARM-TO-TABLE LOGISTICS ───
           </span>
         </div>
