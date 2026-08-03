@@ -207,19 +207,6 @@ export default function DeliveryPartnerRegistration() {
             </p>
           </div>
 
-          {/* 3-Step Form Progress Indicator */}
-          <div className="grid grid-cols-3 gap-2 mb-5 p-2 rounded-2xl bg-[#EFECE6]/60 border border-[#DCE3DC] text-center text-[10.5px] font-semibold text-[#063826]">
-            <div className="py-1.5 rounded-xl bg-[#063826] text-white shadow-sm flex items-center justify-center gap-1">
-              <span>1.</span> Personal Info
-            </div>
-            <div className="py-1.5 rounded-xl bg-white/70 text-[#063826] flex items-center justify-center gap-1">
-              <span>2.</span> Vehicle Info
-            </div>
-            <div className="py-1.5 rounded-xl bg-white/70 text-[#063826] flex items-center justify-center gap-1">
-              <span>3.</span> Documents
-            </div>
-          </div>
-
           {/* Admin Review Notice Pill */}
           <div className="flex items-center gap-3 p-4 mb-6 rounded-full bg-[#E2EDE7]/70 border border-[#C5DCD0] text-xs text-[#063826]">
             <Info size={18} className="shrink-0 text-[#063826]" />
