@@ -64,7 +64,7 @@ export default function QuickKartLogin() {
 
         showSuccessToast("Login Successful", { subtitle: `Welcome back, ${name}!` });
 
-        if (status === "PENDING_APPROVAL") {
+        if (status === "PENDING_APPROVAL" || status === "REJECTED" || status === "SUSPENDED") {
           if (role === "DRIVER") { navigate("/driver/pending"); return; }
           if (role === "STORE")  { navigate("/store/pending");  return; }
         }

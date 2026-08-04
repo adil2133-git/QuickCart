@@ -32,32 +32,8 @@ const Login = async (req, res) => {
             });
         }
 
-        // Drivers and Store partners go through an approval process, check status
-        if (user.role === "DRIVER" || user.role === "STORE") {
-            if (user.status === "PENDING_APPROVAL") {
-                return res.status(403).json({
-                    title: "Application Under Review",
-                    message: "Your application is currently under review by our administration team.",
-                    status: user.status,
-                });
-            }
-
-            if (user.status === "REJECTED") {
-                return res.status(403).json({
-                    title: "Application Not Approved",
-                    message: "Your application was not approved. Please contact support for assistance.",
-                    status: user.status,
-                });
-            }
-
-            if (user.status === "SUSPENDED") {
-                return res.status(403).json({
-                    title: "Account Restricted",
-                    message: "Your account has been suspended. Please contact support for assistance.",
-                    status: user.status,
-                });
-            }
-        }
+        // Drivers and Store partners can log in even if PENDING_APPROVAL or REJECTED
+        // so they can access their status / pending page. Only BLOCKED accounts are denied above.
 
         const { AccessToken, RefreshToken } = generateToken(user.email, user._id, user.role);
 
