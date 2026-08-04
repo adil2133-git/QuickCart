@@ -22,6 +22,13 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
+  // If a driver or store account is not active (PENDING_APPROVAL, REJECTED, or SUSPENDED),
+  // block access to the dashboard and redirect directly to their pending status screen
+  if ((user.role === "DRIVER" || user.role === "STORE") && user.status && user.status !== "ACTIVE") {
+    const pendingPath = user.role === "DRIVER" ? "/driver/pending" : "/store/pending";
+    return <Navigate to={pendingPath} replace />;
+  }
+
   // logged in but wrong role — show a real page instead of silently
   // redirecting, so the user understands why they landed here
   if (!allowedRoles.includes(user.role)) {

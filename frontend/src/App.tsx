@@ -72,6 +72,10 @@ const PageLoader = () => (
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore()
   if (isAuthenticated && user) {
+    if ((user.role === 'DRIVER' || user.role === 'STORE') && user.status && user.status !== 'ACTIVE') {
+      const pendingPath = user.role === 'DRIVER' ? '/driver/pending' : '/store/pending'
+      return <Navigate to={pendingPath} replace />
+    }
     const home = ROLE_HOME[user.role] ?? '/login'
     return <Navigate to={home} replace />
   }
