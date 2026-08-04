@@ -39,6 +39,7 @@ const protectRoutes = async (req, res, next) => {
             email: decoded.email,
             userID: decoded.id,
             role: decoded.role,
+            status: user.status || "ACTIVE",
         };
 
         next();

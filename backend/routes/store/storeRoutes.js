@@ -3,6 +3,7 @@ const router = express.Router();
 
 const protectRoutes = require("../../middleware/protectRoutes");
 const authorizeRoles = require("../../middleware/authorizeRoles");
+const requireActiveStatus = require("../../middleware/requireActiveStatus");
 
 const { uploadProductImages } = require("../../middleware/uploadProductImages");
 const { uploadCategoryImage } = require("../../middleware/uploadCategoryImage");
@@ -43,37 +44,37 @@ const {
     cancelUndeliverableOrder,
 } = require("../../controllers/store/storeOrdersController");
 
-// GET /api/store/me
+// GET /api/store/me (Accessible by pending/rejected accounts to display status page)
 router.get("/me", protectRoutes, authorizeRoles("STORE"), getMyStoreProfile);
-router.get("/dashboard/summary", protectRoutes, authorizeRoles("STORE"), getDashboardSummary);
-router.patch("/branding", protectRoutes, authorizeRoles("STORE"), uploadStoreBranding, updateStoreBranding);
-router.patch("/toggleManualClose", protectRoutes, authorizeRoles("STORE"), toggleManualClose);
-router.patch("/status", protectRoutes, authorizeRoles("STORE"), updateStoreStatus);
-router.patch("/info", protectRoutes, authorizeRoles("STORE"), updateStoreInfo);
-router.patch("/hours", protectRoutes, authorizeRoles("STORE"), updateOperatingHours);
+
+// Operational store routes require ACTIVE status
+router.get("/dashboard/summary", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, getDashboardSummary);
+router.patch("/branding", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, uploadStoreBranding, updateStoreBranding);
+router.patch("/toggleManualClose", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, toggleManualClose);
+router.patch("/status", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, updateStoreStatus);
+router.patch("/info", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, updateStoreInfo);
+router.patch("/hours", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, updateOperatingHours);
 
 // ─── Products ─────────────────────────────────────────────────────────────────
-router.post("/addProduct", protectRoutes, authorizeRoles("STORE"), uploadProductImages, createProduct);
-router.get("/getProductsByStore", protectRoutes, authorizeRoles("STORE"), getProductsByStore);
-router.get("/getSingleProduct/:id", protectRoutes, authorizeRoles("STORE"), getProductById);
-router.put("/updateProduct/:id", protectRoutes, authorizeRoles("STORE"), uploadProductImages, updateProduct);
-router.patch("/toggleAvailability/:id", protectRoutes, authorizeRoles("STORE"), toggleAvailability);
-router.patch("/updateStock/:id", protectRoutes, authorizeRoles("STORE"), updateStock);
-router.delete("/deleteProduct/:id", protectRoutes, authorizeRoles("STORE"), deleteProduct);
+router.post("/addProduct", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, uploadProductImages, createProduct);
+router.get("/getProductsByStore", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, getProductsByStore);
+router.get("/getSingleProduct/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, getProductById);
+router.put("/updateProduct/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, uploadProductImages, updateProduct);
+router.patch("/toggleAvailability/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, toggleAvailability);
+router.patch("/updateStock/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, updateStock);
+router.delete("/deleteProduct/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, deleteProduct);
 
 // ─── Categories ───────────────────────────────────────────────────────────────
-// Global (not store-scoped) — getCategories has no protectRoutes so any logged-in
-// area of the app could read it too; add protectRoutes here if that's not desired.
-router.post("/addCategory", protectRoutes, authorizeRoles("STORE"), uploadCategoryImage, createCategory);
+router.post("/addCategory", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, uploadCategoryImage, createCategory);
 router.get("/getCategories", getCategories);
-router.get("/getSingleCategory/:id", protectRoutes, authorizeRoles("STORE"), getCategoryById);
-router.put("/updateCategory/:id", protectRoutes, authorizeRoles("STORE"), uploadCategoryImage, updateCategory);
-router.delete("/deleteCategory/:id", protectRoutes, authorizeRoles("STORE"), deleteCategory);
+router.get("/getSingleCategory/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, getCategoryById);
+router.put("/updateCategory/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, uploadCategoryImage, updateCategory);
+router.delete("/deleteCategory/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, deleteCategory);
 
-router.get("/orders", protectRoutes, authorizeRoles("STORE"), getStoreOrders);
-router.get("/orders/:id", protectRoutes, authorizeRoles("STORE"), getStoreOrderDetail);
-router.patch("/orders/:id/status", protectRoutes, authorizeRoles("STORE"), updateOrderStatus);
-router.post("/orders/:id/retry-dispatch", protectRoutes, authorizeRoles("STORE"), retryDriverSearch);
-router.patch("/orders/:id/cancel-undeliverable", protectRoutes, authorizeRoles("STORE"), cancelUndeliverableOrder);
+router.get("/orders", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, getStoreOrders);
+router.get("/orders/:id", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, getStoreOrderDetail);
+router.patch("/orders/:id/status", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, updateOrderStatus);
+router.post("/orders/:id/retry-dispatch", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, retryDriverSearch);
+router.patch("/orders/:id/cancel-undeliverable", protectRoutes, authorizeRoles("STORE"), requireActiveStatus, cancelUndeliverableOrder);
 
 module.exports = router;

@@ -3,6 +3,7 @@ const router = express.Router();
 
 const protectRoutes = require("../../middleware/protectRoutes");
 const authorizeRoles = require("../../middleware/authorizeRoles");
+const requireActiveStatus = require("../../middleware/requireActiveStatus");
 
 const {
     getDeliveryRequests,
@@ -31,8 +32,11 @@ const { getRewardsSummary } = require("../../controllers/driver/driverRewardsCon
 router.use(protectRoutes);
 router.use(authorizeRoles("DRIVER"));
 
-// profile (includes availabilityStatus)
+// profile (accessible by pending/rejected accounts to view application status)
 router.get("/me", getMyDriverProfile);
+
+// Operational driver endpoints require ACTIVE status
+router.use(requireActiveStatus);
 
 // delivery requests — broadcast from the store's dispatch service
 router.get("/deliveries/requests", getDeliveryRequests);
