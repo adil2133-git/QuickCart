@@ -90,12 +90,12 @@ const registerDriver = async (req, res) => {
         const lowerEmail = email.toLowerCase();
 
         const emailExists = await User.findOne({ email: lowerEmail });
-        if (emailExists) {
+        if (emailExists && emailExists.status !== "REJECTED") {
             return res.status(409).json({ success: false, message: "An account with this email already exists." });
         }
 
         const phoneExists = await User.findOne({ phone });
-        if (phoneExists) {
+        if (phoneExists && phoneExists.status !== "REJECTED") {
             return res.status(409).json({ success: false, message: "Phone number is already registered." });
         }
 
@@ -188,12 +188,12 @@ const registerStore = async (req, res) => {
         const lowerEmail = email.toLowerCase();
 
         const emailExists = await User.findOne({ email: lowerEmail });
-        if (emailExists) {
+        if (emailExists && emailExists.status !== "REJECTED") {
             return res.status(409).json({ success: false, message: "An account with this email already exists." });
         }
 
         const phoneExists = await User.findOne({ phone });
-        if (phoneExists) {
+        if (phoneExists && phoneExists.status !== "REJECTED") {
             return res.status(409).json({ success: false, message: "Phone number is already registered." });
         }
 

@@ -53,20 +53,36 @@ const verifyOtpController = async (req, res) => {
             lng,
         } = JSON.parse(userData);
 
-        const existingUser = await User.findOne({ email: lowerEmail });
-        if (existingUser) {
-            await client.del(`register:${lowerEmail}`);
-            return res.status(409).json({ message: "Email is already registered" });
+        let targetUser = await User.findOne({ email: lowerEmail });
+
+        if (targetUser) {
+            if (targetUser.status === "REJECTED") {
+                // Remove old rejected profile before re-creating
+                if (role === "DRIVER") await DriverProfile.deleteOne({ userId: targetUser._id });
+                if (role === "STORE") await StoreProfile.deleteOne({ userId: targetUser._id });
+
+                targetUser.name = name;
+                targetUser.phone = phone;
+                targetUser.password = password;
+                targetUser.role = role;
+                targetUser.status = "PENDING_APPROVAL";
+                await targetUser.save();
+            } else {
+                await client.del(`register:${lowerEmail}`);
+                return res.status(409).json({ message: "Email is already registered" });
+            }
+        } else {
+            targetUser = await User.create({
+                name,
+                phone,
+                email: lowerEmail,
+                password,
+                role,
+                ...(["DRIVER", "STORE"].includes(role) && { status: "PENDING_APPROVAL" }),
+            });
         }
 
-        const newUser = await User.create({
-            name,
-            phone,
-            email: lowerEmail,
-            password,
-            role,
-            ...(["DRIVER", "STORE"].includes(role) && { status: "PENDING_APPROVAL" }),
-        });
+        const newUser = targetUser;
 
         if (role === "DRIVER") {
             await DriverProfile.create({
