@@ -1,10 +1,8 @@
-// src/features/auth/components/PendingApproval.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapPin,
   Clock,
-  Zap,
   LogOut,
   RefreshCw,
   Mail,
@@ -14,15 +12,17 @@ import {
   Hash,
   Calendar,
   AtSign,
-  ChevronRight,
-  ShoppingBag,
   Loader2,
   Store as StoreIcon,
   MapPinned,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import api from "../../../api/axios";
 import LocationPreviewMap from "../../admin/components/locationPreview";
 import { useLogout } from "../hooks/useLogout";
+
+import heroBg from "../../../assets/hero-bg1.webp";
 
 type Role = "driver" | "store";
 
@@ -80,9 +80,9 @@ function formatDate(dateString: string) {
 function statusLabel(status: ProfileInfo["approvalStatus"]) {
   switch (status) {
     case "PENDING_APPROVAL":
-      return "Pending Approval";
+      return "Pending Review";
     case "ACTIVE":
-      return "Approved";
+      return "Approved 🎉";
     case "REJECTED":
       return "Rejected";
     case "SUSPENDED":
@@ -95,14 +95,12 @@ function statusLabel(status: ProfileInfo["approvalStatus"]) {
 const roleConfig = {
   driver: {
     endpoint: "driver",
-    heroIcon: <Clock size={28} className="text-[#1F4D3D]" />,
-    sidebarTagline: "Your neighbourhood grocery, delivered fast.",
-    sidebarBody:
-      "Join our network of elite delivery partners and local stores to bring quality goods to your community.",
+    heroIcon: <Clock size={28} className="text-[#063826]" />,
+    sidebarTagline: "Join our network of elite delivery partners.",
+    sidebarBody: "Deliver groceries fast and earn on your schedule with QuickKart Logistics.",
     cardLabel: "Applicant Name",
     idLabel: "Driver ID",
-    nextStepsDescription:
-      "Our team verifies your background check and vehicle documents.",
+    nextStepsDescription: "Our admin team verifies your background check, license, and vehicle registration.",
     getIdentity: (p: ProfileInfo) => (p as DriverProfile).driverId,
     extraFields: (p: ProfileInfo) => {
       const d = p as DriverProfile;
@@ -115,14 +113,12 @@ const roleConfig = {
   },
   store: {
     endpoint: "store",
-    heroIcon: <StoreIcon size={28} className="text-[#1F4D3D]" />,
-    sidebarTagline: "Bring your store online, the easy way.",
-    sidebarBody:
-      "Join our network of local stores and delivery partners to bring quality goods to your community.",
+    heroIcon: <StoreIcon size={28} className="text-[#063826]" />,
+    sidebarTagline: "Grow your business with hyperlocal delivery.",
+    sidebarBody: "Join our network of premium local stores and reach thousands of customers instantly.",
     cardLabel: "Account Holder",
     idLabel: "Store ID",
-    nextStepsDescription:
-      "Our team verifies your trade license, owner ID, and store details.",
+    nextStepsDescription: "Our team verifies your trade license, owner ID, and store location details.",
     getIdentity: (p: ProfileInfo) => (p as StoreProfileInfo).storeId,
     extraFields: (p: ProfileInfo) => {
       const s = p as StoreProfileInfo;
@@ -142,13 +138,13 @@ function buildSteps(description: string) {
     {
       number: 2,
       title: "Notification",
-      description: "Receive an email and SMS once your profile is activated.",
+      description: "Receive confirmation once your application is reviewed and verified.",
       done: false,
     },
     {
       number: 3,
       title: "Login & Start",
-      description: "Access your dashboard and start accepting local orders.",
+      description: "Access your merchant dashboard and start fulfilling orders.",
       done: false,
     },
   ];
@@ -163,6 +159,7 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
 
   const navigate = useNavigate();
   const config = roleConfig[role];
+  const { logout: handleLogout, isLoggingOut } = useLogout();
 
   const fetchProfile = async () => {
     try {
@@ -184,19 +181,11 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
       }
 
       setProfile(fetched);
-
-      if (fetched.approvalStatus === "ACTIVE") {
-        navigate("/login", {
-          state: {
-            message: "Your account has been approved! Please log in to continue.",
-          },
-        });
-      }
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong."
+          : "Something went wrong fetching application status."
       );
     }
   };
@@ -213,7 +202,6 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
     }, 60_000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
   const handleCheckStatus = async () => {
@@ -225,29 +213,27 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
     );
   };
 
-  const { logout: handleLogout, isLoggingOut } = useLogout();
-
-  // ── Loading ──
+  // ── Loading State ──
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#F7F8F5]">
+      <div className="h-screen w-screen flex items-center justify-center bg-[#F9F8F6]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 size={28} className="animate-spin text-[#1F4D3D]" />
-          <p className="text-sm text-[#6E7C74]">
-            Loading your application...
+          <Loader2 size={32} className="animate-spin text-[#063826]" />
+          <p className="text-xs font-semibold text-[#5D6F65]">
+            Checking your application status...
           </p>
         </div>
       </div>
     );
   }
 
-  // ── Error ──
+  // ── Error State ──
   if (error || !profile) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#F7F8F5]">
-        <div className="flex flex-col items-center gap-4 max-w-sm text-center px-6">
-          <AlertCircle size={32} className="text-rose-600" />
-          <p className="text-sm text-[#16241D]">
+      <div className="h-screen w-screen flex items-center justify-center bg-[#F9F8F6]">
+        <div className="flex flex-col items-center gap-4 max-w-sm text-center px-6 p-8 rounded-3xl bg-white border border-[#E5E7EB] shadow-sm">
+          <AlertCircle size={36} className="text-red-500" />
+          <p className="text-xs font-medium text-[#1E293B]">
             {error || "We couldn't load your application status."}
           </p>
           <button
@@ -255,7 +241,7 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
               setLoading(true);
               fetchProfile().finally(() => setLoading(false));
             }}
-            className="text-sm font-semibold uppercase tracking-widest px-6 py-2.5 rounded-xl border border-[#1F4D3D] text-[#1F4D3D] hover:bg-[#E7EFEA] transition-colors cursor-pointer"
+            className="text-xs font-semibold py-2.5 px-6 rounded-full bg-[#063826] text-white hover:bg-[#042418] transition-all cursor-pointer"
           >
             Try Again
           </button>
@@ -264,34 +250,8 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
     );
   }
 
-  // ── Rejected state ──
-  if (profile?.approvalStatus === "REJECTED") {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#F7F8F5]">
-        <div className="flex flex-col items-center gap-4 max-w-sm text-center px-6">
-          <AlertCircle size={40} className="text-rose-600" />
-          <h2 className="text-2xl font-bold text-[#16241D]">Application Rejected</h2>
-          <p className="text-sm leading-relaxed text-[#6E7C74]">
-            Unfortunately your application was not approved at this time.
-            Please contact support for more information.
-          </p>
-          <a
-            href="mailto:support@quickkart.com"
-            className="text-sm font-semibold underline text-[#1F4D3D]"
-          >
-            support@quickkart.com
-          </a>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-sm font-semibold px-6 py-2.5 rounded-xl bg-[#1F4D3D] text-white hover:bg-[#163D30] transition-colors cursor-pointer"
-          >
-            <LogOut size={15} /> Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  const isApproved = profile.approvalStatus === "ACTIVE";
+  const isRejected = profile.approvalStatus === "REJECTED";
   const steps = buildSteps(config.nextStepsDescription);
   const identity = config.getIdentity(profile);
   const extraFields = config.extraFields(profile);
@@ -299,300 +259,272 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
     role === "store" ? (profile as StoreProfileInfo).coordinates : null;
 
   return (
-    <div className="h-screen flex overflow-hidden font-['Inter',sans-serif]">
-      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-      <aside className="w-[420px] h-full flex flex-col justify-between px-10 py-10 flex-shrink-0 bg-[#1F4D3D]">
-        <div>
-          <div className="flex items-center gap-2 mb-16">
-            <ShoppingBag size={22} className="text-[#A9CC3B]" />
-            <span className="text-white text-xl font-bold tracking-tight">
-              QuickKart
-            </span>
-          </div>
-          <ul className="space-y-7">
-            {[
-              { icon: <MapPin size={16} />, label: "Hyperlocal" },
-              { icon: <Clock size={16} />, label: "Real-time product availability" },
-              { icon: <Zap size={16} />, label: "Fast delivery" },
-            ].map(({ icon, label }) => (
-              <li
-                key={label}
-                className="flex items-center gap-3 text-sm tracking-widest uppercase text-emerald-100/70"
-              >
-                <span>{icon}</span>
-                {label}
-              </li>
-            ))}
-          </ul>
+    <div className="flex h-screen w-screen overflow-hidden font-sans bg-[#F9F8F6] select-none">
+      
+      {/* ── Left Split-Screen Hero Panel ────────────────────────────────── */}
+      <aside className="hidden md:flex flex-col justify-between w-[360px] lg:w-[440px] xl:w-[480px] h-full p-8 lg:p-12 relative overflow-hidden bg-[#063826] text-white flex-shrink-0">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={heroBg} 
+            alt="QuickKart Logistics" 
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
         </div>
-        <div>
-          <h2 className="text-white text-4xl font-bold leading-tight mb-4">
+
+        <div className="relative z-10" />
+
+        <div className="relative z-10 mt-auto">
+          <span className="font-bold text-2xl tracking-tight text-white mb-2 block" style={{ fontFamily: "Fraunces, serif" }}>
+            QuickKart
+          </span>
+          <h1 
+            className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-2" 
+            style={{ fontFamily: "Fraunces, serif" }}
+          >
             {config.sidebarTagline}
-          </h2>
-          <p className="text-sm leading-relaxed mb-10 text-emerald-100/80">
+          </h1>
+          <p className="text-xs lg:text-sm text-white/90 font-normal leading-relaxed max-w-sm">
             {config.sidebarBody}
           </p>
-          <p className="text-xs text-emerald-200/50">
-            © 2024 QuickKart
-          </p>
+          <div className="mt-8 text-[11px] text-white/60 font-medium">
+            © 2024 QuickKart Logistics.
+          </div>
         </div>
       </aside>
 
-      {/* ── Main ─────────────────────────────────────────────────────────── */}
-      <main className="flex-1 h-full overflow-y-auto px-16 py-14 bg-[#F7F8F5]">
-        {/* Hero */}
-        <div className="flex flex-col items-center text-center mb-10">
-          <div className="w-16 h-16 rounded-full border-2 border-[#1F4D3D] flex items-center justify-center mb-6 bg-[#E7EFEA]">
-            {config.heroIcon}
-          </div>
-          <h2 className="text-4xl font-bold mb-3 text-[#16241D]">
-            Application Under Review
-          </h2>
-          <p className="text-sm max-w-lg leading-relaxed text-[#6E7C74]">
-            We've received your application! Our team is reviewing your
-            documents and will notify you within 24–48 hours.
-          </p>
+      {/* ── Right Main Area ─────────────────────────────────────────────── */}
+      <main className="flex-1 h-full overflow-y-auto p-6 sm:p-10 lg:p-12">
+        <div className="max-w-[560px] mx-auto space-y-6">
 
-          {profile?.name && (
-            <p className="mt-2 text-sm font-semibold text-[#1F4D3D]">
-              Hi, {profile.name} 👋
-            </p>
-          )}
-        </div>
-
-        {/* Applicant Card */}
-        <div className="rounded-2xl p-6 mb-4 bg-white border border-[#E3E7E1] shadow-sm">
-          <div className="flex items-start justify-between mb-1">
-            <p className="text-xs uppercase tracking-widest text-[#6E7C74]">
-              {config.cardLabel}
-            </p>
-            <span className="text-xs px-4 py-1 rounded-full font-semibold bg-[#E7EFEA] text-[#1F4D3D]">
-              {profile.role}
-            </span>
-          </div>
-          <p className="text-xl font-bold mb-5 text-[#16241D]">
-            {profile.name}
-          </p>
-
-          <hr className="border-[#E3E7E1] mb-5" />
-
-          <div className="grid grid-cols-2 gap-5 mb-5">
-            {[
-              { icon: <Phone size={14} />, label: "Phone", value: profile.phone },
-              { icon: <AtSign size={14} />, label: "Email", value: profile.email },
-              { icon: <Hash size={14} />, label: config.idLabel, value: identity },
-              {
-                icon: <Calendar size={14} />,
-                label: "Registered On",
-                value: formatDate(profile.registeredOn),
-              },
-              ...extraFields,
-            ].map(({ icon, label, value }) => (
-              <div key={label} className="flex items-start gap-2">
-                <span className="mt-0.5 text-[#1F4D3D]">
-                  {icon}
-                </span>
-                <div>
-                  <p className="text-xs mb-0.5 text-[#6E7C74]">
-                    {label}
-                  </p>
-                  <p className="text-sm font-semibold text-[#16241D]">
-                    {value}
-                  </p>
-                </div>
+          {/* APPROVED CELEBRATION CARD */}
+          {isApproved && (
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-[#E2EDE7] via-emerald-50 to-emerald-100 border-2 border-[#063826] text-center shadow-lg animate-in fade-in duration-500">
+              <div className="w-14 h-14 rounded-full bg-[#063826] text-white flex items-center justify-center mx-auto mb-3 shadow-md">
+                <Sparkles size={26} />
               </div>
-            ))}
-          </div>
-
-          <hr className="border-[#E3E7E1] mb-4" />
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-[#6E7C74]">
-              Application Status
-            </span>
-            <span className="flex items-center gap-2 text-xs px-4 py-1.5 rounded-full font-semibold tracking-widest uppercase border border-[#1F4D3D] text-[#1F4D3D] bg-[#E7EFEA]">
-              <span className="w-2 h-2 rounded-full inline-block bg-[#1F4D3D]" />
-              {statusLabel(profile.approvalStatus)}
-            </span>
-          </div>
-        </div>
-
-        {/* Document Status */}
-        <div className="rounded-2xl p-6 mb-4 bg-white border border-[#E3E7E1] shadow-sm">
-          <p className="text-xs uppercase tracking-widest mb-4 text-[#6E7C74]">
-            Submitted Documents
-          </p>
-          <ul className="space-y-3">
-            {profile.documents.map((doc) => (
-              <li
-                key={doc.key}
-                className="flex items-center justify-between"
+              <h2 
+                className="text-2xl sm:text-3xl font-bold text-[#063826]"
+                style={{ fontFamily: "Fraunces, serif" }}
               >
-                <div className="flex items-center gap-2 text-sm text-[#16241D]">
-                  {doc.submitted ? (
-                    <CheckCircle2 size={16} className="text-emerald-600" />
-                  ) : (
-                    <AlertCircle size={16} className="text-amber-500" />
-                  )}
-                  {doc.label}
-                </div>
-                <span
-                  className={`text-xs px-3 py-0.5 rounded-full font-semibold ${
-                    doc.submitted
-                      ? "bg-[#E7EFEA] text-[#1F4D3D]"
-                      : "bg-amber-50 text-amber-700"
-                  }`}
+                Application Approved! 🎉
+              </h2>
+              <p className="text-xs sm:text-sm text-[#063826]/90 mt-2 leading-relaxed max-w-md mx-auto">
+                Congratulations! Your QuickKart partner application has been reviewed and approved by our admin team.
+              </p>
+              <div className="mt-5">
+                <button
+                  onClick={() => navigate("/login", { state: { message: "Account Approved! Please login to continue." } })}
+                  className="py-3 px-6 rounded-full bg-[#063826] hover:bg-[#042418] text-white text-xs sm:text-sm font-semibold transition-all shadow-md flex items-center justify-center gap-2 mx-auto cursor-pointer"
                 >
-                  {doc.submitted ? "Submitted" : "Missing"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+                  Log In to Access Dashboard <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
 
-        {/* Store Location — store applicants only */}
-        {role === "store" && (
-          <div className="rounded-2xl p-6 mb-4 bg-white border border-[#E3E7E1] shadow-sm">
-            <p className="text-xs uppercase tracking-widest mb-4 text-[#6E7C74]">
-              Store Location
+          {/* REJECTED CARD */}
+          {isRejected && (
+            <div className="p-6 rounded-3xl bg-red-50 border-2 border-red-200 text-center shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center mx-auto mb-3">
+                <AlertCircle size={26} />
+              </div>
+              <h2 
+                className="text-2xl font-bold text-red-700"
+                style={{ fontFamily: "Fraunces, serif" }}
+              >
+                Application Not Approved
+              </h2>
+              <p className="text-xs sm:text-sm text-red-600 mt-2 leading-relaxed max-w-md mx-auto">
+                Regrettably, your application could not be approved at this time. Our team requires updated or clearer document details.
+              </p>
+              <div className="mt-4 pt-3 border-t border-red-200/60 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a
+                  href="mailto:support@quickkart.com"
+                  className="text-xs font-semibold text-red-700 hover:underline flex items-center gap-1"
+                >
+                  <Mail size={14} /> Contact Support
+                </a>
+                <span className="hidden sm:inline text-red-300">•</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-xs font-semibold text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <LogOut size={14} /> Logout Account
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* PENDING HERO HEADER (Only shown while pending) */}
+          {!isApproved && !isRejected && (
+            <div className="text-center py-2">
+              <div className="w-14 h-14 rounded-full bg-[#E2EDE7] border-2 border-[#063826] flex items-center justify-center mx-auto mb-3 text-[#063826]">
+                {config.heroIcon}
+              </div>
+              <h2 
+                className="text-3xl sm:text-4xl font-bold text-[#063826]"
+                style={{ fontFamily: "Fraunces, serif" }}
+              >
+                Application Under Review
+              </h2>
+              <p className="text-xs sm:text-sm text-[#5D6F65] mt-1.5 max-w-md mx-auto">
+                We've received your details! Our team is reviewing your documents and will notify you within 24–48 hours.
+              </p>
+              {profile.name && (
+                <span className="inline-block mt-3 px-4 py-1 rounded-full text-xs font-semibold bg-[#E2EDE7]/80 text-[#063826]">
+                  Applicant: {profile.name}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* APPLICANT PROFILE DETAILS CARD */}
+          <div className="p-6 rounded-3xl bg-white border border-[#E5E7EB] shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#6E7C74] uppercase tracking-wider">
+                {config.cardLabel}
+              </span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#E2EDE7] text-[#063826]">
+                {profile.role}
+              </span>
+            </div>
+
+            <p className="text-xl font-bold text-[#1E293B]" style={{ fontFamily: "Fraunces, serif" }}>
+              {profile.name}
             </p>
-            {storeCoordinates ? (
-              <>
-                <LocationPreviewMap
-                  lat={storeCoordinates.lat}
-                  lng={storeCoordinates.lng}
-                  height={220}
-                />
-                <div className="flex items-center justify-between mt-3">
-                  <p className="text-xs font-mono text-[#6E7C74]">
-                    {storeCoordinates.lat.toFixed(6)}, {storeCoordinates.lng.toFixed(6)}
-                  </p>
-                  <a
-                    href={`https://www.google.com/maps?q=${storeCoordinates.lat},${storeCoordinates.lng}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-semibold underline text-[#1F4D3D]"
-                  >
-                    Open in Google Maps
-                  </a>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-[#E5E7EB]">
+              {[
+                { icon: <Phone size={14} />, label: "Phone", value: profile.phone },
+                { icon: <AtSign size={14} />, label: "Email", value: profile.email },
+                { icon: <Hash size={14} />, label: config.idLabel, value: identity },
+                { icon: <Calendar size={14} />, label: "Registered On", value: formatDate(profile.registeredOn) },
+                ...extraFields,
+              ].map(({ icon, label, value }) => (
+                <div key={label} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 text-[#063826]">{icon}</span>
+                  <div>
+                    <p className="text-[11px] text-[#6E7C74] font-medium">{label}</p>
+                    <p className="text-xs font-semibold text-[#1E293B] truncate max-w-[200px]">{value}</p>
+                  </div>
                 </div>
-              </>
-            ) : (
-              <p className="text-sm text-[#6E7C74]">
-                No location was pinned during registration. Our team will
-                confirm your address using the details you provided.
+              ))}
+            </div>
+
+            <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between">
+              <span className="text-xs text-[#6E7C74] font-medium">Approval Status</span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full border border-[#063826] text-[#063826] bg-[#E2EDE7]/70 flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${isApproved ? "bg-emerald-600" : isRejected ? "bg-red-600" : "bg-amber-500 animate-pulse"}`} />
+                {statusLabel(profile.approvalStatus)}
+              </span>
+            </div>
+          </div>
+
+          {/* SUBMITTED DOCUMENTS CARD */}
+          <div className="p-6 rounded-3xl bg-white border border-[#E5E7EB] shadow-sm">
+            <p className="text-xs font-semibold text-[#6E7C74] uppercase tracking-wider mb-3">
+              Submitted Documents
+            </p>
+            <div className="space-y-2.5">
+              {profile.documents.map((doc) => (
+                <div
+                  key={doc.key}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-[#FAF9F6] border border-[#E5E7EB]"
+                >
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#1E293B]">
+                    <CheckCircle2 size={16} className="text-[#063826]" />
+                    {doc.label}
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#E2EDE7] text-[#063826]">
+                    Verified File
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* MAP LOCATION PREVIEW (Store Applicants Only) */}
+          {role === "store" && storeCoordinates && (
+            <div className="p-6 rounded-3xl bg-white border border-[#E5E7EB] shadow-sm space-y-3">
+              <p className="text-xs font-semibold text-[#6E7C74] uppercase tracking-wider">
+                Store Location Pin
+              </p>
+              <div className="rounded-2xl overflow-hidden border border-[#E5E7EB]">
+                <LocationPreviewMap lat={storeCoordinates.lat} lng={storeCoordinates.lng} height={200} />
+              </div>
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="font-mono text-[#6E7C74]">{storeCoordinates.lat.toFixed(6)}, {storeCoordinates.lng.toFixed(6)}</span>
+                <a
+                  href={`https://www.google.com/maps?q=${storeCoordinates.lat},${storeCoordinates.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-[#063826] hover:underline"
+                >
+                  Open in Maps →
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* WHAT HAPPENS NEXT */}
+          {!isApproved && !isRejected && (
+            <div className="p-6 rounded-3xl bg-white border border-[#E5E7EB] shadow-sm space-y-4">
+              <p className="text-xs font-semibold text-[#6E7C74] uppercase tracking-wider">
+                What Happens Next?
+              </p>
+              <div className="space-y-3">
+                {steps.map((step) => (
+                  <div key={step.number} className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-[#063826] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                      {step.number}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-[#1E293B]">{step.title}</p>
+                      <p className="text-[11px] text-[#6E7C74] mt-0.5 leading-relaxed">{step.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ACTION BUTTONS */}
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleCheckStatus}
+              disabled={checking}
+              className="w-full py-3.5 rounded-full bg-[#063826] hover:bg-[#042418] text-white font-semibold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            >
+              <RefreshCw size={16} className={checking ? "animate-spin" : ""} />
+              {checking ? "Refreshing Status..." : "Check Application Status"}
+            </button>
+
+            {lastChecked && (
+              <p className="text-center text-[10.5px] text-[#6E7C74]">
+                Last checked at {lastChecked}
               </p>
             )}
-          </div>
-        )}
 
-        {/* What Happens Next */}
-        <div className="rounded-2xl p-6 mb-4 bg-white border border-[#E3E7E1] shadow-sm">
-          <p className="text-xs uppercase tracking-widest mb-6 text-[#6E7C74]">
-            What Happens Next?
-          </p>
-          <ol>
-            {steps.map((step, i) => (
-              <li key={step.number} className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                      step.done
-                        ? "bg-[#1F4D3D] text-white"
-                        : "bg-[#F5F7F3] text-[#6E7C74] border border-[#E3E7E1]"
-                    }`}
-                  >
-                    {step.done ? <CheckCircle2 size={15} /> : step.number}
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div className="w-px flex-1 my-1 bg-[#E3E7E1]" />
-                  )}
-                </div>
-                <div className="pb-5">
-                  <p className={`text-sm font-semibold ${step.done ? "text-[#16241D]" : "text-[#6E7C74]"}`}>
-                    {step.title}
-                  </p>
-                  <p className="text-xs leading-relaxed mt-0.5 text-[#6E7C74]">
-                    {step.description}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <p className="text-xs mt-1 text-[#6E7C74]">
-            You will receive an email and SMS notification once your account is
-            approved.
-          </p>
-        </div>
-
-        {/* Contact Support */}
-        <div className="rounded-2xl p-6 mb-6 bg-white border border-[#E3E7E1] shadow-sm">
-          <p className="text-xs uppercase tracking-widest mb-4 text-[#6E7C74]">
-            Need Help?
-          </p>
-          <div className="space-y-3">
-            <a
-              href="mailto:support@quickkart.com"
-              className="flex items-center gap-3 text-sm text-[#16241D] hover:text-[#1F4D3D] transition-colors group"
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="w-full py-3 rounded-full text-xs font-semibold text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <Mail size={16} className="text-[#1F4D3D]" />
+              <LogOut size={14} />
+              {isLoggingOut ? "Logging out..." : "Logout Account"}
+            </button>
+          </div>
+
+          {/* FOOTER NEED HELP */}
+          <div className="text-center text-xs text-[#6E7C74] pt-2">
+            Need assistance? Reach out to{" "}
+            <a href="mailto:support@quickkart.com" className="font-semibold text-[#063826] hover:underline">
               support@quickkart.com
-              <ChevronRight
-                size={14}
-                className="ml-auto text-[#6E7C74]"
-              />
-            </a>
-            <hr className="border-[#E3E7E1]" />
-            <a
-              href="tel:+919876500000"
-              className="flex items-center gap-3 text-sm text-[#16241D] hover:text-[#1F4D3D] transition-colors group"
-            >
-              <Phone size={16} className="text-[#1F4D3D]" />
-              +91 98765 00000
-              <ChevronRight
-                size={14}
-                className="ml-auto text-[#6E7C74]"
-              />
             </a>
           </div>
+
         </div>
-
-        {/* Actions */}
-        <div className="space-y-3">
-          <button
-            onClick={handleCheckStatus}
-            disabled={checking}
-            className="w-full flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-widest py-3.5 rounded-xl border border-[#1F4D3D] text-[#1F4D3D] hover:bg-[#1F4D3D] hover:text-white transition-colors cursor-pointer disabled:opacity-60"
-          >
-            <RefreshCw size={15} className={checking ? "animate-spin" : ""} />
-            {checking ? "Checking..." : "Check Application Status"}
-          </button>
-
-          {lastChecked && (
-            <p className="text-center text-xs text-[#6E7C74]">
-              Last checked at {lastChecked}
-            </p>
-          )}
-
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="w-full flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-widest py-3 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <LogOut size={15} />
-            {isLoggingOut ? "Logging out..." : "Logout"}
-          </button>
-        </div>
-
-        <p className="text-center text-xs mt-8 mb-4 text-[#6E7C74]">
-          Need help?{" "}
-          <a
-            href="mailto:support@quickkart.com"
-            className="underline text-[#1F4D3D]"
-          >
-            Contact Support
-          </a>
-        </p>
       </main>
     </div>
   );
