@@ -46,6 +46,7 @@ const getMyDriverProfile = async (req, res) => {
                 vehicleNumber: driverProfile.vehicleNumber,
                 licenseNumber: driverProfile.licenseNumber,
                 documents,
+                rejectionReason: driverProfile.rejectionReason || null,
                 currentLevel: driverProfile.currentLevel,
                 totalDeliveries: driverProfile.totalDeliveries,
             },

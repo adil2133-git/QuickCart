@@ -17,6 +17,7 @@ import {
   MapPinned,
   ArrowRight,
   Sparkles,
+  Info,
 } from "lucide-react";
 import api from "../../../api/axios";
 import LocationPreviewMap from "../../admin/components/locationPreview";
@@ -39,6 +40,7 @@ interface BaseProfile {
   registeredOn: string;
   role: string;
   approvalStatus: "ACTIVE" | "PENDING_APPROVAL" | "SUSPENDED" | "REJECTED";
+  rejectionReason?: string | null;
   documents: DocumentItem[];
 }
 
@@ -335,10 +337,31 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
               >
                 Application Not Approved
               </h2>
-              <p className="text-xs sm:text-sm text-red-600 mt-2 leading-relaxed max-w-md mx-auto">
-                Regrettably, your application could not be approved at this time. Our team requires updated or clearer document details.
+
+              {profile.rejectionReason ? (
+                <div className="p-4 my-3 rounded-2xl bg-white border border-red-200 text-left text-xs shadow-xs">
+                  <p className="font-bold text-red-800 mb-1 flex items-center gap-1.5">
+                    <Info size={14} className="text-red-600" /> Reason from Admin Review Team:
+                  </p>
+                  <p className="text-red-700 font-medium italic pl-5">"{profile.rejectionReason}"</p>
+                </div>
+              ) : (
+                <p className="text-xs sm:text-sm text-red-600 mt-2 leading-relaxed max-w-md mx-auto">
+                  Regrettably, your application could not be approved at this time. Our team requires updated or clearer document details.
+                </p>
+              )}
+
+              <p className="text-xs text-red-700 mt-2">
+                Please re-register below with clear documents and updated details to submit your fresh application.
               </p>
-              <div className="mt-4 pt-3 border-t border-red-200/60 flex flex-col sm:flex-row items-center justify-center gap-3">
+
+              <div className="mt-4 pt-4 border-t border-red-200/60 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => navigate(role === "driver" ? "/register/delivery" : "/register/store")}
+                  className="w-full sm:w-auto py-2.5 px-5 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  Re-Apply &amp; Update Application <ArrowRight size={14} />
+                </button>
                 <a
                   href="mailto:support@quickkart.com"
                   className="text-xs font-semibold text-red-700 hover:underline flex items-center gap-1"
@@ -350,7 +373,7 @@ export default function PendingApproval({ role }: PendingApprovalProps) {
                   onClick={handleLogout}
                   className="text-xs font-semibold text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <LogOut size={14} /> Logout Account
+                  <LogOut size={14} /> Logout
                 </button>
               </div>
             </div>

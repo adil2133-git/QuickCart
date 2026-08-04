@@ -57,6 +57,7 @@ const getMyStoreProfile = async (req, res) => {
                 operatingHours: storeProfile.operatingHours,
                 coordinates: storeProfile.coordinates,
                 documents,
+                rejectionReason: storeProfile.rejectionReason || null,
             },
         });
     } catch (err) {
