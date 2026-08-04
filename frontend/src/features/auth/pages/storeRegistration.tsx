@@ -1,30 +1,40 @@
-// src/features/auth/components/StoreRegistration.tsx
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Store, User, FileText, Upload, CheckCircle2, Eye, EyeOff, Info, ArrowRight, Loader2, Navigation, Search } from "lucide-react";
 import api from "../../../api/axios";
 import { getApiErrorMessage } from "../../../api/apiError";
 import OtpVerificationModal from "../components/otpVerificationModal";
 import PasswordStrengthBar from "../components/shared/passwordStrengthBar";
-import { useInputFocusStyle } from "../hooks/useInputFocusStyle";
 import { storeRegisterValidationSchema } from "../validation/authSchemas";
 import { showSuccessToast, showErrorToast } from "../../../components/ui/toastService";
 
-type UploadState = { file: File | null };
+import storeRegBg from "../../../assets/store_reg_bg.png";
+
+type UploadState = {
+  file: File | null;
+  name: string | null;
+  size: string | null;
+  uploaded: boolean;
+};
 
 type Coords = { lat: number; lng: number };
 
-// What gets saved to form state once the user clicks "Confirm Location".
-// Until this exists, the form's `location` is null and submission is blocked.
 type ConfirmedLocation = {
   lat: number;
   lng: number;
-  resolvedAddress: string | null; // reverse-geocoded label shown to the user, may be null if lookup failed
+  resolvedAddress: string | null;
 };
 
-
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
 
 // ─── Upload Card ─────────────────────────────────────────────────────────────
 function UploadCard({
@@ -41,15 +51,16 @@ function UploadCard({
   onUpload: (file: File) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const uploaded = !!upload.file;
+  const { uploaded, name, size } = upload;
+
   return (
     <div
       onClick={() => ref.current?.click()}
-      className="relative group p-5 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all"
-      style={{
-        borderColor: uploaded ? "#145C43" : "#DCE3DC",
-        backgroundColor: uploaded ? "#E8EFEC" : "#F5F7F3",
-      }}
+      className={`relative flex items-center justify-between p-4 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${
+        uploaded 
+          ? "border-[#063826] bg-[#E2EDE7]/70 text-[#063826]" 
+          : "border-[#E5E7EB] bg-[#FAF9F6] hover:bg-[#F2F0EB] text-[#6E7C74]"
+      }`}
     >
       <input
         ref={ref}
@@ -57,34 +68,49 @@ function UploadCard({
         accept=".jpg,.jpeg,.png,.pdf"
         className="hidden"
         onChange={(e) => {
-          if (e.target.files?.[0]) onUpload(e.target.files[0]);
+          const f = e.target.files?.[0];
+          if (f) {
+            if (f.size > 5 * 1024 * 1024) {
+              showErrorToast("File Too Large", { subtitle: "Document must be under 5MB" });
+              return;
+            }
+            onUpload(f);
+          }
         }}
       />
-      <div style={{ color: uploaded ? "#145C43" : "#6E7C74" }}>{icon}</div>
-      <div className="text-center">
-        <p className="text-sm font-semibold text-gray-800">{label}</p>
-        <p
-          className="text-xs mt-0.5"
-          style={{
-            color: uploaded ? "#145C43" : "#6E7C74",
-            fontWeight: uploaded ? 600 : 400,
-          }}
-        >
-          {uploaded ? `Uploaded: ${upload.file?.name}` : sub}
-        </p>
+      
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div className={`p-2.5 rounded-2xl ${uploaded ? "bg-[#063826] text-white" : "bg-white text-[#6E7C74] border border-[#E5E7EB]"}`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-[#1A3326] truncate">{label}</p>
+          {uploaded ? (
+            <p className="text-[11px] text-[#2C4E3F] truncate font-medium mt-0.5">
+              {name} • <span className="text-[#6E7C74]">{size}</span>
+            </p>
+          ) : (
+            <p className="text-[10.5px] text-[#7A8C82] mt-0.5">{sub}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="shrink-0 pl-2">
+        {uploaded ? (
+          <span className="text-xs font-bold text-[#063826] flex items-center gap-1">
+            <CheckCircle2 size={16} /> Uploaded
+          </span>
+        ) : (
+          <span className="text-xs font-semibold text-[#063826] hover:underline flex items-center gap-1">
+            <Upload size={14} /> Browse
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Location Step ────────────────────────────────────────────────────────────
-// Implements the explicit flow:
-//   1. User clicks "Use Current Location" OR types a search query
-//   2. A marker appears
-//   3. User can drag the marker to fine-tune
-//   4. User clicks "Confirm Location" — only THEN is the location saved
-//      to the parent form. Dragging or re-searching after a confirm
-//      un-confirms it, so a stale confirm can never silently survive a change.
+// ─── Location Step (Leaflet Map Picker) ───────────────────────────────────────
 function LocationStep({
   confirmed,
   onConfirm,
@@ -92,7 +118,7 @@ function LocationStep({
 }: {
   confirmed: ConfirmedLocation | null;
   onConfirm: (loc: ConfirmedLocation | null) => void;
-  initialAddressHint: string; // address+pincode typed earlier in the form, used to prefill the search box once
+  initialAddressHint: string;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<{ map: L.Map; markerIcon: L.DivIcon } | null>(null);
@@ -103,7 +129,6 @@ function LocationStep({
   const [gpsLoading, setGpsLoading] = useState(false);
   const [mapReady, setMapReady] = useState(false);
 
-  // Pending = pinned but not yet confirmed by the user.
   const [pending, setPending] = useState<Coords | null>(null);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
@@ -146,7 +171,6 @@ function LocationStep({
     markerRef.current = marker;
   }, [setPendingCoords]);
 
-  // ── Init map once ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -166,11 +190,11 @@ function LocationStep({
       html: `
         <div style="
           width:36px;height:36px;
-          background:#145C43;
-          border:3px solid #0D2B21;
+          background:#063826;
+          border:3px solid #FFFFFF;
           border-radius:50% 50% 50% 0;
           transform:rotate(-45deg);
-          box-shadow:0 4px 12px rgba(13,43,33,0.35);
+          box-shadow:0 4px 14px rgba(6,56,38,0.4);
         "></div>`,
       iconSize: [36, 36],
       iconAnchor: [18, 36],
@@ -189,11 +213,8 @@ function LocationStep({
       map.remove();
       mapInstanceRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // If a location was already confirmed (e.g. user went back a step and returned),
-  // re-show it on the map without requiring re-confirmation.
   useEffect(() => {
     if (!mapReady || !confirmed || !mapInstanceRef.current) return;
     const { map, markerIcon } = mapInstanceRef.current;
@@ -201,11 +222,8 @@ function LocationStep({
     placeMarker(map, markerIcon, confirmed.lat, confirmed.lng);
     setPending({ lat: confirmed.lat, lng: confirmed.lng });
     setResolvedAddress(confirmed.resolvedAddress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady]);
 
-  // Prefill the search box from the address typed earlier in the form, once,
-  // so the user isn't forced to retype something they already wrote above.
   useEffect(() => {
     if (!hintAppliedRef.current && initialAddressHint && !searchText) {
       hintAppliedRef.current = true;
@@ -213,7 +231,6 @@ function LocationStep({
     }
   }, [initialAddressHint, searchText]);
 
-  // ── Forward geocode (search box → pin) ───────────────────────────────────
   const handleSearch = async () => {
     const query = searchText.trim();
     if (!query || !mapInstanceRef.current) return;
@@ -242,7 +259,6 @@ function LocationStep({
     }
   };
 
-  // ── GPS ────────────────────────────────────────────────────────────────────
   const handleGPS = () => {
     if (!navigator.geolocation || !mapInstanceRef.current) return;
     setSearchError("");
@@ -274,153 +290,112 @@ function LocationStep({
 
   return (
     <div className="space-y-3">
-      {/* Search row */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </span>
-          <input
-            type="text"
-            placeholder="Search for your store's address"
-            className="w-full h-11 pl-9 pr-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400"
-            style={{ borderColor: "#DCE3DC" }}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSearch();
-              }
-            }}
-          />
-        </div>
+      
+      {/* Search Input Row */}
+      <div className="relative flex items-center">
+        <span className="absolute left-4 text-[#94A3B8]">
+          <Search size={16} />
+        </span>
+        <input
+          type="text"
+          placeholder="Search location..."
+          className="w-full pl-10 pr-24 py-2.5 text-xs sm:text-sm rounded-full bg-[#FAF9F6] border border-[#E5E7EB] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#063826] focus:bg-white outline-none transition-all shadow-sm"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSearch();
+            }
+          }}
+        />
         <button
           type="button"
           onClick={handleSearch}
           disabled={searching || !searchText.trim()}
-          className="h-11 px-4 rounded-lg text-sm font-semibold transition-all hover:brightness-95 active:scale-95 disabled:opacity-50 flex-shrink-0"
-          style={{ backgroundColor: "#145C43", color: "#FFFFFF" }}
+          className="absolute right-1.5 py-1.5 px-3.5 rounded-full text-xs font-semibold bg-[#063826] text-white hover:bg-[#042418] disabled:opacity-50 transition-all cursor-pointer"
         >
-          {searching ? "Searching…" : "Search"}
+          {searching ? "Finding..." : "Search"}
         </button>
       </div>
 
+      {/* GPS Trigger Button */}
       <button
         type="button"
         onClick={handleGPS}
         disabled={gpsLoading}
-        className="w-full h-11 flex items-center justify-center gap-2 rounded-lg text-sm font-semibold border-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-60"
-        style={{ borderColor: "#145C43", color: "#145C43", backgroundColor: "#E8EFEC" }}
+        className="flex items-center gap-1.5 text-xs font-semibold text-[#063826] hover:underline cursor-pointer ml-1"
       >
-        {gpsLoading ? (
-          <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M21 12a9 9 0 11-6.219-8.56" />
-          </svg>
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-          </svg>
-        )}
-        {gpsLoading ? "Locating…" : "Use Current Location"}
+        <Navigation size={14} className={gpsLoading ? "animate-spin" : ""} />
+        <span>Use Current Location</span>
       </button>
 
       {searchError && (
-        <p className="text-xs flex items-start gap-1.5" style={{ color: "#BA1A1A" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 mt-0.5">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          {searchError}
-        </p>
+        <p className="text-xs text-red-600 pl-1">{searchError}</p>
       )}
 
-      {/* Map */}
+      {/* Map Box */}
       <div
-        className="relative rounded-xl overflow-hidden border-2"
-        style={{ borderColor: isConfirmed ? "#145C43" : pending ? "#A9CC3B" : "#DCE3DC" }}
+        className={`relative rounded-3xl overflow-hidden border-2 transition-all ${
+          isConfirmed ? "border-[#063826]" : pending ? "border-[#063826]/60" : "border-[#E5E7EB]"
+        }`}
       >
-        <div ref={mapRef} style={{ height: "280px", width: "100%", zIndex: 1 }} />
+        <div ref={mapRef} style={{ height: "240px", width: "100%", zIndex: 1 }} />
       </div>
 
-      {/* Pin / confirm panel */}
+      {/* Pin Confirmation Box */}
       <div
-        className="rounded-lg p-3 space-y-2"
-        style={{
-          backgroundColor: isConfirmed ? "#E8EFEC" : pending ? "#F5F7F3" : "#F5F7F3",
-          border: `1px solid ${isConfirmed ? "#145C43" : pending ? "#DCE3DC" : "#E3E7E1"}`,
-        }}
+        className={`rounded-2xl p-3.5 text-xs space-y-2 ${
+          isConfirmed ? "bg-[#E2EDE7]/70 border border-[#063826]/30 text-[#063826]" : "bg-[#FAF9F6] border border-[#E5E7EB] text-[#6E7C74]"
+        }`}
       >
         {!pending && (
-          <p className="text-xs text-gray-400">
-            No pin yet — search above, use your current location, or click directly on the map.
+          <p className="text-center text-[#94A3B8]">
+            No pin yet — search above, use current location, or click directly on the map.
           </p>
         )}
 
         {pending && (
           <>
             <div className="flex items-center gap-2">
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: isConfirmed ? "#145C43" : "#A9CC3B" }}
-              />
-              <p className="text-xs font-mono font-semibold" style={{ color: "#16241D" }}>
+              <div className={`w-2 h-2 rounded-full ${isConfirmed ? "bg-[#063826]" : "bg-[#063826]"}`} />
+              <p className="font-mono font-semibold text-[#16241D]">
                 {pending.lat}, {pending.lng}
               </p>
               {isConfirmed && (
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full font-semibold ml-auto"
-                  style={{ backgroundColor: "#E8EFEC", color: "#145C43" }}
-                >
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#063826] text-white ml-auto">
                   ✓ Confirmed
                 </span>
               )}
             </div>
 
-            <p className="text-xs leading-relaxed" style={{ color: "#6E7C74" }}>
+            <p className="leading-relaxed">
               {resolving ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <svg className="animate-spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M21 12a9 9 0 11-6.219-8.56" />
-                  </svg>
-                  Looking up address for this pin…
-                </span>
+                <span>Looking up address for pin...</span>
               ) : resolvedAddress ? (
-                <>Nearest match: <span className="font-medium">{resolvedAddress}</span></>
+                <>Nearest match: <span className="font-medium text-[#063826]">{resolvedAddress}</span></>
               ) : (
-                "Couldn't resolve an address for this exact pin — that's fine, the coordinates will still be saved."
+                "Coordinates pinned cleanly."
               )}
             </p>
 
             {!isConfirmed && (
-              <>
-                <p className="text-xs" style={{ color: "#6E7C74" }}>
-                  Drag the marker to fine-tune, then confirm.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  className="w-full h-10 rounded-lg text-sm font-semibold transition-all hover:brightness-95 active:scale-[0.98]"
-                  style={{ backgroundColor: "#145C43", color: "#FFFFFF" }}
-                >
-                  Confirm Location
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                className="w-full py-2 rounded-full text-xs font-semibold bg-[#063826] text-white hover:bg-[#042418] transition-all cursor-pointer mt-1"
+              >
+                Confirm Location Pin
+              </button>
             )}
 
             {isConfirmed && (
               <button
                 type="button"
                 onClick={() => onConfirm(null)}
-                className="text-xs font-semibold underline"
-                style={{ color: "#145C43" }}
+                className="text-[11px] font-semibold underline text-[#063826] cursor-pointer"
               >
-                Change location
+                Change Location Pin
               </button>
             )}
           </>
@@ -430,27 +405,25 @@ function LocationStep({
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main StoreRegistration Component ───────────────────────────────────────
 export default function StoreRegistration() {
   const navigate = useNavigate();
 
-  // Location — null until the user explicitly confirms a pin
   const [location, setLocation] = useState<ConfirmedLocation | null>(null);
 
-  // File uploads
-  const [tradeLicense, setTradeLicense] = useState<UploadState>({ file: null });
-  const [ownerID, setOwnerID] = useState<UploadState>({ file: null });
-  const [storeFront, setStoreFront] = useState<UploadState>({ file: null });
+  const [tradeLicense, setTradeLicense] = useState<UploadState>({ file: null, name: null, size: null, uploaded: false });
+  const [ownerID, setOwnerID] = useState<UploadState>({ file: null, name: null, size: null, uploaded: false });
+  const [storeFront, setStoreFront] = useState<UploadState>({ file: null, name: null, size: null, uploaded: false });
 
-  // UI state
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [error, setError] = useState("");
   const [targetEmail, setTargetEmail] = useState("");
   const [showOtpModal, setShowOtpModal] = useState(false);
 
-  const { handleFocus } = useInputFocusStyle("muted");
-  const inputClass =
-    "w-full h-11 px-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 transition-all";
-  const inputStyle = { borderColor: "#DCE3DC" };
+  const inputPillClass =
+    "w-full px-5 py-3 text-xs sm:text-sm rounded-full bg-[#FAF9F6] border border-[#E5E7EB] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#063826] focus:bg-white outline-none transition-all shadow-sm";
 
   const formik = useFormik({
     initialValues: {
@@ -524,7 +497,7 @@ export default function StoreRegistration() {
   };
 
   return (
-    <div className="flex min-h-screen w-full font-sans" style={{ backgroundColor: "#F7F8F5" }}>
+    <div className="flex h-screen w-screen overflow-hidden font-sans bg-[#F9F8F6] select-none">
       {showOtpModal && (
         <OtpVerificationModal
           email={targetEmail}
@@ -533,447 +506,369 @@ export default function StoreRegistration() {
         />
       )}
 
-      {/* ── Left Panel ──────────────────────────────────────────────────────── */}
-      <aside
-        className="hidden md:flex flex-col justify-between w-[40%] min-h-screen px-10 py-10 relative overflow-hidden flex-shrink-0"
-        style={{ backgroundColor: "#0D2B21" }}
-      >
-        <div
-          className="absolute inset-0 opacity-20 grayscale pointer-events-none"
-          style={{ background: "linear-gradient(135deg,#0D2B21 0%,#0A1F17 100%)" }}
-        />
-        <div className="relative z-10">
-          <span className="text-white font-bold text-2xl tracking-tight">QuickKart</span>
-          <div className="mt-10 space-y-4">
-            <h1 className="text-white text-3xl font-bold leading-tight">
-              Grow your business with hyperlocal delivery.
-            </h1>
-            <p className="text-sm leading-relaxed" style={{ color: "#8FCDB0" }}>
-              Your neighbourhood grocery, delivered fast. Join our network of premium local stores.
-            </p>
-          </div>
-          <nav className="mt-10 space-y-1">
-            {[
-              { label: "Hyperlocal", icon: <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" /> },
-              {
-                label: "Real-time availability",
-                icon: (<><circle cx="12" cy="12" r="10" /><polyline points="12 8 12 12 14 14" /></>),
-              },
-              {
-                label: "Fast delivery",
-                icon: (
-                  <>
-                    <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3" />
-                    <rect x="9" y="11" width="14" height="10" rx="2" />
-                    <circle cx="12" cy="21" r="1" />
-                    <circle cx="20" cy="21" r="1" />
-                  </>
-                ),
-              },
-            ].map(({ label, icon }, i) => (
-              <div key={i} className="flex items-center gap-3 py-3 cursor-pointer group">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8FCDB0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {icon}
-                </svg>
-                <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: "#8FCDB0" }}>
-                  {label}
-                </span>
-              </div>
-            ))}
-          </nav>
+      {/* Left Panel: Split-Screen Hero Image & Branding */}
+      <aside className="hidden md:flex flex-col justify-between w-[360px] lg:w-[440px] xl:w-[480px] h-full p-8 lg:p-12 relative overflow-hidden bg-[#063826] text-white flex-shrink-0">
+        
+        {/* Left Hero Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={storeRegBg} 
+            alt="QuickKart Store Partner" 
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Vignette Gradient for Crisp Text Readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
         </div>
-        <div className="relative z-10 flex items-center gap-1">
-          <span className="text-xs" style={{ color: "#8FCDB0" }}>© 2024 QuickKart</span>
+
+        {/* Top Spacer */}
+        <div className="relative z-10" />
+
+        {/* Bottom Hero Typography & Statement */}
+        <div className="relative z-10 mt-auto">
+          <span className="font-bold text-2xl tracking-tight text-white mb-2 block" style={{ fontFamily: "Fraunces, serif" }}>
+            QuickKart
+          </span>
+          <h1 
+            className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-2" 
+            style={{ fontFamily: "Fraunces, serif" }}
+          >
+            Partner with QuickKart
+          </h1>
+          <p className="text-xs lg:text-sm text-white/90 font-normal leading-relaxed max-w-sm">
+            Join our network of premium local merchants. Elevate your business with our cutting-edge logistics and reach thousands of customers in your area instantly.
+          </p>
+          <div className="mt-8 text-[11px] text-white/60 font-medium">
+            © 2024 QuickKart Logistics.
+          </div>
         </div>
       </aside>
 
-      {/* ── Right Panel ─────────────────────────────────────────────────────── */}
-      <main className="flex-1 h-screen overflow-y-auto px-6 md:px-0 py-10">
-        <div className="max-w-[480px] mx-auto space-y-8">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs">
-            <button onClick={() => navigate("/login")} className="hover:underline" style={{ color: "#145C43" }}>
-              Login
-            </button>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-            <button onClick={() => navigate("/create-account")} className="hover:underline" style={{ color: "#145C43" }}>
-              Create Account
-            </button>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-            <span className="font-bold" style={{ color: "#145C43" }}>Store Registration</span>
-          </nav>
+      {/* Right Panel: Form Area */}
+      <main className="flex-1 h-full overflow-y-auto p-6 sm:p-10 lg:p-12">
+        <div className="max-w-[560px] mx-auto">
 
-          {/* Heading */}
-          <div>
-            <h2 className="text-2xl font-bold text-[#16241D]">Register your Store</h2>
-            <p className="text-sm text-[#6E7C74] mt-1">
+          {/* Page Heading */}
+          <div className="mb-4">
+            <h2 
+              className="text-3xl sm:text-4xl font-bold text-[#063826]"
+              style={{ fontFamily: "Fraunces, serif" }}
+            >
+              Register your Store
+            </h2>
+            <p className="text-xs sm:text-sm text-[#5D6F65] mt-1.5">
               Partner with us to reach thousands of customers in your locality.
             </p>
           </div>
 
-          {/* Admin Review Notice */}
-          <div
-            className="flex items-start gap-3 p-4 rounded-lg"
-            style={{ backgroundColor: "#F5F7F3", borderLeft: "4px solid #145C43" }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#145C43" stroke="none" className="mt-0.5 flex-shrink-0">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-            </svg>
-            <p className="text-xs leading-relaxed" style={{ color: "#6E7C74" }}>
+          {/* Admin Review Notice Pill */}
+          <div className="flex items-center gap-3 p-4 mb-6 rounded-full bg-[#E2EDE7]/70 border border-[#C5DCD0] text-xs text-[#063826]">
+            <Info size={18} className="shrink-0 text-[#063826]" />
+            <p className="leading-tight italic">
               Your store will be reviewed and approved by our admin team within 24–48 hours after submission. Ensure all documents are clear and valid.
             </p>
           </div>
 
           {/* Error Banner */}
           {error && (
-            <div className="flex items-center gap-2 rounded-md px-4 py-3 bg-[#FBEAEA] border border-[#BA1A1A]/30">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BA1A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <p className="text-sm text-[#BA1A1A]">{error}</p>
+            <div className="p-3.5 mb-5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-600">
+              <p>{error}</p>
             </div>
           )}
 
-          <form onSubmit={formik.handleSubmit} className="space-y-8" noValidate>
-            {/* ── Section 1: Store Info ─────────────────────────────────────── */}
-            <section className="space-y-5">
-              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#E3E7E1" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l1-5h16l1 5" />
-                  <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
-                  <path d="M9 9v12M15 9v12" />
-                </svg>
-                <h3 className="text-base font-semibold text-[#16241D]">Store Info</h3>
+          <form onSubmit={formik.handleSubmit} className="space-y-6" noValidate>
+            
+            {/* Section 1: Store Basics */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
+                <span className="text-xs font-semibold text-[#6E7C74] tracking-wider uppercase">
+                  1. STORE BASICS
+                </span>
               </div>
 
-              <div className="space-y-4">
-                {/* Store Name */}
+              {/* Store Name */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Store Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="storeName"
+                  name="storeName"
+                  type="text"
+                  placeholder="e.g., Fresh Valley Supermarket"
+                  value={formik.values.storeName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.storeName && formik.errors.storeName && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.storeName}</p>
+                )}
+              </div>
+
+              {/* Owner Name */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Owner Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="ownerName"
+                  name="ownerName"
+                  type="text"
+                  placeholder="Full Legal Name"
+                  value={formik.values.ownerName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.ownerName && formik.errors.ownerName && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.ownerName}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Section 2: Contact & Credentials */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
+                <span className="text-xs font-semibold text-[#6E7C74] tracking-wider uppercase">
+                  2. CONTACT & CREDENTIALS
+                </span>
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="store@example.com"
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.email && formik.errors.email && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.email}</p>
+                )}
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="10-digit mobile number, e.g. 9876543210"
+                  value={formik.values.phone}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.phone && formik.errors.phone && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.phone}</p>
+                )}
+              </div>
+
+              {/* Password & Confirm Password Side-by-Side Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Store Name
+                  <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                    Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 9l1-5h16l1 5" />
-                        <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
-                      </svg>
-                    </span>
                     <input
-                      id="storeName"
-                      name="storeName"
-                      type="text"
-                      placeholder="e.g. Green Valley Organics"
-                      className={`${inputClass} pl-9 ${formik.touched.storeName && formik.errors.storeName ? "border-red-400 focus:border-red-500" : ""}`}
-                      style={inputStyle}
-                      value={formik.values.storeName}
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formik.values.password}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      onFocus={handleFocus}
+                      className={`${inputPillClass} pr-10`}
                     />
-                  </div>
-                  {formik.touched.storeName && formik.errors.storeName && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.storeName}</p>
-                  )}
-                </div>
-
-                {/* Owner Name */}
-                <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Owner Name
-                  </label>
-                  <input
-                    id="ownerName"
-                    name="ownerName"
-                    type="text"
-                    placeholder="Legal full name"
-                    className={`${inputClass} ${formik.touched.ownerName && formik.errors.ownerName ? "border-red-400 focus:border-red-500" : ""}`}
-                    style={inputStyle}
-                    value={formik.values.ownerName}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    onFocus={handleFocus}
-                  />
-                  {formik.touched.ownerName && formik.errors.ownerName && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.ownerName}</p>
-                  )}
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Address
-                  </label>
-                  <textarea
-                    id="address"
-                    name="address"
-                    placeholder="Full street address, building number, landmark"
-                    rows={3}
-                    className={`w-full p-3 bg-white border rounded-lg outline-none text-sm text-gray-800 placeholder-gray-400 resize-none transition-all ${
-                      formik.touched.address && formik.errors.address ? "border-red-400 focus:border-red-500" : ""
-                    }`}
-                    style={inputStyle}
-                    value={formik.values.address}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    onFocus={handleFocus}
-                  />
-                  {formik.touched.address && formik.errors.address && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.address}</p>
-                  )}
-                </div>
-
-                {/* Pincode */}
-                <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">
-                    Pincode
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                    </span>
-                    <input
-                      id="pincode"
-                      name="pincode"
-                      type="text"
-                      placeholder="6-digit postal code"
-                      className={`${inputClass} pl-9 ${formik.touched.pincode && formik.errors.pincode ? "border-red-400 focus:border-red-500" : ""}`}
-                      style={inputStyle}
-                      value={formik.values.pincode}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      onFocus={handleFocus}
-                    />
-                  </div>
-                  {formik.touched.pincode && formik.errors.pincode && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.pincode}</p>
-                  )}
-                </div>
-
-                {/* ── Location Step ───────────────────────────────────────── */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500">
-                      Store Location
-                    </label>
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                      style={{
-                        backgroundColor: location ? "#E8EFEC" : "rgba(186,26,26,0.08)",
-                        color: location ? "#145C43" : "#BA1A1A",
-                      }}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B]"
                     >
-                      {location ? "✓ Confirmed" : "Required"}
-                    </span>
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Search your address or use your current location, adjust the pin, then confirm.
-                  </p>
-                  <LocationStep
-                    confirmed={location}
-                    onConfirm={setLocation}
-                    initialAddressHint={
-                      formik.values.address.trim() && formik.values.pincode.trim()
-                        ? `${formik.values.address.trim()}, ${formik.values.pincode.trim()}, India`
-                        : ""
-                    }
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* ── Section 2: Credentials ───────────────────────────────────── */}
-            <section className="space-y-5">
-              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#E3E7E1" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0110 0v4" />
-                </svg>
-                <h3 className="text-base font-semibold text-[#16241D]">Credentials</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Email</label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="name@store.com"
-                    className={`${inputClass} ${formik.touched.email && formik.errors.email ? "border-red-400 focus:border-red-500" : ""}`}
-                    style={inputStyle}
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    onFocus={handleFocus}
-                  />
-                  {formik.touched.email && formik.errors.email && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.email}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Phone</label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="10-digit mobile number"
-                    className={`${inputClass} ${formik.touched.phone && formik.errors.phone ? "border-red-400 focus:border-red-500" : ""}`}
-                    style={inputStyle}
-                    value={formik.values.phone}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    onFocus={handleFocus}
-                  />
-                  {formik.touched.phone && formik.errors.phone && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.phone}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Password</label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="Enter password (min. 8 characters)"
-                    className={`${inputClass} ${formik.touched.password && formik.errors.password ? "border-red-400 focus:border-red-500" : ""}`}
-                    style={inputStyle}
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    onFocus={handleFocus}
-                  />
                   <PasswordStrengthBar password={formik.values.password} />
                   {formik.touched.password && formik.errors.password && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.password}</p>
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.password}</p>
                   )}
                 </div>
+
                 <div>
-                  <label className="block text-xs font-semibold tracking-wide uppercase text-gray-500 mb-1.5">Confirm Password</label>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Re-enter your password"
-                    className={`${inputClass} ${formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-400 focus:border-red-500" : ""}`}
-                    style={inputStyle}
-                    value={formik.values.confirmPassword}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    onFocus={handleFocus}
-                  />
+                  <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                    Confirm Password <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formik.values.confirmPassword}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`${inputPillClass} pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B]"
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   {formik.touched.confirmPassword && formik.errors.confirmPassword && (
-                    <p className="mt-1 text-[11px] font-medium text-red-600 pl-1">{formik.errors.confirmPassword}</p>
+                    <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.confirmPassword}</p>
                   )}
                 </div>
               </div>
-            </section>
+            </div>
 
-            {/* ── Section 3: Documents ─────────────────────────────────────── */}
-            <section className="space-y-5">
-              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "#E3E7E1" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#145C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-                <h3 className="text-base font-semibold text-[#16241D]">Documents</h3>
+            {/* Section 3: Physical Presence */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
+                <span className="text-xs font-semibold text-[#6E7C74] tracking-wider uppercase">
+                  3. PHYSICAL PRESENCE
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <UploadCard
-                  icon={
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="12" y1="18" x2="12" y2="12" />
-                      <line x1="9" y1="15" x2="15" y2="15" />
-                    </svg>
+              {/* Address */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  placeholder="Street Address, Area"
+                  value={formik.values.address}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.address && formik.errors.address && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.address}</p>
+                )}
+              </div>
+
+              {/* Pincode */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="pincode"
+                  name="pincode"
+                  type="text"
+                  placeholder="6-digit ZIP/PIN code"
+                  value={formik.values.pincode}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={inputPillClass}
+                />
+                {formik.touched.pincode && formik.errors.pincode && (
+                  <p className="mt-1 text-[10px] font-medium text-red-600 pl-2">{formik.errors.pincode}</p>
+                )}
+              </div>
+
+              {/* Interactive Store Location Map */}
+              <div>
+                <label className="block text-left text-[11px] font-medium text-[#374151] mb-1 pl-1">
+                  Store Location <span className="text-red-500">*</span>
+                </label>
+                <LocationStep
+                  confirmed={location}
+                  onConfirm={setLocation}
+                  initialAddressHint={
+                    formik.values.address.trim() && formik.values.pincode.trim()
+                      ? `${formik.values.address.trim()}, ${formik.values.pincode.trim()}, India`
+                      : ""
                   }
+                />
+              </div>
+            </div>
+
+            {/* Section 4: Document Verification */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-black/5 pb-1.5">
+                <span className="text-xs font-semibold text-[#6E7C74] tracking-wider uppercase">
+                  4. DOCUMENT VERIFICATION
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <UploadCard
+                  icon={<FileText size={20} />}
                   label="Trade License"
                   sub="PDF, JPG or PNG (Max 5MB)"
                   upload={tradeLicense}
-                  onUpload={(f) => setTradeLicense({ file: f })}
+                  onUpload={(f) => setTradeLicense({ file: f, name: f.name, size: formatFileSize(f.size), uploaded: true })}
                 />
+
                 <UploadCard
-                  icon={
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="4" width="20" height="16" rx="2" />
-                      <path d="M7 15s0-4 5-4 5 4 5 4" />
-                      <circle cx="12" cy="9" r="2" />
-                    </svg>
-                  }
+                  icon={<User size={20} />}
                   label="Owner ID Proof"
-                  sub="Government Issued ID"
+                  sub="Government Issued ID (Aadhaar / PAN)"
                   upload={ownerID}
-                  onUpload={(f) => setOwnerID({ file: f })}
+                  onUpload={(f) => setOwnerID({ file: f, name: f.name, size: formatFileSize(f.size), uploaded: true })}
                 />
+
                 <UploadCard
-                  icon={
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                  }
+                  icon={<Store size={20} />}
                   label="Store Front Photo"
                   sub="Clear photo of the shop entrance"
                   upload={storeFront}
-                  onUpload={(f) => setStoreFront({ file: f })}
+                  onUpload={(f) => setStoreFront({ file: f, name: f.name, size: formatFileSize(f.size), uploaded: true })}
                 />
               </div>
-            </section>
+            </div>
 
-            {/* ── Submit ───────────────────────────────────────────────────── */}
-            <div className="pt-4">
+            {/* Submit Section */}
+            <div className="pt-2">
+              <p className="text-[11px] text-center text-[#5D6F65] mb-3">
+                By clicking submit, you agree to QuickKart's{" "}
+                <a href="#" className="font-semibold underline text-[#063826]">
+                  Merchant Terms &amp; Conditions
+                </a>.
+              </p>
+
               <button
                 type="submit"
                 disabled={formik.isSubmitting}
-                className="w-full h-12 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70 cursor-pointer"
-                style={{
-                  backgroundColor: "#A9CC3B",
-                  color: "#16241D",
-                  boxShadow: "0 8px 24px rgba(20,92,67,0.12)",
-                }}
+                className="w-full py-3.5 rounded-full bg-[#063826] hover:bg-[#042418] active:scale-[0.99] text-white font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#063826]/20 cursor-pointer disabled:opacity-70"
               >
                 {formik.isSubmitting ? (
-                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 12a9 9 0 11-6.219-8.56" />
-                  </svg>
+                  <>
+                    <Loader2 size={18} className="animate-spin text-white" />
+                    Submitting Application...
+                  </>
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 9l1-5h16l1 5" />
-                    <path d="M3 9h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" />
-                  </svg>
+                  <>
+                    Submit Store Application <ArrowRight size={16} />
+                  </>
                 )}
-                {formik.isSubmitting ? "Submitting..." : "Submit Store Application"}
               </button>
-              <p className="mt-3 text-xs text-center text-gray-500">
-                By clicking submit, you agree to QuickKart's{" "}
-                <a href="#" className="font-semibold underline" style={{ color: "#145C43" }}>
-                  Merchant Terms &amp; Conditions
-                </a>
-                .
-              </p>
-              <p className="mt-4 text-sm text-center text-gray-500">
+
+              <p className="mt-4 text-xs text-center text-[#5D6F65]">
                 Already have an account?{" "}
                 <button
                   type="button"
                   onClick={() => navigate("/login")}
-                  className="font-semibold underline"
-                  style={{ color: "#145C43" }}
+                  className="font-bold text-[#063826] hover:underline"
                 >
-                  Login
+                  Partner Login
                 </button>
               </p>
             </div>
